@@ -1,5 +1,5 @@
 // js/gulmeme-meydani.js
-// Kafana Tak! - Gülmeme Meydan Okuması (Face-to-Face Kamera Düellosu)
+// Kafana Tak! - Gülmeme Meydan Okuması (Face-to-Face Kamera Düellosu & Su Püskürtme Meydanı)
 
 import { sounds } from './audio.js';
 
@@ -13,7 +13,19 @@ export const FUNNY_CHALLENGES = [
   'Gözlerini şaşı yapıp en ciddi haber spikeri ses tonunla haber sun.',
   'Arkadaşının sol omzunda görünmez bir papağan varmış gibi onunla konuş.',
   'Robot gibi hareket ederek "Gülmek benim sistemime aykırıdır" de.',
-  'Tencere kapağı gibi tıslayarak hava kaçırma sesi çıkar.'
+  'Tencere kapağı gibi tıslayarak hava kaçırma sesi çıkar.',
+  'Ağzını hiç açmadan dişlerinin arasından "Ben bir patatesim" de.',
+  'Ağır çekimde esne ve arkadaşına en komik bakışını at.',
+  'Arkadaşının saçına bakıp "Orada bir uzaylı mı var?" diye dehşetle fısılda.',
+  'Arkadaşının gözlerinin içine bakarak sadece derin derin nefes al.',
+  'Ağzını büzüp balık gibi "blup blup" yaparak gözlerini devir.',
+  'İtalyan mafyası gibi elini sallayarak "Mamma mia, sen ne diyorsun!" de.',
+  'Kafanı hafifçe yana eğip en masum yavru kedi bakışını at.',
+  'En derin ses tonunla arkadaşına "Pizzayı sen mi yedin?" diye sor.',
+  'Burnunu çekip "Buralar biraz şampiyon koktu" de.',
+  'Ağzını açmadan sadece burnundan komik bir melodi mırıldan.',
+  'Gözlerini sonuna kadar açıp arkadaşının kaşlarına kilitlen!',
+  'En dramatize pembe dizi repliğini söyle: "Bunu bana nasıl yaparsın!"'
 ];
 
 export const DAD_JOKES = [
@@ -23,7 +35,19 @@ export const DAD_JOKES = [
   'Röntgen filmi çektirdik, yakında sinemalarda!',
   'Fransız ihtilali neye karşı yapılmıştır? Tabii ki sabaha karşı!',
   'Geçen gün fırına gittim, ekmek kalmamış. Ben de pide aldım.',
-  'Gözün aydın, kulakların manisa!'
+  'Gözün aydın, kulakların manisa!',
+  'İlahi Azrail, sen adamı öldürürsün!',
+  'Geçen gün taksi çevirdim, hala dönüyor!',
+  'Yıkanan tona ne denir? Washington!',
+  'Adamın biri kitap okurken ölmüş, neden? Satır başına gelmiş!',
+  'Seven ne yapmaz? Dubleks yapar, site yapar!',
+  'Geçen gün bir şaka yaptım, duvardaki tablo bile eğildi!',
+  'Sinemada on dakika ara verdiler, aradım ama meşguldü!',
+  'Adamın kafasına radyo düşmüş, bir şey olmamış; çünkü hafif müzik çalıyormuş!',
+  'Hangi bağda üzüm yetişmez? Tabii ki ayakkabı bağında!',
+  'Masada hangi örtü yenir? Tabii ki börek altı!',
+  'En acı meyve hangisidir? Tabii ki biber!',
+  'Tavuklar en çok hangi sporu sever? Tabii ki gıdık basketbolu!'
 ];
 
 export class GulmemeMeydaniEngine {
@@ -32,9 +56,11 @@ export class GulmemeMeydaniEngine {
     this.stream = null;
     this.timerInterval = null;
     this.promptInterval = null;
+    this.tensionInterval = null;
     this.remainingSeconds = 60;
     this.scores = { player1: 0, player2: 0 };
     this.currentPrompt = '';
+    this.isWaterMode = false;
   }
 
   init() {
@@ -65,8 +91,78 @@ export class GulmemeMeydaniEngine {
         this.stopCamera();
         clearInterval(this.timerInterval);
         clearInterval(this.promptInterval);
+        clearInterval(this.tensionInterval);
         this.game.showScreen('party-games');
       };
+    }
+
+    // Troll Sesi Butonu
+    const btnTroll = document.getElementById('btn-trigger-troll-sound');
+    if (btnTroll) {
+      btnTroll.onclick = () => this.playTrollSound();
+    }
+
+    // Su Modu Butonu
+    const btnWater = document.getElementById('btn-toggle-water-mode');
+    if (btnWater) {
+      btnWater.onclick = () => {
+        this.isWaterMode = !this.isWaterMode;
+        sounds.playClick();
+        btnWater.textContent = this.isWaterMode ? '💧 Ağza Su Al: AÇIK!' : '💧 Ağza Su Al: Kapalı';
+        btnWater.style.background = this.isWaterMode ? 'rgba(0,245,212,0.35)' : 'rgba(0,245,212,0.15)';
+        const banner = document.getElementById('water-mode-banner');
+        if (banner) banner.style.display = this.isWaterMode ? 'block' : 'none';
+      };
+    }
+  }
+
+  playTrollSound() {
+    try {
+      const audioCtx = sounds.ctx || new (window.AudioContext || window.webkitAudioContext)();
+      if (!audioCtx) return;
+
+      const types = ['fart', 'boing', 'siren', 'whistle'];
+      const chosen = types[Math.floor(Math.random() * types.length)];
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      const now = audioCtx.currentTime;
+
+      if (chosen === 'fart') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.linearRampToValueAtTime(45, now + 0.35);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.linearRampToValueAtTime(0, now + 0.35);
+        osc.start(now);
+        osc.stop(now + 0.35);
+      } else if (chosen === 'boing') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(200, now);
+        osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
+        osc.frequency.exponentialRampToValueAtTime(300, now + 0.3);
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.linearRampToValueAtTime(0, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      } else {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
+        gain.gain.setValueAtTime(0.35, now);
+        gain.gain.linearRampToValueAtTime(0, now + 0.25);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      }
+
+      // Barometreyi zıplat
+      const bar = document.getElementById('gulmeme-tension-bar');
+      if (bar) bar.style.width = '90%';
+    } catch(e) {
+      sounds.playWheelTick();
     }
   }
 
@@ -101,6 +197,7 @@ export class GulmemeMeydaniEngine {
   newDuel() {
     clearInterval(this.timerInterval);
     clearInterval(this.promptInterval);
+    clearInterval(this.tensionInterval);
     this.remainingSeconds = 60;
 
     document.getElementById('gulmeme-timer').textContent = '60s';
@@ -108,7 +205,16 @@ export class GulmemeMeydaniEngine {
     document.getElementById('gulmeme-duel-over').style.display = 'none';
 
     this.nextPrompt();
-    this.promptInterval = setInterval(() => this.nextPrompt(), 7000);
+    this.promptInterval = setInterval(() => this.nextPrompt(), 6500);
+
+    // Canlı Gerginlik Barı Simülasyonu
+    this.tensionInterval = setInterval(() => {
+      const bar = document.getElementById('gulmeme-tension-bar');
+      if (bar) {
+        const randWidth = Math.floor(20 + Math.random() * 65);
+        bar.style.width = `${randWidth}%`;
+      }
+    }, 1200);
 
     this.timerInterval = setInterval(() => {
       this.remainingSeconds--;
@@ -117,6 +223,7 @@ export class GulmemeMeydaniEngine {
       if (this.remainingSeconds <= 0) {
         clearInterval(this.timerInterval);
         clearInterval(this.promptInterval);
+        clearInterval(this.tensionInterval);
         this.finishDuel('Berabere! İki taraf da taş gibi durdu!');
       }
     }, 1000);
@@ -141,13 +248,11 @@ export class GulmemeMeydaniEngine {
   handleLaughed(who) {
     sounds.playCheer();
     if (who === 'player1') {
-      // 1. Oyuncu güldü -> 2. Oyuncu puan alır
       this.scores.player2++;
-      this.finishDuel('😂 1. OYUNCU GÜLDÜ! Puan 2. Oyuncuya!');
+      this.finishDuel(this.isWaterMode ? '💧 1. OYUNCU SUYU PÜSKÜRTTÜ! Puan 2. Oyuncuya!' : '😂 1. OYUNCU GÜLDÜ! Puan 2. Oyuncuya!');
     } else {
-      // 2. Oyuncu güldü -> 1. Oyuncu puan alır
       this.scores.player1++;
-      this.finishDuel('😂 2. OYUNCU GÜLDÜ! Puan 1. Oyuncuya!');
+      this.finishDuel(this.isWaterMode ? '💧 2. OYUNCU SUYU PÜSKÜRTTÜ! Puan 1. Oyuncuya!' : '😂 2. OYUNCU GÜLDÜ! Puan 1. Oyuncuya!');
     }
     this.updateScoresUI();
   }
@@ -160,6 +265,7 @@ export class GulmemeMeydaniEngine {
   finishDuel(resultText) {
     clearInterval(this.timerInterval);
     clearInterval(this.promptInterval);
+    clearInterval(this.tensionInterval);
 
     document.getElementById('gulmeme-active-duel').style.display = 'none';
     document.getElementById('gulmeme-duel-over').style.display = 'block';

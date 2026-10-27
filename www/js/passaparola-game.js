@@ -6,6 +6,10 @@ import { sounds } from './audio.js';
 import QRCode from './qrcode.esm.js';
 import { firebaseNetwork } from './firebase-network.js';
 
+if (typeof window !== 'undefined' && QRCode) {
+  window.QRCode = QRCode;
+}
+
 export const PASSAPAROLA_LETTERS = [
   'A', 'B', 'C', 'Ç', 'D', 'E', 'F', 'G', 
   'H', 'I', 'İ', 'K', 'L', 'M', 'N', 'O', 
@@ -144,6 +148,21 @@ export class PassaparolaEngine {
           btnModeLocal.style.color = 'var(--text-dim)';
         }
         this.createWifiRoom();
+      };
+    }
+
+    // Bağlantıyı Kopyala Butonu
+    const btnCopyLink = document.getElementById('btn-copy-passa-link');
+    if (btnCopyLink) {
+      btnCopyLink.onclick = async () => {
+        sounds.playClick();
+        const url = firebaseNetwork.getPassaparolaUrl(this.roomId || 'PASS');
+        try {
+          await navigator.clipboard.writeText(url);
+          this.game.showToast('📋 Passaparola bağlantısı panoya kopyalandı!');
+        } catch (e) {
+          prompt('Passaparola bağlantısı:', url);
+        }
       };
     }
 
@@ -291,17 +310,32 @@ export class PassaparolaEngine {
 
     const joinUrl = firebaseNetwork.getPassaparolaUrl(this.roomId);
     const cvsContainer = document.getElementById('passa-qr-canvas');
-    if (cvsContainer && window.QRCode) {
+    if (cvsContainer) {
       cvsContainer.innerHTML = '';
+      cvsContainer.style.background = '#FFFFFF';
+      cvsContainer.style.padding = '8px';
+      cvsContainer.style.borderRadius = '14px';
+      cvsContainer.style.display = 'inline-block';
+      cvsContainer.style.boxShadow = '0 0 25px rgba(0,245,212,0.4)';
+
       const cvs = document.createElement('canvas');
+      cvs.style.display = 'block';
+      cvs.style.borderRadius = '8px';
       cvsContainer.appendChild(cvs);
-      window.QRCode.toCanvas(cvs, joinUrl, {
-        width: 140,
-        margin: 1,
-        color: { dark: '#00F5D4', light: '#0B0E14' }
-      }, (err) => {
-        if (err) console.error('QR error:', err);
-      });
+
+      const qrEngine = (typeof QRCode !== 'undefined' && QRCode) || (typeof window !== 'undefined' && window.QRCode);
+      if (qrEngine && qrEngine.toCanvas) {
+        qrEngine.toCanvas(cvs, joinUrl, {
+          width: 180,
+          margin: 1,
+          color: { dark: '#000000', light: '#FFFFFF' }
+        }).catch(err => {
+          console.warn('Passaparola QR canvas hatası, fallback resim:', err);
+          cvsContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(joinUrl)}" width="180" height="180" style="display:block; border-radius:8px; background:#FFF;" />`;
+        });
+      } else {
+        cvsContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(joinUrl)}" width="180" height="180" style="display:block; border-radius:8px; background:#FFF;" />`;
+      }
     }
 
     const initialRoom = {

@@ -2502,6 +2502,7 @@ class GameApp {
       btnOpenBottle.addEventListener('click', () => {
         sounds.playClick();
         this.showScreen('bottle');
+        this.bottleEngine.renderScreen();
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
     }
@@ -2647,6 +2648,66 @@ class GameApp {
     // 11. NASIL OYNANIR REHBER MODALI BAĞLANTILARI
     // =========================================
     initPartyGuides(this);
+
+    // =========================================
+    // 12. OYUNDAN ÇIKIŞ VE MENÜYE DÖNÜŞ MODALI OLAYLARI
+    // =========================================
+    const btnCancelGameLeave = document.getElementById('btn-cancel-game-leave');
+    const btnConfirmGameLeave = document.getElementById('btn-confirm-game-leave');
+    const modalGameLeave = document.getElementById('modal-game-leave-confirm');
+    if (btnCancelGameLeave && modalGameLeave) {
+      btnCancelGameLeave.addEventListener('click', () => {
+        sounds.playClick();
+        modalGameLeave.classList.remove('active');
+      });
+    }
+    if (btnConfirmGameLeave && modalGameLeave) {
+      btnConfirmGameLeave.addEventListener('click', () => {
+        sounds.playClick();
+        modalGameLeave.classList.remove('active');
+        this.endRound();
+        this.showScreen('home');
+      });
+    }
+
+    // =========================================
+    // 13. UYGULAMADAN ÇIKIŞ ONAY MODALI OLAYLARI
+    // =========================================
+    const btnCancelAppExit = document.getElementById('btn-cancel-app-exit');
+    const btnConfirmAppExit = document.getElementById('btn-confirm-app-exit');
+    const modalAppExit = document.getElementById('modal-confirm-exit');
+    if (btnCancelAppExit && modalAppExit) {
+      btnCancelAppExit.addEventListener('click', () => {
+        sounds.playClick();
+        modalAppExit.classList.remove('active');
+      });
+    }
+    if (btnConfirmAppExit && modalAppExit) {
+      btnConfirmAppExit.addEventListener('click', () => {
+        sounds.playClick();
+        this.exitApplication();
+      });
+    }
+
+    // =========================================
+    // 14. DONANIM VE TARAYICI GERİ TUŞU DİNLEYİCİLERİ
+    // =========================================
+    window.addEventListener('popstate', (e) => {
+      this.handleHardwareBack();
+    });
+    window.addEventListener('backbutton', (e) => {
+      e.preventDefault();
+      this.handleHardwareBack();
+    });
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+      try {
+        window.Capacitor.Plugins.App.addListener('backButton', () => {
+          this.handleHardwareBack();
+        });
+      } catch (err) {
+        console.warn('Capacitor App backButton listener hatası:', err);
+      }
+    }
   }
 
   updateTeamModeUI() {
@@ -2745,6 +2806,94 @@ class GameApp {
       }
     }
     this.checkOrientation();
+  }
+
+  handleHardwareBack() {
+    sounds.playClick();
+
+    // 1. Herhangi bir açık modal var mı?
+    const activeModals = document.querySelectorAll('.modal-overlay.active, .modal.active, .rules-guide-overlay.active');
+    if (activeModals && activeModals.length > 0) {
+      const topModal = activeModals[activeModals.length - 1];
+      // Eğer zaten çıkış modalı açıksa ve yine basıldıysa çıkış yap
+      if (topModal.id === 'modal-confirm-exit') {
+        this.exitApplication();
+        return;
+      }
+      topModal.classList.remove('active');
+      return;
+    }
+
+    // 2. Aktif ekran hangisi?
+    const activeScreen = document.querySelector('.screen.active');
+    const screenId = activeScreen ? activeScreen.id : 'screen-home';
+
+    // 3. Parti oyunlarının içindeyse -> party-games ekranına dön
+    const partyScreens = [
+      'screen-vampire', 'screen-spy', 'screen-bomb', 'screen-bottle',
+      'screen-isim-sehir', 'screen-sarki-duello', 'screen-kelime-bombasi',
+      'screen-gulmeme-meydani', 'screen-passaparola', 'screen-carkifelek'
+    ];
+    if (partyScreens.includes(screenId)) {
+      if (this.gulmemeEngine) {
+        try { this.gulmemeEngine.stopCamera(); } catch (e) {}
+      }
+      if (this.passaparolaEngine && this.passaparolaEngine.timerInterval) {
+        clearInterval(this.passaparolaEngine.timerInterval);
+      }
+      if (this.sarkiDuelloEngine && this.sarkiDuelloEngine.audioElement) {
+        try { this.sarkiDuelloEngine.audioElement.pause(); } catch (e) {}
+      }
+      this.showScreen('partyGames');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // 4. Parti oyunları ana ekranındaysa ('screen-party-games') -> Ana sayfaya dön
+    if (screenId === 'screen-party-games') {
+      this.showScreen('home');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // 5. Oyun turları esnasındaysa ('screen-round' veya 'screen-countdown') -> Oyundan çıkış onay modalını aç
+    if (screenId === 'screen-round' || screenId === 'screen-countdown') {
+      const leaveModal = document.getElementById('modal-game-leave-confirm');
+      if (leaveModal) {
+        leaveModal.classList.add('active');
+      } else {
+        this.showScreen('home');
+      }
+      return;
+    }
+
+    // 6. Tur özeti veya kazanan ekranındaysa ('screen-summary' veya 'screen-match-winner') -> Ana sayfaya dön
+    if (screenId === 'screen-summary' || screenId === 'screen-match-winner') {
+      this.stopSummaryVideo();
+      this.showScreen('home');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // 7. Ana sayfadaysa ('screen-home') -> Uygulamadan çıkış onay modalını aç
+    if (screenId === 'screen-home') {
+      const exitModal = document.getElementById('modal-confirm-exit');
+      if (exitModal) {
+        exitModal.classList.add('active');
+      } else {
+        this.exitApplication();
+      }
+    }
+  }
+
+  exitApplication() {
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+      window.Capacitor.Plugins.App.exitApp();
+    } else if (navigator && navigator.app && navigator.app.exitApp) {
+      navigator.app.exitApp();
+    } else {
+      window.close();
+    }
   }
 
   getPin() {
@@ -3583,70 +3732,73 @@ class GameApp {
         return;
       }
 
-      // 4. Parti Oyunlarındaysa: Çıkış için ONAY İSTE, onaylandığında temizle ve Parti Arenasına dön
+      // 4. Parti Oyunlarındaysa: Doğrudan temizle ve Parti Arenasına dön (Bloke edici popup olmadan)
       // 4.1 İsim Şehir
       if (this.screens['isim-sehir'] && this.screens['isim-sehir'].classList.contains('active')) {
-        this.showGameLeaveConfirmModal('partyGames', () => {
-          if (this.isimSehirEngine) {
-            if (this.isimSehirEngine.pollInterval) clearInterval(this.isimSehirEngine.pollInterval);
-            if (this.isimSehirEngine.timerInterval) clearInterval(this.isimSehirEngine.timerInterval);
-          }
-        });
+        if (this.isimSehirEngine) {
+          if (this.isimSehirEngine.pollInterval) clearInterval(this.isimSehirEngine.pollInterval);
+          if (this.isimSehirEngine.timerInterval) clearInterval(this.isimSehirEngine.timerInterval);
+        }
+        sounds.playClick();
+        this.showScreen('partyGames');
         return;
       }
 
       // 4.2 Çarkıfelek
       if (this.screens.carkifelek && this.screens.carkifelek.classList.contains('active')) {
-        this.showGameLeaveConfirmModal('partyGames', () => {
-          if (this.carkifelekEngine) {
-            if (this.carkifelekEngine.turnTimer) clearInterval(this.carkifelekEngine.turnTimer);
-            this.carkifelekEngine.isSpinning = false;
-          }
-        });
+        if (this.carkifelekEngine) {
+          if (this.carkifelekEngine.turnTimer) clearInterval(this.carkifelekEngine.turnTimer);
+          this.carkifelekEngine.isSpinning = false;
+        }
+        sounds.playClick();
+        this.showScreen('partyGames');
         return;
       }
 
       // 4.3 Passaparola
       if (this.screens.passaparola && this.screens.passaparola.classList.contains('active')) {
-        this.showGameLeaveConfirmModal('partyGames', () => {
-          if (this.passaparolaEngine) {
-            if (this.passaparolaEngine.timerInterval) clearInterval(this.passaparolaEngine.timerInterval);
-            this.passaparolaEngine.isPlaying = false;
-          }
-        });
+        if (this.passaparolaEngine) {
+          if (this.passaparolaEngine.timerInterval) clearInterval(this.passaparolaEngine.timerInterval);
+          this.passaparolaEngine.isPlaying = false;
+        }
+        sounds.playClick();
+        this.showScreen('partyGames');
         return;
       }
 
       // 4.4 Şarkı Düellosu
       if (this.screens['sarki-duello'] && this.screens['sarki-duello'].classList.contains('active')) {
-        this.showGameLeaveConfirmModal('partyGames', () => {
-          if (this.sarkiDuelloEngine) {
-            if (this.sarkiDuelloEngine.timerInterval) clearInterval(this.sarkiDuelloEngine.timerInterval);
+        if (this.sarkiDuelloEngine) {
+          if (this.sarkiDuelloEngine.timerInterval) clearInterval(this.sarkiDuelloEngine.timerInterval);
+          if (this.sarkiDuelloEngine.audioElement) {
+            try { this.sarkiDuelloEngine.audioElement.pause(); } catch (e) {}
           }
-          try { sounds.stopAll(); } catch (e) {}
-        });
+        }
+        sounds.playClick();
+        this.showScreen('partyGames');
         return;
       }
 
       // 4.5 Kelime Bombası / Son Sözü Söyle
       if (this.screens['kelime-bombasi'] && this.screens['kelime-bombasi'].classList.contains('active')) {
-        this.showGameLeaveConfirmModal('partyGames', () => {
-          if (this.kelimeBombasiEngine) {
-            if (this.kelimeBombasiEngine.timerInterval) clearInterval(this.kelimeBombasiEngine.timerInterval);
-          }
-        });
+        if (this.kelimeBombasiEngine) {
+          if (this.kelimeBombasiEngine.timerInterval) clearInterval(this.kelimeBombasiEngine.timerInterval);
+        }
+        sounds.playClick();
+        this.showScreen('partyGames');
         return;
       }
 
       // 4.6 Gülmeme Meydanı
       if (this.screens['gulmeme-meydani'] && this.screens['gulmeme-meydani'].classList.contains('active')) {
-        this.showGameLeaveConfirmModal('partyGames', () => {
-          if (this.gulmemeEngine) {
-            this.gulmemeEngine.stopCamera();
-            if (this.gulmemeEngine.timerInterval) clearInterval(this.gulmemeEngine.timerInterval);
-            if (this.gulmemeEngine.promptInterval) clearInterval(this.gulmemeEngine.promptInterval);
-          }
-        });
+        if (this.gulmemeEngine) {
+          this.gulmemeEngine.stopCamera();
+          if (this.gulmemeEngine.timerInterval) clearInterval(this.gulmemeEngine.timerInterval);
+          if (this.gulmemeEngine.promptInterval) clearInterval(this.gulmemeEngine.promptInterval);
+          if (this.gulmemeEngine.tensionInterval) clearInterval(this.gulmemeEngine.tensionInterval);
+        }
+        sounds.playClick();
+        this.showScreen('partyGames');
         return;
       }
 
@@ -3655,55 +3807,49 @@ class GameApp {
         const singleContainer = document.getElementById('vampire-single-container');
         const multiContainer = document.getElementById('vampire-multi-container');
         const hubSelect = document.getElementById('vampire-hub-select');
-        // Eğer tek veya çoklu lobi içindeyse önce Vampir Mod Seçimine dönmeyi sor
         if ((singleContainer && singleContainer.style.display !== 'none') ||
             (multiContainer && multiContainer.style.display !== 'none')) {
-          this.showGameLeaveConfirmModal('vampire', () => {
-            if (this.vampireEngine) {
-              if (this.vampireEngine.pollTimer) clearInterval(this.vampireEngine.pollTimer);
-              if (this.vampireEngine.discussTimer) clearInterval(this.vampireEngine.discussTimer);
-            }
-            if (singleContainer) singleContainer.style.display = 'none';
-            if (multiContainer) multiContainer.style.display = 'none';
-            if (hubSelect) hubSelect.style.display = 'block';
-          });
-          return;
-        }
-        // Eğer zaten hub içindeyse Parti Arenasına dönmeyi sor
-        this.showGameLeaveConfirmModal('partyGames', () => {
           if (this.vampireEngine) {
             if (this.vampireEngine.pollTimer) clearInterval(this.vampireEngine.pollTimer);
             if (this.vampireEngine.discussTimer) clearInterval(this.vampireEngine.discussTimer);
           }
-        });
+          if (singleContainer) singleContainer.style.display = 'none';
+          if (multiContainer) multiContainer.style.display = 'none';
+          if (hubSelect) hubSelect.style.display = 'block';
+          sounds.playClick();
+          return;
+        }
+        sounds.playClick();
+        this.showScreen('partyGames');
         return;
       }
 
       // 4.8 Casus Kim / Casus Var
       if (this.screens.spy && this.screens.spy.classList.contains('active')) {
-        this.showGameLeaveConfirmModal('partyGames', () => {
-          if (this.spyEngine) {
-            if (this.spyEngine.timerInterval) clearInterval(this.spyEngine.timerInterval);
-          }
-          try { sounds.stopPartyBeat(); } catch (e) {}
-        });
+        if (this.spyEngine) {
+          if (this.spyEngine.timerInterval) clearInterval(this.spyEngine.timerInterval);
+        }
+        try { sounds.stopPartyBeat(); } catch (e) {}
+        sounds.playClick();
+        this.showScreen('partyGames');
         return;
       }
 
       // 4.9 Saatli Bomba
       if (this.screens.bomb && this.screens.bomb.classList.contains('active')) {
-        this.showGameLeaveConfirmModal('partyGames', () => {
-          if (this.bombEngine) {
-            if (this.bombEngine.tickInterval) clearInterval(this.bombEngine.tickInterval);
-          }
-          try { sounds.stopAll(); } catch (e) {}
-        });
+        if (this.bombEngine) {
+          if (this.bombEngine.tickInterval) clearInterval(this.bombEngine.tickInterval);
+        }
+        try { sounds.stopAll(); } catch (e) {}
+        sounds.playClick();
+        this.showScreen('partyGames');
         return;
       }
 
       // 4.10 Şişe Çevirmece
       if (this.screens.bottle && this.screens.bottle.classList.contains('active')) {
-        this.showGameLeaveConfirmModal('partyGames', null);
+        sounds.playClick();
+        this.showScreen('partyGames');
         return;
       }
 
@@ -3714,6 +3860,7 @@ class GameApp {
       ) {
         sounds.playClick();
         this.showScreen('home');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 
@@ -3722,7 +3869,9 @@ class GameApp {
         (this.screens.summary && this.screens.summary.classList.contains('active')) ||
         (this.screens['match-winner'] && this.screens['match-winner'].classList.contains('active'))
       ) {
+        sounds.playClick();
         this.showScreen('home');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 
@@ -3732,14 +3881,32 @@ class GameApp {
       }
     };
 
+    // Global Native Android donanım geri tuşu köprüsü
+    this.handleHardwareBack = () => {
+      console.log('📱 Android Donanım Geri Tuşu Algılandı!');
+      handleBack();
+    };
+    if (typeof window !== 'undefined') {
+      window.handleHardwareBack = this.handleHardwareBack;
+    }
+
     // 1. Capacitor Native Hardware Back Button (Android Geri Tuşu)
-    try {
-      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
-        window.Capacitor.Plugins.App.addListener('backButton', () => {
-          handleBack();
-        });
-      }
-    } catch (e) {}
+    const registerCapacitorBack = () => {
+      try {
+        const appPlugin = window.Capacitor?.Plugins?.App;
+        if (appPlugin && typeof appPlugin.addListener === 'function') {
+          appPlugin.addListener('backButton', () => {
+            handleBack();
+          });
+          return true;
+        }
+      } catch (e) {}
+      return false;
+    };
+    if (!registerCapacitorBack()) {
+      setTimeout(registerCapacitorBack, 1000);
+      setTimeout(registerCapacitorBack, 3000);
+    }
 
     // 2. Cordova / Android WebView backbutton event
     document.addEventListener('backbutton', (e) => {
