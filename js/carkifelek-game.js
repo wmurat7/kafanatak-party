@@ -5,6 +5,7 @@
 
 import { sounds } from './audio.js';
 import { firebaseNetwork } from './firebase-network.js';
+import { HostModerationPanel } from './host-moderation-panel.js';
 
 export const CARKIFELEK_SLICES = [
   { text: '500', value: 500, color: '#00F5D4', type: 'points' },
@@ -375,7 +376,20 @@ export class CarkifelekEngine {
     const badge = document.getElementById('cark-player-count-badge');
     const list = document.getElementById('cark-connected-players');
     if (badge) {
-      badge.textContent = `${this.wifiPlayers.length} Oyuncu Bağlı`;
+      badge.innerHTML = `
+        <span style="margin-right:6px;">${this.wifiPlayers.length} Oyuncu Bağlı</span>
+        <button type="button" class="btn-host-moderation-badge" id="btn-cark-mod-open" style="padding:2px 8px; font-size:0.72rem; vertical-align:middle;">
+          <span class="pulse-dot"></span> 🛡️ Yönetim Masası
+        </button>
+      `;
+      document.getElementById('btn-cark-mod-open')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        HostModerationPanel.open({
+          namespace: 'carkifelek',
+          roomId: this.roomId,
+          title: 'Çarkıfelek Yarışmacı Masası'
+        });
+      });
     }
     if (list) {
       list.innerHTML = this.wifiPlayers.map((p, idx) => `

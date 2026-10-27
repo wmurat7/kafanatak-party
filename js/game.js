@@ -21,6 +21,7 @@ import { KelimeIslemEngine } from './kelime-islem-game.js';
 import { AilelerYarisiyorEngine } from './aileler-yarisiyor-game.js';
 import { initPartyGuides } from './party-guide.js';
 import { firebaseNetwork } from './firebase-network.js';
+import { HostModerationPanel } from './host-moderation-panel.js';
 
 class GameApp {
   constructor() {
@@ -4844,7 +4845,19 @@ class GameApp {
     if (!listEl) return;
 
     const pList = players ? (Array.isArray(players) ? players : Object.values(players)) : [];
-    if (badgeEl) badgeEl.textContent = `${pList.length} Kişi`;
+    if (badgeEl) badgeEl.textContent = pList.length;
+
+    // Yönetim Paneli Butonu Dinleyicisi
+    const btnOpenMod = document.getElementById('btn-open-spectator-mod');
+    if (btnOpenMod) {
+      btnOpenMod.onclick = () => {
+        HostModerationPanel.open({
+          namespace: 'spectator',
+          roomId: this.spectatorRoomId,
+          title: 'Stüdyo & Seyirci Yönetimi'
+        });
+      };
+    }
 
     if (pList.length === 0) {
       listEl.innerHTML = `<div id="spec-empty-hint" style="font-size:0.78rem; color:var(--text-dim); text-align:center; padding:8px;">Henüz kimse bağlanmadı. QR okutanlar burada listelenir.</div>`;

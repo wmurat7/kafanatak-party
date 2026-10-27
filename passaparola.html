@@ -221,6 +221,49 @@
     </div>
   </div>
 
+  <!-- HAKEMDEN İKAZ MODALI -->
+  <div id="modal-host-warning" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:999999; align-items:center; justify-content:center; padding:20px;">
+    <div class="card" style="border: 2px solid #FBBF24; box-shadow: 0 0 40px rgba(251,191,36,0.6); max-width:380px;">
+      <div style="font-size:2.8rem; filter: drop-shadow(0 0 14px #FBBF24);">⚠️</div>
+      <h3 style="color:#FDE047; font-size:1.25rem; font-weight:900; margin:8px 0;">HAKEMDEN İKAZ!</h3>
+      <p id="host-warning-msg" style="font-size:0.95rem; color:#FFF; font-weight:700; line-height:1.4; margin-bottom:18px; background:rgba(0,0,0,0.4); padding:10px 14px; border-radius:12px; border:1px solid rgba(251,191,36,0.3);">
+        Lütfen kurallara uyun ve oyundan ayrılmayın!
+      </p>
+      <button type="button" id="btn-dismiss-warning" style="background:linear-gradient(135deg, #F59E0B, #D97706); color:#FFF; border:none; border-radius:12px; padding:12px 20px; font-weight:900; font-size:0.95rem; cursor:pointer; width:100%;">
+        Anladım, Dikkat Edeceğim
+      </button>
+    </div>
+  </div>
+
+  <!-- OYUNDAN ATILMA MODALI -->
+  <div id="modal-host-kicked" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999999; align-items:center; justify-content:center; padding:20px;">
+    <div class="card" style="border: 2px solid #EF4444; box-shadow: 0 0 45px rgba(239,68,68,0.7); max-width:380px;">
+      <div style="font-size:2.8rem; filter: drop-shadow(0 0 16px #EF4444);">🚫</div>
+      <h3 style="color:#FFF; font-size:1.35rem; font-weight:900; margin:8px 0;">YARIŞMADAN ÇIKARILDINIZ</h3>
+      <p id="host-kicked-msg" style="font-size:0.9rem; color:#FCA5A5; line-height:1.4; margin-bottom:18px; background:rgba(0,0,0,0.45); padding:10px 14px; border-radius:12px; border:1px solid rgba(239,68,68,0.4);">
+        Sunucu / Hakem tarafından yarışmadan çıkarıldınız.
+      </p>
+      <button type="button" id="btn-dismiss-kicked" style="background:linear-gradient(135deg, #EF4444, #B91C1C); color:#FFF; border:none; border-radius:12px; padding:12px 20px; font-weight:900; font-size:0.95rem; cursor:pointer; width:100%;">
+        Tamam, Giriş Ekranına Dön
+      </button>
+    </div>
+  </div>
+
+  <!-- ODA KAPATILDI MODALI -->
+  <div id="modal-room-closed" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999999; align-items:center; justify-content:center; padding:20px;">
+    <div class="card" style="border: 2px solid #6366F1; box-shadow: 0 0 45px rgba(99,102,241,0.6); max-width:380px;">
+      <div style="font-size:2.8rem; filter: drop-shadow(0 0 16px #6366F1);">🛑</div>
+      <h3 style="color:#FFF; font-size:1.35rem; font-weight:900; margin:8px 0;">YARIŞMA SONLANDI</h3>
+      <p id="room-closed-msg" style="font-size:0.9rem; color:#C7D2FE; line-height:1.4; margin-bottom:18px; background:rgba(0,0,0,0.45); padding:10px 14px; border-radius:12px; border:1px solid rgba(99,102,241,0.4);">
+        Oda yöneticisi tarafından oturum sonlandırıldı.
+      </p>
+      <button type="button" id="btn-dismiss-closed" style="background:linear-gradient(135deg, #6366F1, #4F46E5); color:#FFF; border:none; border-radius:12px; padding:12px 20px; font-weight:900; font-size:0.95rem; cursor:pointer; width:100%;">
+        Tamam, Giriş Ekranına Dön
+      </button>
+    </div>
+  </div>
+
+  <script src="js/firebase-network.js"></script>
   <script type="module">
     const PASSAPAROLA_LETTERS = [
       'A', 'B', 'C', 'Ç', 'D', 'E', 'F', 'G', 
@@ -300,6 +343,27 @@
       localStorage.setItem(`kafanatak_pid_passa_${roomId}`, myPlayerId);
 
       try {
+        const checkRes = await fetch(`${dbUrl}/kafanatak/passaparola/${roomId}.json`);
+        const room = await checkRes.json() || {};
+        if (room.isClosed) {
+          alert('🛑 Bu yarışma odası kapatılmıştır!');
+          if (btn) { btn.disabled = false; btn.textContent = '🚀 Odaya Katıl'; }
+          isRegistering = false;
+          return;
+        }
+        if (room.isLocked) {
+          alert('🔒 Bu oda yeni yarışmacılara kilitlenmiştir!');
+          if (btn) { btn.disabled = false; btn.textContent = '🚀 Odaya Katıl'; }
+          isRegistering = false;
+          return;
+        }
+        if ((room.kicked && room.kicked[myPlayerId]) || (room.kickedPlayers && room.kickedPlayers[myPlayerId])) {
+          alert('🚫 Bu yarışmadan çıkarıldınız, tekrar katılamazsınız!');
+          if (btn) { btn.disabled = false; btn.textContent = '🚀 Odaya Katıl'; }
+          isRegistering = false;
+          return;
+        }
+
         await fetch(`${dbUrl}/kafanatak/passaparola/${roomId}/players/${myPlayerId}.json`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -328,10 +392,59 @@
 
     document.getElementById('btn-join-room').onclick = registerPlayer;
 
+    function handleWarningByHost(msg) {
+      document.getElementById('host-warning-msg').textContent = msg || 'Lütfen kurallara uyun ve oyundan ayrılmayın!';
+      document.getElementById('modal-host-warning').style.display = 'flex';
+    }
+
+    function handleKickedByHost(reason) {
+      document.getElementById('host-kicked-msg').textContent = reason || 'Sunucu / Hakem tarafından yarışmadan çıkarıldınız.';
+      document.getElementById('modal-host-kicked').style.display = 'flex';
+      document.getElementById('stage-playing').style.display = 'none';
+      document.getElementById('stage-finished').style.display = 'none';
+      document.getElementById('stage-lobby').style.display = 'block';
+      const btn = document.getElementById('btn-join-room');
+      if (btn) { btn.style.display = 'block'; btn.disabled = false; btn.textContent = '🚀 Odaya Katıl'; }
+      document.getElementById('lobby-wait-text').style.display = 'none';
+    }
+
+    function handleRoomClosedByHost(reason) {
+      document.getElementById('room-closed-msg').textContent = reason || 'Oda yöneticisi tarafından oturum sonlandırıldı.';
+      document.getElementById('modal-room-closed').style.display = 'flex';
+      document.getElementById('stage-playing').style.display = 'none';
+      document.getElementById('stage-finished').style.display = 'none';
+      document.getElementById('stage-lobby').style.display = 'block';
+      const btn = document.getElementById('btn-join-room');
+      if (btn) { btn.style.display = 'block'; btn.disabled = false; btn.textContent = '🚀 Odaya Katıl'; }
+      document.getElementById('lobby-wait-text').style.display = 'none';
+    }
+
+    document.getElementById('btn-dismiss-warning').onclick = () => {
+      document.getElementById('modal-host-warning').style.display = 'none';
+    };
+
+    document.getElementById('btn-dismiss-kicked').onclick = () => {
+      document.getElementById('modal-host-kicked').style.display = 'none';
+    };
+
+    document.getElementById('btn-dismiss-closed').onclick = () => {
+      document.getElementById('modal-room-closed').style.display = 'none';
+    };
+
     let lastAction = '';
 
     function syncState(room) {
       if (!room) return;
+
+      // 0. Güvenlik Denetimi (Oda Kapatılma, Kick, İkaz, Duyuru)
+      if (window.firebaseNetwork) {
+        const handled = firebaseNetwork.handleClientSecurity(room, myPlayerId, {
+          onKicked: (reason) => handleKickedByHost(reason),
+          onWarning: (msg) => handleWarningByHost(msg),
+          onRoomClosed: (reason) => handleRoomClosedByHost(reason)
+        });
+        if (handled && (room.isClosed || (room.kicked && room.kicked[myPlayerId]))) return;
+      }
 
       const stageLobby = document.getElementById('stage-lobby');
       const stagePlaying = document.getElementById('stage-playing');

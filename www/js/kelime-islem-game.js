@@ -4,6 +4,7 @@
 import { sounds } from './audio.js';
 import QRCode from './qrcode.esm.js';
 import { firebaseNetwork } from './firebase-network.js';
+import { HostModerationPanel } from './host-moderation-panel.js';
 import {
   TURKISH_VOWELS,
   TURKISH_CONSONANTS,
@@ -712,7 +713,12 @@ export class KelimeIslemEngine {
     }
 
     pContainer.innerHTML = `
-      <div style="font-size:0.78rem; color:#00F5D4; font-weight:800; margin-bottom:6px;">👥 Bağlı Yarışmacılar (${this.connectedPlayers.length}) - Hakem Yetkisi:</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span style="font-size:0.78rem; color:#00F5D4; font-weight:800;">👥 Bağlı Yarışmacılar (${this.connectedPlayers.length}):</span>
+        <button type="button" class="btn-host-moderation-badge" id="btn-ki-mod-open" style="padding:2px 8px; font-size:0.72rem; vertical-align:middle;">
+          <span class="pulse-dot"></span> 🛡️ Yönetim Paneli
+        </button>
+      </div>
       <div style="display:flex; flex-wrap:wrap; gap:6px;">
         ${this.connectedPlayers.map(p => {
           const isRed = p.team === 'red';
@@ -727,6 +733,15 @@ export class KelimeIslemEngine {
         }).join('')}
       </div>
     `;
+
+    document.getElementById('btn-ki-mod-open')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      HostModerationPanel.open({
+        namespace: 'kelime_islem',
+        roomId: this.roomId,
+        title: 'Bir Kelime Bir İşlem Hakem Masası'
+      });
+    });
 
     pContainer.querySelectorAll('.btn-ki-warn').forEach(btn => {
       btn.onclick = (e) => {

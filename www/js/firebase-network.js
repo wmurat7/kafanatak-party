@@ -265,8 +265,10 @@ class FirebaseNetworkManager {
    */
   async setPlayer(namespace, roomId, player) {
     if (!roomId || !player || !player.id) return false;
+    const cleanNs = String(namespace || '').trim().toLowerCase();
+    const cleanRoom = String(roomId || '').trim().toUpperCase();
     try {
-      const url = this.buildPath(namespace, roomId, `players/${player.id}`);
+      const url = this.buildPath(cleanNs, cleanRoom, `players/${player.id}`);
       const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
       const timeoutId = controller ? setTimeout(() => controller.abort(), 4000) : null;
 
@@ -277,6 +279,16 @@ class FirebaseNetworkManager {
         signal: controller ? controller.signal : undefined
       });
       if (timeoutId) clearTimeout(timeoutId);
+
+      // Güvenlik günlüğüne giriş kaydı ekle (oturum süresince tekil)
+      try {
+        const joinSessionKey = `joined_${cleanNs}_${cleanRoom}_${player.id}`;
+        if (typeof sessionStorage !== 'undefined' && !sessionStorage.getItem(joinSessionKey)) {
+          sessionStorage.setItem(joinSessionKey, '1');
+          this.logSecurityEvent(cleanNs, cleanRoom, `👤 ${player.name || 'Oyuncu'} odaya katıldı.`, 'join');
+        }
+      } catch (e) {}
+
       return true;
     } catch (err) {
       console.warn(`[FirebaseNetwork] setPlayer hatası:`, err.message);
@@ -287,11 +299,14 @@ class FirebaseNetworkManager {
   /**
    * Odadan oyuncuyu siler (Çıkış onayında)
    */
-  async removePlayer(namespace, roomId, playerId) {
+  async removePlayer(namespace, roomId, playerId, playerName = '') {
     if (!roomId || !playerId) return false;
+    const cleanNs = String(namespace || '').trim().toLowerCase();
+    const cleanRoom = String(roomId || '').trim().toUpperCase();
     try {
-      const url = this.buildPath(namespace, roomId, `players/${playerId}`);
+      const url = this.buildPath(cleanNs, cleanRoom, `players/${playerId}`);
       await fetch(url, { method: 'DELETE' });
+      this.logSecurityEvent(cleanNs, cleanRoom, `🚪 ${playerName || 'Bir oyuncu'} odadan ayrıldı.`, 'leave');
       return true;
     } catch (err) {
       console.warn(`[FirebaseNetwork] removePlayer hatası:`, err.message);
@@ -318,11 +333,15 @@ class FirebaseNetworkManager {
     } catch (e) {}
 
     // 2. Anlık aksiyon olarak da ilet
-    return await this.sendAction(cleanNs, cleanRoom, 'player_warning', {
+    await this.sendAction(cleanNs, cleanRoom, 'player_warning', {
       targetPlayerId: playerId,
       message: message,
       timestamp: Date.now()
     });
+
+    // 3. Güvenlik günlüğüne kaydet
+    await this.logSecurityEvent(cleanNs, cleanRoom, `⚠️ Oyuncuya (${playerId}) ikaz iletildi: "${message}"`, 'warning');
+    return true;
   }
 
   /**
@@ -347,11 +366,268 @@ class FirebaseNetworkManager {
     } catch (e) {}
 
     // 3. Anlık kick aksiyonu yayınla
-    return await this.sendAction(cleanNs, cleanRoom, 'player_kicked', {
+    await this.sendAction(cleanNs, cleanRoom, 'player_kicked', {
       targetPlayerId: playerId,
       reason: reason,
       timestamp: Date.now()
     });
+
+    // 4. Güvenlik günlüğüne kaydet
+    await this.logSecurityEvent(cleanNs, cleanRoom, `🚫 Oyuncu (${playerId}) odadan atıldı. Sebep: ${reason}`, 'kick');
+    return true;
+  }
+
+  /**
+   * Ana telefon yetkisiyle tüm bağlı cihazlara genel ikaz / anons yayınlar
+   */
+  async broadcastAnnouncement(namespace, roomId, message) {
+    if (!roomId || !message) return false;
+    const cleanNs = String(namespace || '').trim().toLowerCase();
+    const cleanRoom = String(roomId || '').trim().toUpperCase();
+
+    try {
+      const url = this.buildPath(cleanNs, cleanRoom, 'announcement');
+      await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, timestamp: Date.now() })
+      });
+    } catch (e) {}
+
+    await this.logSecurityEvent(cleanNs, cleanRoom, `📣 Herkese İkaz/Duyuru: "${message}"`, 'broadcast');
+
+    return await this.sendAction(cleanNs, cleanRoom, 'room_announcement', {
+      message,
+      timestamp: Date.now()
+    });
+  }
+
+  /**
+   * Odayı yeni katılımlara kilitler veya kilidi açar
+   */
+  async toggleRoomLock(namespace, roomId, isLocked = true) {
+    if (!roomId) return false;
+    const cleanNs = String(namespace || '').trim().toLowerCase();
+    const cleanRoom = String(roomId || '').trim().toUpperCase();
+
+    try {
+      const url = this.buildPath(cleanNs, cleanRoom, 'isLocked');
+      await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Boolean(isLocked))
+      });
+    } catch (e) {}
+
+    await this.logSecurityEvent(cleanNs, cleanRoom, isLocked ? '🔒 Oda yeni katılımcılara kilitlendi.' : '🔓 Oda yeni katılımcılara açıldı.', 'lock');
+
+    return await this.sendAction(cleanNs, cleanRoom, 'room_lock_changed', {
+      isLocked: Boolean(isLocked),
+      timestamp: Date.now()
+    });
+  }
+
+  /**
+   * Odayı güvenle dağıtır ve kapatır
+   */
+  async closeRoom(namespace, roomId) {
+    if (!roomId) return false;
+    const cleanNs = String(namespace || '').trim().toLowerCase();
+    const cleanRoom = String(roomId || '').trim().toUpperCase();
+
+    try {
+      const url = this.buildPath(cleanNs, cleanRoom, 'isClosed');
+      await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(true)
+      });
+    } catch (e) {}
+
+    await this.logSecurityEvent(cleanNs, cleanRoom, '🛑 Oda yönetici tarafından kapatıldı.', 'close');
+
+    return await this.sendAction(cleanNs, cleanRoom, 'room_closed', {
+      reason: 'Oda yöneticisi tarafından oturum sonlandırıldı.',
+      timestamp: Date.now()
+    });
+  }
+
+  /**
+   * Odaya güvenlik günlüğü kaydı ekler
+   */
+  async logSecurityEvent(namespace, roomId, text, type = 'info') {
+    if (!roomId || !text) return false;
+    const cleanNs = String(namespace || '').trim().toLowerCase();
+    const cleanRoom = String(roomId || '').trim().toUpperCase();
+
+    const logEntry = {
+      id: 'log_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      text,
+      type,
+      timestamp: Date.now(),
+      timeStr: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    };
+
+    try {
+      const url = this.buildPath(cleanNs, cleanRoom, 'auditLog');
+      await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(logEntry)
+      });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
+   * Katılımcının odaya girip giremeyeceğini denetler (Kilit, Ban, Kapatılma kontrolü)
+   */
+  async verifyJoinEligibility(namespace, roomId, playerId) {
+    if (!roomId) return { allowed: false, reason: 'Geçersiz oda kodu!' };
+    const room = await this.getRoom(namespace, roomId);
+    if (!room) return { allowed: false, reason: 'Oda bulunamadı veya henüz açılmamış!' };
+
+    if (room.isClosed) {
+      return { allowed: false, reason: 'Bu oda yönetici tarafından kapatılmıştır!' };
+    }
+    if (room.isLocked) {
+      return { allowed: false, reason: 'Oda yeni katılımcılara kilitlenmiştir!' };
+    }
+    if (room.kicked && playerId && room.kicked[playerId]) {
+      return { allowed: false, reason: 'Bu odadan çıkarıldınız, tekrar katılamazsınız!' };
+    }
+
+    return { allowed: true, room };
+  }
+
+  /**
+   * İstemci tarafında güvenlik denetimlerini (Oda kapatıldı mı, oyuncu atıldı mı, ikaz veya duyuru var mı) tek noktadan yürütür.
+   * Tüm oyunların istemci ekranları bu fonksiyonu çağırarak kod tekrarı olmadan tam güvenlik sağlar.
+   */
+  handleClientSecurity(roomData, playerId, callbacks = {}) {
+    if (!roomData) return false;
+
+    // 1. Oda Kapatıldı mı?
+    if (roomData.isClosed) {
+      if (callbacks.onRoomClosed) {
+        callbacks.onRoomClosed(roomData.closeReason || 'Oda yöneticisi tarafından oturum sonlandırıldı.');
+      } else {
+        alert('🛑 Bu oda oda yöneticisi tarafından kapatılmıştır.');
+        window.location.reload();
+      }
+      return true;
+    }
+
+    // 2. Oyuncu Kicklendi mi? (Kalıcı Ban Listesi)
+    const kickInfo = (roomData.kicked && playerId && roomData.kicked[playerId]) || 
+                     (roomData.kickedPlayers && playerId && roomData.kickedPlayers[playerId]);
+    if (kickInfo) {
+      if (callbacks.onKicked) {
+        callbacks.onKicked(kickInfo.reason || 'Oda yöneticisi tarafından odadan çıkarıldınız.');
+      }
+      return true;
+    }
+
+    // 3. Hakem Aksiyonları (İkaz & Kick & Duyuru)
+    if (roomData.actions) {
+      const actList = Array.isArray(roomData.actions) ? roomData.actions : Object.values(roomData.actions);
+      actList.forEach(a => {
+        if (!a) return;
+        const actId = a.id || (a.timestamp + '_' + a.type);
+        if (!this._processedClientActionIds) this._processedClientActionIds = new Set();
+        if (this._processedClientActionIds.has(actId)) return;
+        this._processedClientActionIds.add(actId);
+
+        if (a.targetPlayerId && a.targetPlayerId === playerId) {
+          if (a.type === 'player_kicked' && callbacks.onKicked) {
+            callbacks.onKicked(a.reason || 'Oda yöneticisi tarafından odadan çıkarıldınız.');
+          } else if (a.type === 'player_warning' && callbacks.onWarning) {
+            callbacks.onWarning(a.message || 'Lütfen kurallara uyun ve ekrandan ayrılmayın!');
+          }
+        } else if (a.type === 'room_announcement') {
+          if (callbacks.onAnnouncement) {
+            callbacks.onAnnouncement(a.message || '');
+          } else {
+            this.showAnnouncementToast(a.message || '');
+          }
+        } else if (a.type === 'room_closed' && callbacks.onRoomClosed) {
+          callbacks.onRoomClosed(a.reason || 'Oda yöneticisi tarafından kapatıldı.');
+        }
+      });
+    }
+
+    // 4. Doğrudan Oda Duyurusu
+    if (roomData.announcement && roomData.announcement.message) {
+      const annId = roomData.announcement.id || (roomData.announcement.timestamp + '_' + roomData.announcement.message);
+      if (!this._processedClientActionIds) this._processedClientActionIds = new Set();
+      if (!this._processedClientActionIds.has(annId)) {
+        this._processedClientActionIds.add(annId);
+        if (callbacks.onAnnouncement) {
+          callbacks.onAnnouncement(roomData.announcement.message);
+        } else {
+          this.showAnnouncementToast(roomData.announcement.message);
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * İstemci ekranında şık, glassmorphic yönetici duyuru bildirimini gösterir
+   */
+  showAnnouncementToast(message) {
+    if (!message || typeof document === 'undefined') return;
+    let toast = document.getElementById('fb-announcement-banner');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'fb-announcement-banner';
+      toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(-30px);
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.96), rgba(217, 119, 6, 0.96));
+        color: #FFFFFF;
+        padding: 12px 20px;
+        border-radius: 16px;
+        box-shadow: 0 12px 36px rgba(245, 158, 11, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.25);
+        z-index: 99999999;
+        font-family: inherit;
+        font-weight: 800;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        max-width: 90vw;
+        backdrop-filter: blur(12px);
+        transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        opacity: 0;
+        pointer-events: auto;
+      `;
+      document.body.appendChild(toast);
+    }
+    toast.innerHTML = `
+      <span style="font-size: 1.5rem; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));">📢</span>
+      <div style="flex:1;">
+        <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: #FEF3C7; font-weight: 900;">YÖNETİCİ DUYURUSU</div>
+        <div style="margin-top: 2px; font-size: 0.92rem; font-weight: 700; line-height: 1.35;">${message}</div>
+      </div>
+      <button type="button" onclick="this.parentElement.style.opacity='0'; this.parentElement.style.transform='translateX(-50%) translateY(-30px)';" style="background: rgba(0,0,0,0.2); border: none; color: #FFF; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; font-weight: 900;">✕</button>
+    `;
+    requestAnimationFrame(() => {
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateX(-50%) translateY(0)';
+    });
+    if (this._announcementTimer) clearTimeout(this._announcementTimer);
+    this._announcementTimer = setTimeout(() => {
+      if (toast) {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(-30px)';
+      }
+    }, 6000);
   }
 
   /**

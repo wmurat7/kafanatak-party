@@ -3206,14 +3206,18 @@
       </div>
 
       <!-- BAĞLI SEYİRCİLER & HAKEM YÖNETİMİ -->
-      <div id="spectator-moderation-box" style="margin-top:10px; margin-bottom:12px; text-align:left; background:rgba(0,0,0,0.4); border:1.5px solid rgba(0,245,212,0.25); border-radius:14px; padding:10px 12px;">
+      <div id="spectator-moderation-box" style="margin-top:12px; margin-bottom:12px; text-align:left; background:rgba(0,0,0,0.4); border:1.5px solid rgba(0,245,212,0.3); border-radius:16px; padding:12px 14px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <div style="font-size:0.8rem; font-weight:900; color:#00F5D4; display:flex; align-items:center; gap:6px;">
-            <span>👥</span> <span>BAĞLI KULLANICILAR (HAKEM YÖNETİMİ)</span>
+          <div style="font-size:0.82rem; font-weight:900; color:#00F5D4; display:flex; align-items:center; gap:6px;">
+            <span>👥</span> <span>BAĞLI SEYİRCİLER & HAKEM MASASI</span>
           </div>
-          <span id="spec-connected-count-badge" style="font-size:0.75rem; font-weight:800; background:rgba(0,245,212,0.18); color:#00F5D4; padding:2px 8px; border-radius:999px;">0 Kişi</span>
+          <button type="button" id="btn-open-spectator-mod" class="btn-host-moderation-badge" style="padding:4px 10px; font-size:0.75rem;">
+            <span class="pulse-dot"></span>
+            <span>🛡️ Yönetim Paneli</span>
+            <span id="spec-connected-count-badge" style="background:rgba(0,0,0,0.4); padding:1px 6px; border-radius:999px;">0</span>
+          </button>
         </div>
-        <div id="spec-connected-players-list" style="display:flex; flex-direction:column; gap:6px; max-height:140px; overflow-y:auto;">
+        <div id="spec-connected-players-list" style="display:flex; flex-direction:column; gap:6px; max-height:120px; overflow-y:auto;">
           <div id="spec-empty-hint" style="font-size:0.78rem; color:var(--text-dim); text-align:center; padding:8px;">Henüz kimse bağlanmadı. QR okutanlar burada listelenir.</div>
         </div>
       </div>

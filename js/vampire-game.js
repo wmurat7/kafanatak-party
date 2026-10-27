@@ -5,6 +5,7 @@
 
 import { firebaseNetwork } from './firebase-network.js';
 import QRCode from './qrcode.esm.js';
+import { HostModerationPanel } from './host-moderation-panel.js';
 
 export function getApiBaseUrl() {
   const savedIp = localStorage.getItem('kafanatak_last_server_ip') || '192.168.1.159';
@@ -701,8 +702,11 @@ export class VampireGameEngine {
           </div>
 
           <div style="background:rgba(0,0,0,0.4); border-radius:14px; padding:12px; margin-bottom:16px;">
-            <div style="font-size:0.82rem; font-weight:800; color:var(--primary); margin-bottom:8px;">
-              Toplanan Köylüler (${state.players.length}) - Muhtar Yetkisi:
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-size:0.82rem; font-weight:800; color:var(--primary);">Toplanan Köylüler (${state.players.length}):</span>
+              <button type="button" class="btn-host-moderation-badge" id="btn-vamp-mod-open" style="padding:2px 8px; font-size:0.72rem; vertical-align:middle;">
+                <span class="pulse-dot"></span> 🛡️ Muhtarlık Masası
+              </button>
             </div>
             <div class="player-pills" style="justify-content:center; min-height:40px; gap:6px;">
               ${state.players.length === 0 ? '<span style="font-size:0.82rem; color:var(--text-dim);">Henüz kimse katılmadı. QR kodu okutun!</span>' : state.players.map(p => `
@@ -724,6 +728,15 @@ export class VampireGameEngine {
 
       // QR Kod çiz (Kütüphanesiz veya QRCode Canvas ile)
       this.drawQRCode('vampire-qr-canvas', clientUrl);
+
+      document.getElementById('btn-vamp-mod-open')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        HostModerationPanel.open({
+          namespace: 'vampire',
+          roomId: state.roomId,
+          title: 'Köy Muhtarlık Masası'
+        });
+      });
 
       // Muhtar İkaz & Atma Dinleyicileri
       container.querySelectorAll('.btn-vampire-warn').forEach(btn => {

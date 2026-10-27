@@ -4,6 +4,7 @@
 import { sounds } from './audio.js';
 import QRCode from './qrcode.esm.js';
 import { firebaseNetwork } from './firebase-network.js';
+import { HostModerationPanel } from './host-moderation-panel.js';
 
 export const LETTERS_WHEEL = [
   'A', 'B', 'C', 'Ç', 'D', 'E', 'F', 'G', 
@@ -546,7 +547,22 @@ export class IsimSehirGameEngine {
     });
 
     const countBadge = document.getElementById('isim-player-count-badge');
-    if (countBadge) countBadge.textContent = `${this.players.length} Oyuncu Bağlı`;
+    if (countBadge) {
+      countBadge.innerHTML = `
+        <span style="margin-right:6px;">${this.players.length} Oyuncu Bağlı</span>
+        <button type="button" class="btn-host-moderation-badge" id="btn-isim-mod-open" style="padding:2px 8px; font-size:0.72rem; vertical-align:middle;">
+          <span class="pulse-dot"></span> 🛡️ Yönetim Masası
+        </button>
+      `;
+      document.getElementById('btn-isim-mod-open')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        HostModerationPanel.open({
+          namespace: 'isim-sehir',
+          roomId: this.roomId,
+          title: 'İsim Şehir Yarışmacı Masası'
+        });
+      });
+    }
   }
 
   drawWheel() {

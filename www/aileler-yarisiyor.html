@@ -419,6 +419,20 @@
       </div>
     </div>
 
+    <!-- ODA KAPATILDI MODALI -->
+    <div id="modal-room-closed" class="confirm-modal-overlay" style="display:none; z-index:9999999;">
+      <div class="confirm-modal-card" style="border: 2px solid #6366F1; box-shadow: 0 0 45px rgba(99,102,241,0.6);">
+        <div class="confirm-modal-icon" style="filter: drop-shadow(0 0 16px #6366F1);">🛑</div>
+        <h3 style="color:#FFF; font-size:1.35rem; font-weight:900; margin-bottom:8px;">ODA KAPATILDI</h3>
+        <p id="room-closed-msg" style="font-size:0.9rem; color:#C7D2FE; line-height:1.4; margin-bottom:18px; background:rgba(0,0,0,0.45); padding:10px 14px; border-radius:12px; border:1px solid rgba(99,102,241,0.4);">
+          Oda yöneticisi tarafından oturum sonlandırıldı.
+        </p>
+        <button type="button" id="btn-dismiss-closed" style="background:linear-gradient(135deg, #6366F1, #4F46E5); color:#FFF; border:none; border-radius:12px; padding:12px 20px; font-weight:900; font-size:0.95rem; cursor:pointer; width:100%;">
+          Tamam, Giriş Ekranına Dön
+        </button>
+      </div>
+    </div>
+
     <!-- Toast Bildirimi -->
     <div id="toast-notify" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(80px); background:rgba(15,23,42,0.95); border:1.5px solid var(--gold); color:#FFF; padding:8px 18px; border-radius:999px; font-size:0.85rem; font-weight:800; z-index:9999; pointer-events:none; transition:transform 0.25s ease; box-shadow:0 6px 20px rgba(0,0,0,0.6);"></div>
 
@@ -453,10 +467,10 @@
       document.getElementById('btn-choose-red').classList.remove('active');
     };
 
-    // Katıl (Mükerrer bağlantı engellemeli)
+    // Katıl (Mükerrer bağlantı engellemeli & Güvenlik Denetimli)
     let isConnecting = false;
     const btnJoin = document.getElementById('btn-join-room');
-    btnJoin.onclick = () => {
+    btnJoin.onclick = async () => {
       if (isConnecting || btnJoin.disabled) return;
       const roomIn = document.getElementById('input-room-code').value.trim().toUpperCase();
       const nameIn = document.getElementById('input-player-name').value.trim() || 'Yarışmacı';
@@ -473,11 +487,22 @@
 
       isConnecting = true;
       btnJoin.disabled = true;
-      btnJoin.textContent = 'Bağlanılıyor...';
+      btnJoin.textContent = 'Bağlantı ve İzinler Denetleniyor...';
+
+      myPlayerId = firebaseNetwork.getOrCreatePlayerId('aileler_yarisiyor', roomIn, nameIn);
+
+      // Güvenlik & İzin Kontrolü
+      const check = await firebaseNetwork.verifyJoinEligibility('aileler_yarisiyor', roomIn, myPlayerId);
+      if (!check.allowed) {
+        alert('⚠️ ' + check.reason);
+        btnJoin.disabled = false;
+        btnJoin.textContent = '🔔 OYUNA GİR & ZİLE GEÇ';
+        isConnecting = false;
+        return;
+      }
 
       currentRoomId = roomIn;
       playerName = nameIn;
-      myPlayerId = firebaseNetwork.getOrCreatePlayerId('aileler_yarisiyor', currentRoomId, nameIn);
 
       document.getElementById('section-join').style.display = 'none';
       document.getElementById('section-waiting').style.display = 'block';
@@ -523,7 +548,7 @@
         roomUnsubscribe = null;
       }
       if (myPlayerId && currentRoomId) {
-        firebaseNetwork.removePlayer('aileler_yarisiyor', currentRoomId, myPlayerId);
+        firebaseNetwork.removePlayer('aileler_yarisiyor', currentRoomId, myPlayerId, playerName);
       }
       document.getElementById('modal-confirm-exit').style.display = 'none';
       document.getElementById('btn-leave-room').style.display = 'none';
@@ -541,29 +566,13 @@
     function handleRoomSync(room) {
       if (!room) return;
 
-      // 1. Hakem Tarafından Kick Kontrolü
-      if (myPlayerId && ((room.kicked && room.kicked[myPlayerId]) || (room.kickedPlayers && room.kickedPlayers[myPlayerId]))) {
-        const kickInfo = (room.kicked && room.kicked[myPlayerId]) || (room.kickedPlayers && room.kickedPlayers[myPlayerId]);
-        handleKickedByHost(kickInfo.reason || 'Hakem masası tarafından oyundan çıkarıldınız.');
-        return;
-      }
-
-      // 2. Hakem Aksiyonları (İkaz & Kick)
-      if (room.actions) {
-        const actList = Array.isArray(room.actions) ? room.actions : Object.values(room.actions);
-        actList.forEach(a => {
-          if (!a || !a.targetPlayerId || a.targetPlayerId !== myPlayerId) return;
-          const actId = a.id || (a.timestamp + '_' + a.type);
-          if (processedHostActionIds.has(actId)) return;
-          processedHostActionIds.add(actId);
-
-          if (a.type === 'player_kicked') {
-            handleKickedByHost(a.reason || 'Hakem masası tarafından oyundan çıkarıldınız.');
-          } else if (a.type === 'player_warning') {
-            handleWarningByHost(a.message || 'Lütfen kurallara uyun ve ekrandan ayrılmayın!');
-          }
-        });
-      }
+      // 0. Güvenlik Denetimi (Oda Kapatılma, Kick, İkaz, Duyuru)
+      const handled = firebaseNetwork.handleClientSecurity(room, myPlayerId, {
+        onKicked: (reason) => handleKickedByHost(reason),
+        onWarning: (msg) => handleWarningByHost(msg),
+        onRoomClosed: (reason) => handleRoomClosedByHost(reason)
+      });
+      if (handled && (room.isClosed || (room.kicked && room.kicked[myPlayerId]))) return;
 
       const stage = room.stage;
 
@@ -733,6 +742,23 @@
       if (modal) modal.style.display = 'flex';
     }
 
+    function handleRoomClosedByHost(reason) {
+      try { if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 500]); } catch (e) {}
+      if (roomUnsubscribe) {
+        try { roomUnsubscribe(); } catch (e) {}
+        roomUnsubscribe = null;
+      }
+      document.getElementById('btn-leave-room').style.display = 'none';
+      document.getElementById('room-badge').style.display = 'none';
+      document.getElementById('section-waiting').style.display = 'none';
+      document.getElementById('section-faceoff').style.display = 'none';
+      document.getElementById('section-board').style.display = 'none';
+      const modal = document.getElementById('modal-room-closed');
+      const text = document.getElementById('room-closed-msg');
+      if (text) text.textContent = reason || 'Oda yöneticisi tarafından oturum sonlandırıldı.';
+      if (modal) modal.style.display = 'flex';
+    }
+
     document.getElementById('btn-dismiss-warning')?.addEventListener('click', () => {
       const modal = document.getElementById('modal-host-warning');
       if (modal) modal.style.display = 'none';
@@ -740,6 +766,15 @@
 
     document.getElementById('btn-dismiss-kicked')?.addEventListener('click', () => {
       const modal = document.getElementById('modal-host-kicked');
+      if (modal) modal.style.display = 'none';
+      currentRoomId = '';
+      document.getElementById('section-join').style.display = 'block';
+      btnJoin.disabled = false;
+      btnJoin.textContent = '🔔 OYUNA GİR & ZİLE GEÇ';
+    });
+
+    document.getElementById('btn-dismiss-closed')?.addEventListener('click', () => {
+      const modal = document.getElementById('modal-room-closed');
       if (modal) modal.style.display = 'none';
       currentRoomId = '';
       document.getElementById('section-join').style.display = 'block';

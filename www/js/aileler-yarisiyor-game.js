@@ -4,6 +4,7 @@
 import { sounds } from './audio.js';
 import QRCode from './qrcode.esm.js';
 import { firebaseNetwork } from './firebase-network.js';
+import { HostModerationPanel } from './host-moderation-panel.js';
 import {
   AILELER_YARISIYOR_QUESTIONS,
   AILELER_YARISIYOR_KIDS_QUESTIONS,
@@ -474,7 +475,12 @@ export class AilelerYarisiyorEngine {
     }
 
     pContainer.innerHTML = `
-      <div style="font-size:0.78rem; color:#00F5D4; font-weight:800; margin-bottom:6px;">👥 Bağlı Yarışmacılar (${this.connectedPlayers.length}) - Hakem Yetkisi:</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span style="font-size:0.78rem; color:#00F5D4; font-weight:800;">👥 Bağlı Yarışmacılar (${this.connectedPlayers.length}):</span>
+        <button type="button" class="btn-host-moderation-badge" id="btn-ay-mod-open" style="padding:2px 8px; font-size:0.72rem; vertical-align:middle;">
+          <span class="pulse-dot"></span> 🛡️ Yönetim Paneli
+        </button>
+      </div>
       <div style="display:flex; flex-wrap:wrap; gap:6px;">
         ${this.connectedPlayers.map(p => {
           const isRed = p.team === 'red';
@@ -489,6 +495,15 @@ export class AilelerYarisiyorEngine {
         }).join('')}
       </div>
     `;
+
+    document.getElementById('btn-ay-mod-open')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      HostModerationPanel.open({
+        namespace: 'aileler_yarisiyor',
+        roomId: this.roomId,
+        title: 'Aileler Yarışıyor Hakem Masası'
+      });
+    });
 
     pContainer.querySelectorAll('.btn-ay-warn').forEach(btn => {
       btn.onclick = (e) => {

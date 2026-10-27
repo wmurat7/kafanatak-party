@@ -5,6 +5,7 @@
 import { sounds } from './audio.js';
 import QRCode from './qrcode.esm.js';
 import { firebaseNetwork } from './firebase-network.js';
+import { HostModerationPanel } from './host-moderation-panel.js';
 
 if (typeof window !== 'undefined' && QRCode) {
   window.QRCode = QRCode;
@@ -439,7 +440,22 @@ export class PassaparolaEngine {
         if (pList.length > 0) {
           this.players = pList;
           const badge = document.getElementById('passa-player-count-badge');
-          if (badge) badge.textContent = `${pList.length} Yarışmacı Bağlı`;
+          if (badge) {
+            badge.innerHTML = `
+              <span style="margin-right:6px;">${pList.length} Yarışmacı Bağlı</span>
+              <button type="button" class="btn-host-moderation-badge" id="btn-passa-mod-open" style="padding:2px 8px; font-size:0.72rem; vertical-align:middle;">
+                <span class="pulse-dot"></span> 🛡️ Yönetim Masası
+              </button>
+            `;
+            document.getElementById('btn-passa-mod-open')?.addEventListener('click', (e) => {
+              e.stopPropagation();
+              HostModerationPanel.open({
+                namespace: 'passaparola',
+                roomId: this.roomId,
+                title: 'Passaparola Yarışmacı Masası'
+              });
+            });
+          }
           const connEl = document.getElementById('passa-connected-players');
           if (connEl) {
             connEl.innerHTML = pList.map(p => `

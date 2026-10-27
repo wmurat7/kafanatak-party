@@ -291,6 +291,49 @@
     </div>
   </div>
 
+  <!-- HAKEMDEN İKAZ MODALI -->
+  <div id="modal-host-warning" class="modal-overlay" style="display:none; z-index:999999;">
+    <div class="card" style="border: 2px solid #FBBF24; box-shadow: 0 0 40px rgba(251,191,36,0.6); max-width:380px;">
+      <div style="font-size:2.8rem; filter: drop-shadow(0 0 14px #FBBF24);">⚠️</div>
+      <h3 style="color:#FDE047; font-size:1.25rem; font-weight:900; margin:8px 0;">STÜDYO HAKEMİNDEN İKAZ!</h3>
+      <p id="host-warning-msg" style="font-size:0.95rem; color:#FFF; font-weight:700; line-height:1.4; margin-bottom:18px; background:rgba(0,0,0,0.4); padding:10px 14px; border-radius:12px; border:1px solid rgba(251,191,36,0.3);">
+        Lütfen kurallara uyun ve oyundan ayrılmayın!
+      </p>
+      <button type="button" id="btn-dismiss-warning" style="background:linear-gradient(135deg, #F59E0B, #D97706); color:#FFF; border:none; border-radius:12px; padding:12px 20px; font-weight:900; font-size:0.95rem; cursor:pointer; width:100%;">
+        Anladım, Dikkat Edeceğim
+      </button>
+    </div>
+  </div>
+
+  <!-- OYUNDAN ATILMA MODALI -->
+  <div id="modal-host-kicked" class="modal-overlay" style="display:none; z-index:9999999;">
+    <div class="card" style="border: 2px solid #EF4444; box-shadow: 0 0 45px rgba(239,68,68,0.7); max-width:380px;">
+      <div style="font-size:2.8rem; filter: drop-shadow(0 0 16px #EF4444);">🚫</div>
+      <h3 style="color:#FFF; font-size:1.35rem; font-weight:900; margin:8px 0;">STÜDYODAN ÇIKARILDINIZ</h3>
+      <p id="host-kicked-msg" style="font-size:0.9rem; color:#FCA5A5; line-height:1.4; margin-bottom:18px; background:rgba(0,0,0,0.45); padding:10px 14px; border-radius:12px; border:1px solid rgba(239,68,68,0.4);">
+        Stüdyo yönetimi tarafından yayından çıkarıldınız.
+      </p>
+      <button type="button" id="btn-dismiss-kicked" style="background:linear-gradient(135deg, #EF4444, #B91C1C); color:#FFF; border:none; border-radius:12px; padding:12px 20px; font-weight:900; font-size:0.95rem; cursor:pointer; width:100%;">
+        Tamam, Giriş Ekranına Dön
+      </button>
+    </div>
+  </div>
+
+  <!-- ODA KAPATILDI MODALI -->
+  <div id="modal-room-closed" class="modal-overlay" style="display:none; z-index:9999999;">
+    <div class="card" style="border: 2px solid #6366F1; box-shadow: 0 0 45px rgba(99,102,241,0.6); max-width:380px;">
+      <div style="font-size:2.8rem; filter: drop-shadow(0 0 16px #6366F1);">🛑</div>
+      <h3 style="color:#FFF; font-size:1.35rem; font-weight:900; margin:8px 0;">YAYIN SONLANDI</h3>
+      <p id="room-closed-msg" style="font-size:0.9rem; color:#C7D2FE; line-height:1.4; margin-bottom:18px; background:rgba(0,0,0,0.45); padding:10px 14px; border-radius:12px; border:1px solid rgba(99,102,241,0.4);">
+        Oda yöneticisi tarafından oturum sonlandırıldı.
+      </p>
+      <button type="button" id="btn-dismiss-closed" style="background:linear-gradient(135deg, #6366F1, #4F46E5); color:#FFF; border:none; border-radius:12px; padding:12px 20px; font-weight:900; font-size:0.95rem; cursor:pointer; width:100%;">
+        Tamam, Giriş Ekranına Dön
+      </button>
+    </div>
+  </div>
+
+  <script src="js/firebase-network.js"></script>
   <script>
     const TURKISH_CONSONANTS = ['B', 'C', 'Ç', 'D', 'F', 'G', 'Ğ', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'Ş', 'T', 'V', 'Y', 'Z'];
     const TURKISH_VOWELS = ['A', 'E', 'I', 'İ', 'O', 'Ö', 'U', 'Ü'];
@@ -347,6 +390,19 @@
       try {
         const res = await fetch(`${dbUrl}/kafanatak/carkifelek/${roomId}.json`);
         const room = await res.json() || {};
+        if (room.isClosed) {
+          alert('🛑 Bu stüdyo kapatılmıştır!');
+          return;
+        }
+        if (room.isLocked) {
+          alert('🔒 Bu stüdyo yeni yarışmacılara kilitlenmiştir!');
+          return;
+        }
+        if ((room.kicked && room.kicked[myPlayerId]) || (room.kickedPlayers && room.kickedPlayers[myPlayerId])) {
+          alert('🚫 Bu stüdyodan çıkarıldınız, tekrar katılamazsınız!');
+          return;
+        }
+
         let players = room.players || [];
         if (!Array.isArray(players)) players = Object.values(players);
 
@@ -470,10 +526,59 @@
       return currentRoom.activePlayerId === myPlayerId;
     }
 
+    function handleWarningByHost(msg) {
+      document.getElementById('host-warning-msg').textContent = msg || 'Lütfen kurallara uyun ve oyundan ayrılmayın!';
+      document.getElementById('modal-host-warning').style.display = 'flex';
+    }
+
+    function handleKickedByHost(reason) {
+      document.getElementById('host-kicked-msg').textContent = reason || 'Stüdyo yönetimi tarafından yayından çıkarıldınız.';
+      document.getElementById('modal-host-kicked').style.display = 'flex';
+      isRegistered = false;
+      document.getElementById('stage-game').style.display = 'none';
+      document.getElementById('stage-join').style.display = 'flex';
+    }
+
+    function handleRoomClosedByHost(reason) {
+      document.getElementById('room-closed-msg').textContent = reason || 'Oda yöneticisi tarafından oturum sonlandırıldı.';
+      document.getElementById('modal-room-closed').style.display = 'flex';
+      isRegistered = false;
+      document.getElementById('stage-game').style.display = 'none';
+      document.getElementById('stage-join').style.display = 'flex';
+    }
+
+    document.getElementById('btn-dismiss-warning').onclick = () => {
+      document.getElementById('modal-host-warning').style.display = 'none';
+    };
+
+    document.getElementById('btn-dismiss-kicked').onclick = () => {
+      document.getElementById('modal-host-kicked').style.display = 'none';
+      isRegistered = false;
+      document.getElementById('stage-game').style.display = 'none';
+      document.getElementById('stage-join').style.display = 'flex';
+    };
+
+    document.getElementById('btn-dismiss-closed').onclick = () => {
+      document.getElementById('modal-room-closed').style.display = 'none';
+      isRegistered = false;
+      document.getElementById('stage-game').style.display = 'none';
+      document.getElementById('stage-join').style.display = 'flex';
+    };
+
     // Odanın Canlı Durumunu Arayüze Yansıt
     function syncState(room) {
       if (!room) return;
       currentRoom = room;
+
+      // 0. Güvenlik Denetimi (Oda Kapatılma, Kick, İkaz, Duyuru)
+      if (window.firebaseNetwork) {
+        const handled = firebaseNetwork.handleClientSecurity(room, myPlayerId, {
+          onKicked: (reason) => handleKickedByHost(reason),
+          onWarning: (msg) => handleWarningByHost(msg),
+          onRoomClosed: (reason) => handleRoomClosedByHost(reason)
+        });
+        if (handled && (room.isClosed || (room.kicked && room.kicked[myPlayerId]))) return;
+      }
 
       if (!isRegistered) {
         // Eğer zaten kayıtlıysa otomatik oyuna geç

@@ -2,6 +2,8 @@
 // Kafana Tak! - Şarkıyı Devam Ettir (Melodi Düellosu) Parti Oyunu
 
 import { sounds } from './audio.js';
+import { firebaseNetwork } from './firebase-network.js';
+import { HostModerationPanel } from './host-moderation-panel.js';
 
 export const TURKISH_SONGS = [
   {
@@ -328,7 +330,22 @@ export class SarkiDuelloEngine {
       const pArr = Object.values(remoteRoom.players);
       this.players = pArr;
       const countBadge = document.getElementById('sarki-player-count-badge');
-      if (countBadge) countBadge.textContent = `${pArr.length} Oyuncu Bağlı`;
+      if (countBadge) {
+        countBadge.innerHTML = `
+          <span style="margin-right:6px;">${pArr.length} Oyuncu Bağlı</span>
+          <button type="button" class="btn-host-moderation-badge" id="btn-sarki-mod-open" style="padding:2px 8px; font-size:0.72rem; vertical-align:middle;">
+            <span class="pulse-dot"></span> 🛡️ Sahne Masası
+          </button>
+        `;
+        document.getElementById('btn-sarki-mod-open')?.addEventListener('click', (e) => {
+          e.stopPropagation();
+          HostModerationPanel.open({
+            namespace: 'sarki',
+            roomId: this.roomId,
+            title: 'Şarkı Düello Sahne Masası'
+          });
+        });
+      }
 
       const listEl = document.getElementById('sarki-connected-players');
       if (listEl) {
