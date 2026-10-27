@@ -333,10 +333,38 @@ export class SarkiDuelloEngine {
       const listEl = document.getElementById('sarki-connected-players');
       if (listEl) {
         listEl.innerHTML = pArr.map(p => `
-          <span style="background:rgba(0,245,212,0.15); border:1px solid var(--primary); color:#FFF; font-size:0.8rem; font-weight:800; padding:4px 10px; border-radius:999px;">
-            ${p.avatar || '🎤'} ${p.name} (${p.score || 0} P)
-          </span>
+          <div style="background:rgba(0,245,212,0.15); border:1.5px solid var(--primary); color:#FFF; font-size:0.8rem; font-weight:800; padding:4px 10px; border-radius:999px; display:inline-flex; align-items:center; gap:6px;">
+            <span>${p.avatar || '🎤'} ${p.name} (${p.score || 0} P)</span>
+            <button type="button" class="btn-sarki-warn" data-id="${p.id}" data-name="${p.name}" style="background:rgba(251,191,36,0.2); border:1px solid #FBBF24; color:#FDE047; font-size:0.68rem; font-weight:900; border-radius:6px; padding:1px 5px; cursor:pointer;" title="İkaz Gönder">⚠️ İkaz</button>
+            <button type="button" class="btn-sarki-kick" data-id="${p.id}" data-name="${p.name}" style="background:rgba(239,68,68,0.2); border:1px solid #EF4444; color:#FCA5A5; font-size:0.68rem; font-weight:900; border-radius:6px; padding:1px 5px; cursor:pointer;" title="Oyundan At">🚫 At</button>
+          </div>
         `).join('');
+
+        listEl.querySelectorAll('.btn-sarki-warn').forEach(btn => {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            const pId = btn.dataset.id;
+            const pName = btn.dataset.name;
+            const reason = prompt(`⚠️ ${pName} adlı yarışmacıya gönderilecek ikaz mesajı:`, 'Lütfen kurallara uyun ve oyundan ayrılmayın!');
+            if (reason && reason.trim()) {
+              firebaseNetwork.warnPlayer('sarki', this.roomId, pId, reason.trim());
+              alert(`⚠️ ${pName} ikaz edildi.`);
+            }
+          };
+        });
+
+        listEl.querySelectorAll('.btn-sarki-kick').forEach(btn => {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            const pId = btn.dataset.id;
+            const pName = btn.dataset.name;
+            if (confirm(`🚫 ${pName} adlı yarışmacıyı oyundan atmak istediğinize emin misiniz?`)) {
+              firebaseNetwork.kickPlayer('sarki', this.roomId, pId, 'Sunucu (Host) tarafından oyundan çıkarıldınız.');
+              this.players = this.players.filter(x => x.id !== pId);
+              this.handleRemoteRoomUpdate({ ...remoteRoom, players: this.players.reduce((acc, cur) => ({ ...acc, [cur.id]: cur }), {}) });
+            }
+          };
+        });
       }
 
       this.updateMultiScoresUI();

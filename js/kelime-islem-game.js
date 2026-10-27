@@ -662,9 +662,7 @@ export class KelimeIslemEngine {
                   📋 Bağlantıyı Kopyala
                 </button>
               </div>
-              <div id="ki-connected-players-text" style="font-size:0.78rem; color:var(--gold); margin-top:8px; font-weight:800;">
-                👥 Bağlı Oyuncular: ${this.connectedPlayers.length > 0 ? this.connectedPlayers.map(p => p.name).join(', ') : 'Bekleniyor...'}
-              </div>
+              <div id="ki-connected-players-box" style="margin-top:10px; text-align:left;"></div>
             </div>
           ` : ''}
         </div>
@@ -700,7 +698,62 @@ export class KelimeIslemEngine {
 
     if (this.isMultiDevice) {
       this.renderQrCode();
+      this.renderConnectedPlayersUI();
     }
+  }
+
+  renderConnectedPlayersUI() {
+    const pContainer = document.getElementById('ki-connected-players-box');
+    if (!pContainer) return;
+
+    if (!this.connectedPlayers || this.connectedPlayers.length === 0) {
+      pContainer.innerHTML = '<div style="font-size:0.78rem; color:var(--text-muted); text-align:center;">👥 Henüz bağlı yarışmacı yok. QR kod okutulduğunda burada listelenir.</div>';
+      return;
+    }
+
+    pContainer.innerHTML = `
+      <div style="font-size:0.78rem; color:#00F5D4; font-weight:800; margin-bottom:6px;">👥 Bağlı Yarışmacılar (${this.connectedPlayers.length}) - Hakem Yetkisi:</div>
+      <div style="display:flex; flex-wrap:wrap; gap:6px;">
+        ${this.connectedPlayers.map(p => {
+          const isRed = p.team === 'red';
+          return `
+            <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.08); border:1.5px solid ${isRed ? '#EF4444' : '#3B82F6'}; border-radius:999px; padding:4px 10px; font-size:0.8rem; font-weight:800;">
+              <span>${isRed ? '🔴' : '🔵'}</span>
+              <span style="color:#FFF;">${p.name || 'Yarışmacı'}</span>
+              <button type="button" class="btn-ki-warn" data-id="${p.id}" data-name="${p.name}" style="background:rgba(251,191,36,0.2); border:1px solid #FBBF24; color:#FDE047; font-size:0.68rem; font-weight:900; border-radius:6px; padding:1px 5px; cursor:pointer;" title="İkaz Gönder">⚠️ İkaz</button>
+              <button type="button" class="btn-ki-kick" data-id="${p.id}" data-name="${p.name}" style="background:rgba(239,68,68,0.2); border:1px solid #EF4444; color:#FCA5A5; font-size:0.68rem; font-weight:900; border-radius:6px; padding:1px 5px; cursor:pointer;" title="Oyundan At">🚫 At</button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+
+    pContainer.querySelectorAll('.btn-ki-warn').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const pId = btn.dataset.id;
+        const pName = btn.dataset.name;
+        const reason = prompt(`⚠️ ${pName} adlı yarışmacıya gönderilecek ikaz mesajı:`, 'Lütfen kurallara uyun ve ekrandan ayrılmayın!');
+        if (reason && reason.trim()) {
+          firebaseNetwork.warnPlayer('kelime_islem', this.roomId, pId, reason.trim());
+          if (this.game && this.game.showToast) this.game.showToast(`⚠️ ${pName} ikaz edildi.`);
+        }
+      };
+    });
+
+    pContainer.querySelectorAll('.btn-ki-kick').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const pId = btn.dataset.id;
+        const pName = btn.dataset.name;
+        if (confirm(`🚫 ${pName} adlı yarışmacıyı oyundan atmak istediğinize emin misiniz?`)) {
+          firebaseNetwork.kickPlayer('kelime_islem', this.roomId, pId, 'Hakem masası tarafından oyundan çıkarıldınız.');
+          this.connectedPlayers = this.connectedPlayers.filter(x => x.id !== pId);
+          this.renderConnectedPlayersUI();
+          if (this.game && this.game.showToast) this.game.showToast(`🚫 ${pName} odadan atıldı.`);
+        }
+      };
+    });
   }
 
   async toggleMultiDevice() {
@@ -741,10 +794,10 @@ export class KelimeIslemEngine {
       if (!room) return;
       if (room.players) {
         this.connectedPlayers = Object.values(room.players);
-        const pText = document.getElementById('ki-connected-players-text');
-        if (pText) {
-          pText.textContent = `👥 Bağlı Oyuncular (${this.connectedPlayers.length}): ` + this.connectedPlayers.map(p => p.name).join(', ');
-        }
+        this.renderConnectedPlayersUI();
+      } else {
+        this.connectedPlayers = [];
+        this.renderConnectedPlayersUI();
       }
       if (room.actions) {
         const actionList = Object.values(room.actions);

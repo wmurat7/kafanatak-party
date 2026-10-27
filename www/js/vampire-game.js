@@ -702,12 +702,15 @@ export class VampireGameEngine {
 
           <div style="background:rgba(0,0,0,0.4); border-radius:14px; padding:12px; margin-bottom:16px;">
             <div style="font-size:0.82rem; font-weight:800; color:var(--primary); margin-bottom:8px;">
-              Toplanan Köylüler (${state.players.length}):
+              Toplanan Köylüler (${state.players.length}) - Muhtar Yetkisi:
             </div>
-            <div class="player-pills" style="justify-content:center; min-height:40px;">
+            <div class="player-pills" style="justify-content:center; min-height:40px; gap:6px;">
               ${state.players.length === 0 ? '<span style="font-size:0.82rem; color:var(--text-dim);">Henüz kimse katılmadı. QR kodu okutun!</span>' : state.players.map(p => `
-                <div class="player-pill" style="background:rgba(0,245,212,0.15); border:1px solid var(--primary);">
-                  <span>${p.avatar || '🧑‍🌾'}</span> <span>${p.name}</span>
+                <div class="player-pill" style="background:rgba(0,245,212,0.15); border:1px solid var(--primary); display:inline-flex; align-items:center; gap:6px; padding:4px 10px;">
+                  <span>${p.avatar || '🧑‍🌾'}</span>
+                  <span>${p.name}</span>
+                  <button type="button" class="btn-vampire-warn" data-id="${p.id}" data-name="${p.name}" style="background:rgba(251,191,36,0.2); border:1px solid #FBBF24; color:#FDE047; font-size:0.68rem; font-weight:900; border-radius:6px; padding:1px 5px; cursor:pointer;" title="İkaz Gönder">⚠️ İkaz</button>
+                  <button type="button" class="btn-vampire-kick" data-id="${p.id}" data-name="${p.name}" style="background:rgba(239,68,68,0.2); border:1px solid #EF4444; color:#FCA5A5; font-size:0.68rem; font-weight:900; border-radius:6px; padding:1px 5px; cursor:pointer;" title="Oyundan At">🚫 At</button>
                 </div>
               `).join('')}
             </div>
@@ -721,6 +724,33 @@ export class VampireGameEngine {
 
       // QR Kod çiz (Kütüphanesiz veya QRCode Canvas ile)
       this.drawQRCode('vampire-qr-canvas', clientUrl);
+
+      // Muhtar İkaz & Atma Dinleyicileri
+      container.querySelectorAll('.btn-vampire-warn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const pId = btn.dataset.id;
+          const pName = btn.dataset.name;
+          const reason = prompt(`⚠️ ${pName} adlı köylüye gönderilecek ikaz mesajı:`, 'Lütfen kurallara uyun ve oyundan ayrılmayın!');
+          if (reason && reason.trim()) {
+            firebaseNetwork.warnPlayer('vampire', state.roomId, pId, reason.trim());
+            alert(`⚠️ ${pName} ikaz edildi.`);
+          }
+        };
+      });
+
+      container.querySelectorAll('.btn-vampire-kick').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const pId = btn.dataset.id;
+          const pName = btn.dataset.name;
+          if (confirm(`🚫 ${pName} adlı oyuncuyu oyundan atmak istediğinize emin misiniz?`)) {
+            firebaseNetwork.kickPlayer('vampire', state.roomId, pId, 'Köy Muhtarı (Host) tarafından oyundan çıkarıldınız.');
+            this.players = this.players.filter(x => x.id !== pId);
+            this.renderMultiHostScreen({ ...state, players: this.players });
+          }
+        };
+      });
 
       document.getElementById('btn-multi-start-game').addEventListener('click', async () => {
         if (state.players.length < 3) {

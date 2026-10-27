@@ -508,9 +508,42 @@ export class IsimSehirGameEngine {
           ${p.isHost ? '<span style="color:var(--gold);">👑</span>' : ''}
           ${p.submitted ? '<span style="color:#00F5D4;">✓</span>' : ''}
           ${hasCheat ? `<span style="background:#EF4444; color:#FFF; font-size:0.68rem; padding:2px 6px; border-radius:999px; font-weight:900;" title="Ekrandan ayrıldı / Kopya şüphesi">⚠️ ${p.cheatWarnings || 1} Terk</span>` : ''}
+          ${!p.isHost ? `
+            <span style="display:inline-flex; gap:3px; margin-left:4px;">
+              <button type="button" class="btn-pill-warn" data-id="${p.id}" data-name="${p.name}" title="İkaz Gönder" style="background:rgba(251,191,36,0.22); border:1px solid #FBBF24; color:#FDE047; font-size:0.68rem; font-weight:900; border-radius:6px; padding:1px 5px; cursor:pointer;">⚠️ İkaz</button>
+              <button type="button" class="btn-pill-kick" data-id="${p.id}" data-name="${p.name}" title="Oyundan At" style="background:rgba(239,68,68,0.22); border:1px solid #EF4444; color:#FCA5A5; font-size:0.68rem; font-weight:900; border-radius:6px; padding:1px 5px; cursor:pointer;">🚫 At</button>
+            </span>
+          ` : ''}
         </div>
       `;
     }).join('');
+
+    list.querySelectorAll('.btn-pill-warn').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const pId = btn.dataset.id;
+        const pName = btn.dataset.name;
+        const reason = prompt(`⚠️ ${pName} adlı oyuncuya gönderilecek ikaz mesajı:`, 'Lütfen kurallara uyun ve ekrandan ayrılmayın!');
+        if (reason && reason.trim()) {
+          firebaseNetwork.warnPlayer('isim-sehir', this.roomId, pId, reason.trim());
+          if (window.game && window.game.showToast) window.game.showToast(`⚠️ ${pName} ikaz edildi.`);
+        }
+      };
+    });
+
+    list.querySelectorAll('.btn-pill-kick').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const pId = btn.dataset.id;
+        const pName = btn.dataset.name;
+        if (confirm(`🚫 ${pName} adlı oyuncuyu oyundan atmak istediğinize emin misiniz?`)) {
+          firebaseNetwork.kickPlayer('isim-sehir', this.roomId, pId, 'Ana telefon (hakem) tarafından oyundan çıkarıldınız.');
+          this.players = this.players.filter(x => x.id !== pId);
+          this.renderPlayersList();
+          if (window.game && window.game.showToast) window.game.showToast(`🚫 ${pName} odadan atıldı.`);
+        }
+      };
+    });
 
     const countBadge = document.getElementById('isim-player-count-badge');
     if (countBadge) countBadge.textContent = `${this.players.length} Oyuncu Bağlı`;

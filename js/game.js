@@ -4783,6 +4783,13 @@ class GameApp {
 
     // 1. Firebase Bulut Dinleyicisi (SSE / Realtime Tezahürat & Zil)
     this.fbCheerCleanup = firebaseNetwork.listenRoom('spectator', this.spectatorRoomId, (roomData) => {
+      if (roomData) {
+        if (roomData.players) {
+          this.renderConnectedSpectators(roomData.players);
+        } else {
+          this.renderConnectedSpectators([]);
+        }
+      }
       if (roomData && roomData.actions) {
         const actList = Array.isArray(roomData.actions) ? roomData.actions : Object.values(roomData.actions);
         const now = Date.now();
@@ -4829,6 +4836,59 @@ class GameApp {
         }
       } catch (e) {}
     }, 1200);
+  }
+
+  renderConnectedSpectators(players) {
+    const listEl = document.getElementById('spec-connected-players-list');
+    const badgeEl = document.getElementById('spec-connected-count-badge');
+    if (!listEl) return;
+
+    const pList = players ? (Array.isArray(players) ? players : Object.values(players)) : [];
+    if (badgeEl) badgeEl.textContent = `${pList.length} Kişi`;
+
+    if (pList.length === 0) {
+      listEl.innerHTML = `<div id="spec-empty-hint" style="font-size:0.78rem; color:var(--text-dim); text-align:center; padding:8px;">Henüz kimse bağlanmadı. QR okutanlar burada listelenir.</div>`;
+      return;
+    }
+
+    listEl.innerHTML = pList.map(p => {
+      const teamLabel = p.team === 'blue' ? '🔵 Mavi Takım' : (p.team === 'red' ? '🔴 Kırmızı Takım' : '👥 Seyirci');
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:6px 10px;">
+          <div>
+            <strong style="font-size:0.85rem; color:#FFF;">${p.name || 'Seyirci'}</strong>
+            <span style="font-size:0.7rem; color:var(--text-dim); margin-left:4px;">(${teamLabel})</span>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button type="button" class="btn-spec-warn" data-id="${p.id}" data-name="${p.name || 'Seyirci'}" style="background:rgba(251,191,36,0.18); border:1px solid #FBBF24; color:#FDE047; font-size:0.72rem; font-weight:800; border-radius:6px; padding:3px 8px; cursor:pointer;">⚠️ İkaz</button>
+            <button type="button" class="btn-spec-kick" data-id="${p.id}" data-name="${p.name || 'Seyirci'}" style="background:rgba(239,68,68,0.2); border:1px solid #EF4444; color:#FCA5A5; font-size:0.72rem; font-weight:800; border-radius:6px; padding:3px 8px; cursor:pointer;">🚫 At</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    listEl.querySelectorAll('.btn-spec-warn').forEach(btn => {
+      btn.onclick = () => {
+        const pId = btn.dataset.id;
+        const pName = btn.dataset.name;
+        const reason = prompt(`⚠️ ${pName} adlı kullanıcıya iletilecek ikaz mesajı:`, 'Lütfen kurallara uyun ve ekrandan ayrılmayın!');
+        if (reason && reason.trim()) {
+          firebaseNetwork.warnPlayer('spectator', this.spectatorRoomId, pId, reason.trim());
+          this.showToast(`⚠️ ${pName} ikaz edildi.`);
+        }
+      };
+    });
+
+    listEl.querySelectorAll('.btn-spec-kick').forEach(btn => {
+      btn.onclick = () => {
+        const pId = btn.dataset.id;
+        const pName = btn.dataset.name;
+        if (confirm(`🚫 ${pName} adlı kullanıcıyı odadan atmak istediğinize emin misiniz?`)) {
+          firebaseNetwork.kickPlayer('spectator', this.spectatorRoomId, pId, 'Oda yöneticisi tarafından odadan çıkarıldınız.');
+          this.showToast(`🚫 ${pName} odadan çıkarıldı.`);
+        }
+      };
+    });
   }
 
   stopCheerPolling() {

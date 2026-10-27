@@ -3205,6 +3205,19 @@
         <button type="button" id="btn-update-spectator-ip" style="background:#00F5D4; color:#0B0E14; border:none; border-radius:6px; font-weight:800; font-size:0.75rem; padding:5px 10px; cursor:pointer;">Yenile</button>
       </div>
 
+      <!-- BAĞLI SEYİRCİLER & HAKEM YÖNETİMİ -->
+      <div id="spectator-moderation-box" style="margin-top:10px; margin-bottom:12px; text-align:left; background:rgba(0,0,0,0.4); border:1.5px solid rgba(0,245,212,0.25); border-radius:14px; padding:10px 12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="font-size:0.8rem; font-weight:900; color:#00F5D4; display:flex; align-items:center; gap:6px;">
+            <span>👥</span> <span>BAĞLI KULLANICILAR (HAKEM YÖNETİMİ)</span>
+          </div>
+          <span id="spec-connected-count-badge" style="font-size:0.75rem; font-weight:800; background:rgba(0,245,212,0.18); color:#00F5D4; padding:2px 8px; border-radius:999px;">0 Kişi</span>
+        </div>
+        <div id="spec-connected-players-list" style="display:flex; flex-direction:column; gap:6px; max-height:140px; overflow-y:auto;">
+          <div id="spec-empty-hint" style="font-size:0.78rem; color:var(--text-dim); text-align:center; padding:8px;">Henüz kimse bağlanmadı. QR okutanlar burada listelenir.</div>
+        </div>
+      </div>
+
       <div class="modal-actions" style="gap:10px; justify-content:center;">
         <button type="button" id="btn-copy-spectator-link" class="btn-secondary" style="font-size:0.85rem;">
           📋 Bağlantıyı Kopyala

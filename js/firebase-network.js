@@ -300,6 +300,61 @@ class FirebaseNetworkManager {
   }
 
   /**
+   * Ana telefon (Host / Yönetici) yetkisiyle bir oyuncuya ikaz gönderir
+   */
+  async warnPlayer(namespace, roomId, playerId, message = 'Lütfen kurallara uyun ve ekrandan ayrılmayın!') {
+    if (!roomId || !playerId) return false;
+    const cleanNs = String(namespace || '').trim().toLowerCase();
+    const cleanRoom = String(roomId || '').trim().toUpperCase();
+
+    // 1. Oyuncunun alt kaydına son ikazı yaz
+    try {
+      const url = this.buildPath(cleanNs, cleanRoom, `players/${playerId}/lastWarning`);
+      await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, timestamp: Date.now() })
+      });
+    } catch (e) {}
+
+    // 2. Anlık aksiyon olarak da ilet
+    return await this.sendAction(cleanNs, cleanRoom, 'player_warning', {
+      targetPlayerId: playerId,
+      message: message,
+      timestamp: Date.now()
+    });
+  }
+
+  /**
+   * Ana telefon (Host / Yönetici) yetkisiyle bir oyuncuyu odadan atar (Kick)
+   */
+  async kickPlayer(namespace, roomId, playerId, reason = 'Oda yöneticisi tarafından odadan çıkarıldınız.') {
+    if (!roomId || !playerId) return false;
+    const cleanNs = String(namespace || '').trim().toLowerCase();
+    const cleanRoom = String(roomId || '').trim().toUpperCase();
+
+    // 1. Oyuncuyu players altından sil
+    await this.removePlayer(cleanNs, cleanRoom, playerId);
+
+    // 2. Kicked listesine kaydet
+    try {
+      const url = this.buildPath(cleanNs, cleanRoom, `kicked/${playerId}`);
+      await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId, reason, timestamp: Date.now() })
+      });
+    } catch (e) {}
+
+    // 3. Anlık kick aksiyonu yayınla
+    return await this.sendAction(cleanNs, cleanRoom, 'player_kicked', {
+      targetPlayerId: playerId,
+      reason: reason,
+      timestamp: Date.now()
+    });
+  }
+
+  /**
    * Odayı gerçek zamanlı (SSE / EventSource) dinler.
    * Bağlantı zaman aşımına uğramaz; SSE koparsa otomatik yeniden bağlanır ve dual polling kesintisiz sürer.
    * Mükerrer dinleyici (duplicate listener) ve sızıntı korumalıdır.
