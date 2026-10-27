@@ -17,6 +17,7 @@ import { KelimeBombasiEngine } from './kelime-bombasi.js';
 import { GulmemeMeydaniEngine } from './gulmeme-meydani.js';
 import { PassaparolaEngine } from './passaparola-game.js';
 import { CarkifelekEngine } from './carkifelek-game.js';
+import { KelimeIslemEngine } from './kelime-islem-game.js';
 import { initPartyGuides } from './party-guide.js';
 import { firebaseNetwork } from './firebase-network.js';
 
@@ -197,7 +198,9 @@ class GameApp {
       'kelime-bombasi': document.getElementById('screen-kelime-bombasi'),
       'gulmeme-meydani': document.getElementById('screen-gulmeme-meydani'),
       passaparola: document.getElementById('screen-passaparola'),
-      carkifelek: document.getElementById('screen-carkifelek')
+      carkifelek: document.getElementById('screen-carkifelek'),
+      kelimeIslem: document.getElementById('screen-kelime-islem'),
+      'kelime-islem': document.getElementById('screen-kelime-islem')
     };
 
     // Ayarlar & Modlar
@@ -2645,7 +2648,32 @@ class GameApp {
     }
 
     // =========================================
-    // 11. NASIL OYNANIR REHBER MODALI BAĞLANTILARI
+    // 11. BİR KELİME BİR İŞLEM
+    // =========================================
+    this.kelimeIslemEngine = new KelimeIslemEngine(this);
+    const btnOpenKelimeIslem = document.getElementById('btn-open-kelime-islem-game');
+    if (btnOpenKelimeIslem) {
+      btnOpenKelimeIslem.addEventListener('click', () => {
+        sounds.playClick();
+        this.showScreen('kelimeIslem');
+        this.kelimeIslemEngine.init();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+    const btnBackKelimeIslem = document.getElementById('btn-back-from-kelime-islem');
+    if (btnBackKelimeIslem) {
+      btnBackKelimeIslem.addEventListener('click', () => {
+        sounds.playClick();
+        if (this.kelimeIslemEngine && this.kelimeIslemEngine.timerInterval) {
+          clearInterval(this.kelimeIslemEngine.timerInterval);
+        }
+        this.showScreen('partyGames');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+
+    // =========================================
+    // 12. NASIL OYNANIR REHBER MODALI BAĞLANTILARI
     // =========================================
     initPartyGuides(this);
 
@@ -2784,6 +2812,10 @@ class GameApp {
       this.passaparolaEngine.isPlaying = false;
     }
 
+    if (screenKey !== 'kelimeIslem' && screenKey !== 'kelime-islem' && this.kelimeIslemEngine) {
+      if (this.kelimeIslemEngine.timerInterval) clearInterval(this.kelimeIslemEngine.timerInterval);
+    }
+
     if (screenKey === 'party-games') screenKey = 'partyGames';
 
     Object.values(this.screens).forEach(el => {
@@ -2832,7 +2864,8 @@ class GameApp {
     const partyScreens = [
       'screen-vampire', 'screen-spy', 'screen-bomb', 'screen-bottle',
       'screen-isim-sehir', 'screen-sarki-duello', 'screen-kelime-bombasi',
-      'screen-gulmeme-meydani', 'screen-passaparola', 'screen-carkifelek'
+      'screen-gulmeme-meydani', 'screen-passaparola', 'screen-carkifelek',
+      'screen-kelime-islem'
     ];
     if (partyScreens.includes(screenId)) {
       if (this.gulmemeEngine) {
@@ -2840,6 +2873,9 @@ class GameApp {
       }
       if (this.passaparolaEngine && this.passaparolaEngine.timerInterval) {
         clearInterval(this.passaparolaEngine.timerInterval);
+      }
+      if (this.kelimeIslemEngine && this.kelimeIslemEngine.timerInterval) {
+        clearInterval(this.kelimeIslemEngine.timerInterval);
       }
       if (this.sarkiDuelloEngine && this.sarkiDuelloEngine.audioElement) {
         try { this.sarkiDuelloEngine.audioElement.pause(); } catch (e) {}

@@ -1,0 +1,1031 @@
+// js/kelime-islem-game.js
+// Kafana Tak! - Bir Kelime Bir İşlem Efsane Yarışma Motoru
+
+import { sounds } from './audio.js';
+import {
+  TURKISH_VOWELS,
+  TURKISH_CONSONANTS,
+  WEIGHTED_VOWELS,
+  WEIGHTED_CONSONANTS,
+  LARGE_NUMBERS,
+  SMALL_NUMBERS,
+  KELIME_DICTIONARY,
+  findBestWordsFromLetters,
+  solveCountdownNumbers
+} from './kelime-data.js';
+
+export class KelimeIslemEngine {
+  constructor(game) {
+    this.game = game;
+    this.mode = 'full'; // 'full' (1 Kelime + 1 İşlem), 'kelime', 'islem'
+    this.playerMode = 'duel'; // 'duel' (Kırmızı vs Mavi), 'solo' (Tek Başına)
+    this.stage = 'setup'; // 'setup', 'kelime_draw', 'kelime_play', 'kelime_result', 'islem_play', 'islem_result', 'game_over'
+    
+    this.scores = {
+      red: 0,
+      blue: 0,
+      solo: 0
+    };
+    this.currentTurn = 'red'; // 'red' or 'blue'
+    this.round = 1;
+
+    // Zamanlayıcı
+    this.timerSeconds = 45;
+    this.currentSeconds = 45;
+    this.timerInterval = null;
+
+    // Kelime Etabı Verileri
+    this.letters = []; // Max 9: 8 harf + 1 joker ('★')
+    this.selectedLetterIndices = []; // Seçilen harf indisleri
+    this.currentWord = '';
+    this.computerBestWord = null;
+    this.playerWordPoints = 0;
+    this.jokerLetter = 'A'; // Jokerin temsil ettiği harf
+
+    // İşlem Etabı Verileri
+    this.targetNumber = 0;
+    this.initialNumbers = [];
+    this.availableNumbers = []; // [{ id, value, used: false }]
+    this.selectedNum1 = null;
+    this.selectedOp = null;
+    this.calcHistory = []; // [{ num1, op, num2, res, newId }]
+    this.bestPlayerValue = null;
+    this.playerNumberPoints = 0;
+    this.computerSolution = null;
+
+    window.__kelimeIslem = this;
+  }
+
+  init() {
+    this.stage = 'setup';
+    this.renderScreen();
+  }
+
+  setMode(mode) {
+    this.mode = mode;
+    this.renderScreen();
+  }
+
+  setPlayerMode(pMode) {
+    this.playerMode = pMode;
+    this.renderScreen();
+  }
+
+  startNewGame() {
+    sounds.playClick();
+    this.scores = { red: 0, blue: 0, solo: 0 };
+    this.round = 1;
+    this.currentTurn = 'red';
+    
+    if (this.mode === 'islem') {
+      this.startIslemStage();
+    } else {
+      this.startKelimeStage();
+    }
+  }
+
+  // ========================================================
+  // 1. KELİME ETABI MANTIĞI
+  // ========================================================
+  startKelimeStage() {
+    this.stage = 'kelime_draw';
+    this.letters = [];
+    this.selectedLetterIndices = [];
+    this.currentWord = '';
+    this.computerBestWord = null;
+    this.playerWordPoints = 0;
+    this.jokerLetter = 'A';
+    this.renderScreen();
+  }
+
+  drawVowel() {
+    if (this.letters.length >= 8) return;
+    sounds.playTick();
+    const vowel = WEIGHTED_VOWELS[Math.floor(Math.random() * WEIGHTED_VOWELS.length)];
+    this.letters.push(vowel);
+    this.checkAutoFinalizeLetters();
+  }
+
+  drawConsonant() {
+    if (this.letters.length >= 8) return;
+    sounds.playTick();
+    const cons = WEIGHTED_CONSONANTS[Math.floor(Math.random() * WEIGHTED_CONSONANTS.length)];
+    this.letters.push(cons);
+    this.checkAutoFinalizeLetters();
+  }
+
+  drawAutoLetters() {
+    sounds.playClick();
+    this.letters = [];
+    // 3 sesli
+    for (let i = 0; i < 3; i++) {
+      this.letters.push(WEIGHTED_VOWELS[Math.floor(Math.random() * WEIGHTED_VOWELS.length)]);
+    }
+    // 5 sessiz
+    for (let i = 0; i < 5; i++) {
+      this.letters.push(WEIGHTED_CONSONANTS[Math.floor(Math.random() * WEIGHTED_CONSONANTS.length)]);
+    }
+    // Karıştır
+    this.letters.sort(() => Math.random() - 0.5);
+    // 9. harf joker
+    this.letters.push('★');
+    this.startKelimeCountdown();
+  }
+
+  checkAutoFinalizeLetters() {
+    if (this.letters.length === 8) {
+      // 9. harf olarak altın Jokeri ekle
+      this.letters.push('★');
+      setTimeout(() => {
+        this.startKelimeCountdown();
+      }, 500);
+    } else {
+      this.renderScreen();
+    }
+  }
+
+  startKelimeCountdown() {
+    this.stage = 'kelime_play';
+    this.currentSeconds = this.timerSeconds;
+    this.selectedLetterIndices = [];
+    this.currentWord = '';
+    
+    // Bilgisayarın en iyi çözümünü arka planda önceden hesapla
+    const bestWords = findBestWordsFromLetters(this.letters, 5);
+    this.computerBestWord = bestWords[0] || { word: 'YOK', length: 0, points: 0 };
+
+    this.renderScreen();
+    sounds.playCountdown();
+
+    if (this.timerInterval) clearInterval(this.timerInterval);
+    this.timerInterval = setInterval(() => {
+      this.currentSeconds--;
+      if (this.currentSeconds <= 5 && this.currentSeconds > 0) {
+        sounds.playTick();
+      }
+      this.updateTimerDisplay();
+
+      if (this.currentSeconds <= 0) {
+        clearInterval(this.timerInterval);
+        sounds.playBell();
+        this.finishKelimeStage();
+      }
+    }, 1000);
+  }
+
+  toggleLetterInWord(index) {
+    if (this.stage !== 'kelime_play') return;
+    sounds.playClick();
+
+    const existingPos = this.selectedLetterIndices.indexOf(index);
+    if (existingPos >= 0) {
+      // Çıkar
+      this.selectedLetterIndices.splice(existingPos, 1);
+    } else {
+      // Ekle
+      this.selectedLetterIndices.push(index);
+    }
+
+    this.buildCurrentWord();
+    this.renderScreen();
+  }
+
+  buildCurrentWord() {
+    let word = '';
+    for (const idx of this.selectedLetterIndices) {
+      const char = this.letters[idx];
+      if (char === '★') {
+        word += this.jokerLetter;
+      } else {
+        word += char;
+      }
+    }
+    this.currentWord = word;
+  }
+
+  setJokerLetter(ch) {
+    this.jokerLetter = ch.toLocaleUpperCase('tr-TR');
+    this.buildCurrentWord();
+    this.renderScreen();
+  }
+
+  clearWord() {
+    sounds.playClick();
+    this.selectedLetterIndices = [];
+    this.currentWord = '';
+    this.renderScreen();
+  }
+
+  finishKelimeStage() {
+    if (this.timerInterval) clearInterval(this.timerInterval);
+    this.stage = 'kelime_result';
+
+    const word = this.currentWord.trim().toLocaleUpperCase('tr-TR');
+    const isValid = KELIME_DICTIONARY.has(word) && word.length >= 3;
+    
+    if (isValid) {
+      this.playerWordPoints = word.length * 10 + (word.length === 8 ? 20 : 0) + (word.length === 9 ? 50 : 0);
+      sounds.playCorrect();
+    } else {
+      this.playerWordPoints = 0;
+      sounds.playWrong();
+    }
+
+    // Puanı ekle
+    if (this.playerMode === 'duel') {
+      this.scores[this.currentTurn] += this.playerWordPoints;
+    } else {
+      this.scores.solo += this.playerWordPoints;
+    }
+
+    this.renderScreen();
+  }
+
+  acceptWordByJury() {
+    // Jüri / Masadakilerin onayı ile puanı kabul et
+    sounds.playCorrect();
+    const word = this.currentWord.trim().toLocaleUpperCase('tr-TR');
+    const len = Math.max(3, word.length);
+    const addedPoints = len * 10 + (len >= 8 ? 20 : 0);
+    this.playerWordPoints = addedPoints;
+
+    if (this.playerMode === 'duel') {
+      this.scores[this.currentTurn] += addedPoints;
+    } else {
+      this.scores.solo += addedPoints;
+    }
+    this.renderScreen();
+  }
+
+  // ========================================================
+  // 2. İŞLEM ETABI MANTIĞI
+  // ========================================================
+  startIslemStage() {
+    this.stage = 'islem_play';
+    this.currentSeconds = this.timerSeconds;
+    this.selectedNum1 = null;
+    this.selectedOp = null;
+    this.calcHistory = [];
+    this.playerNumberPoints = 0;
+
+    // Hedef Sayı: 100 - 999
+    this.targetNumber = 100 + Math.floor(Math.random() * 900);
+
+    // 5 Küçük Sayı (1-9) + 1 Büyük Sayı (10, 25, 50, 75, 100)
+    const smalls = [];
+    for (let i = 0; i < 5; i++) {
+      smalls.push(SMALL_NUMBERS[Math.floor(Math.random() * SMALL_NUMBERS.length)]);
+    }
+    const large = LARGE_NUMBERS[Math.floor(Math.random() * LARGE_NUMBERS.length)];
+    this.initialNumbers = [...smalls, large].sort(() => Math.random() - 0.5);
+
+    this.availableNumbers = this.initialNumbers.map((val, idx) => ({
+      id: `num_${idx}_${Date.now()}`,
+      value: val,
+      used: false
+    }));
+
+    this.bestPlayerValue = this.initialNumbers[0];
+
+    // Bilgisayar Çözümünü Önceden Hesapla
+    this.computerSolution = solveCountdownNumbers(this.initialNumbers, this.targetNumber);
+
+    this.renderScreen();
+    sounds.playCountdown();
+
+    if (this.timerInterval) clearInterval(this.timerInterval);
+    this.timerInterval = setInterval(() => {
+      this.currentSeconds--;
+      if (this.currentSeconds <= 5 && this.currentSeconds > 0) {
+        sounds.playTick();
+      }
+      this.updateTimerDisplay();
+
+      if (this.currentSeconds <= 0) {
+        clearInterval(this.timerInterval);
+        sounds.playBell();
+        this.finishIslemStage();
+      }
+    }, 1000);
+  }
+
+  selectNumberCard(cardId) {
+    if (this.stage !== 'islem_play') return;
+    const card = this.availableNumbers.find(c => c.id === cardId && !c.used);
+    if (!card) return;
+
+    sounds.playClick();
+
+    if (!this.selectedNum1) {
+      // 1. sayı seçildi
+      this.selectedNum1 = card;
+      this.selectedOp = null;
+    } else if (this.selectedNum1 && !this.selectedOp) {
+      // 1. sayıyı değiştir
+      if (this.selectedNum1.id === card.id) {
+        this.selectedNum1 = null; // Seçimi kaldır
+      } else {
+        this.selectedNum1 = card;
+      }
+    } else if (this.selectedNum1 && this.selectedOp) {
+      // 2. sayı seçildi -> İşlemi tamamla!
+      if (this.selectedNum1.id === card.id) {
+        return; // Aynı sayı kendisiyle işleme giremez
+      }
+      this.executeCalculation(this.selectedNum1, this.selectedOp, card);
+    }
+    this.renderScreen();
+  }
+
+  selectOperator(op) {
+    if (this.stage !== 'islem_play') return;
+    if (!this.selectedNum1) return;
+    sounds.playClick();
+    this.selectedOp = op;
+    this.renderScreen();
+  }
+
+  executeCalculation(num1Card, op, num2Card) {
+    const a = num1Card.value;
+    const b = num2Card.value;
+    let res = null;
+
+    if (op === '+') {
+      res = a + b;
+    } else if (op === '-') {
+      if (a <= b) {
+        alert('Çıkarma işleminde sonuç 0 veya eksi olamaz!');
+        return;
+      }
+      res = a - b;
+    } else if (op === '×') {
+      res = a * b;
+    } else if (op === '÷') {
+      if (b === 0 || a % b !== 0) {
+        alert('Bölme işlemi tam bölünmeli (kalanlı olamaz)!');
+        return;
+      }
+      res = a / b;
+    }
+
+    if (res === null) return;
+
+    sounds.playSlide();
+
+    // Kullanılan iki kartı devreden çıkar
+    num1Card.used = true;
+    num2Card.used = true;
+
+    // Yeni üretilen kartı ekle
+    const newId = `res_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const newCard = {
+      id: newId,
+      value: res,
+      used: false,
+      isResult: true
+    };
+    this.availableNumbers.push(newCard);
+
+    // Tarihçeye ekle
+    this.calcHistory.push({
+      num1Id: num1Card.id,
+      num2Id: num2Card.id,
+      num1Val: a,
+      op: op,
+      num2Val: b,
+      resVal: res,
+      newId: newId
+    });
+
+    // En yakın değeri güncelle
+    this.updateBestPlayerValue();
+
+    // Seçimleri sıfırla
+    this.selectedNum1 = null;
+    this.selectedOp = null;
+
+    // Eğer tam isabet bulunduysa hemen kutla
+    if (res === this.targetNumber) {
+      sounds.playApplause();
+      clearInterval(this.timerInterval);
+      setTimeout(() => this.finishIslemStage(), 600);
+      return;
+    }
+
+    this.renderScreen();
+  }
+
+  undoLastCalculation() {
+    if (this.calcHistory.length === 0) return;
+    sounds.playClick();
+
+    const last = this.calcHistory.pop();
+    
+    // Yeni kartı kaldır
+    this.availableNumbers = this.availableNumbers.filter(c => c.id !== last.newId);
+
+    // Eski iki kartı yeniden aktif yap
+    const c1 = this.availableNumbers.find(c => c.id === last.num1Id);
+    if (c1) c1.used = false;
+    const c2 = this.availableNumbers.find(c => c.id === last.num2Id);
+    if (c2) c2.used = false;
+
+    this.selectedNum1 = null;
+    this.selectedOp = null;
+    this.updateBestPlayerValue();
+    this.renderScreen();
+  }
+
+  updateBestPlayerValue() {
+    let closestVal = this.initialNumbers[0];
+    let closestDiff = Math.abs(closestVal - this.targetNumber);
+
+    for (const card of this.availableNumbers) {
+      const diff = Math.abs(card.value - this.targetNumber);
+      if (diff < closestDiff) {
+        closestDiff = diff;
+        closestVal = card.value;
+      }
+    }
+    this.bestPlayerValue = closestVal;
+  }
+
+  finishIslemStage() {
+    if (this.timerInterval) clearInterval(this.timerInterval);
+    this.stage = 'islem_result';
+
+    this.updateBestPlayerValue();
+    const diff = Math.abs(this.bestPlayerValue - this.targetNumber);
+
+    if (diff === 0) {
+      this.playerNumberPoints = 100;
+      sounds.playCorrect();
+    } else if (diff === 1) {
+      this.playerNumberPoints = 90;
+      sounds.playCorrect();
+    } else if (diff <= 5) {
+      this.playerNumberPoints = 75;
+      sounds.playCorrect();
+    } else if (diff <= 10) {
+      this.playerNumberPoints = 50;
+      sounds.playSlide();
+    } else if (diff <= 20) {
+      this.playerNumberPoints = 25;
+      sounds.playSlide();
+    } else {
+      this.playerNumberPoints = 0;
+      sounds.playWrong();
+    }
+
+    if (this.playerMode === 'duel') {
+      this.scores[this.currentTurn] += this.playerNumberPoints;
+    } else {
+      this.scores.solo += this.playerNumberPoints;
+    }
+
+    this.renderScreen();
+  }
+
+  nextRoundOrGameOver() {
+    sounds.playClick();
+    if (this.mode === 'full') {
+      if (this.playerMode === 'duel' && this.currentTurn === 'red') {
+        // Sıra Mavi Takıma geçer
+        this.currentTurn = 'blue';
+        this.startKelimeStage();
+        return;
+      }
+    }
+    // Oyun bitti
+    this.stage = 'game_over';
+    sounds.playApplause();
+    this.renderScreen();
+  }
+
+  updateTimerDisplay() {
+    const el = document.getElementById('ki-timer-seconds');
+    if (el) {
+      el.textContent = this.currentSeconds;
+      if (this.currentSeconds <= 5) {
+        el.style.color = '#EF4444';
+        el.style.transform = 'scale(1.2)';
+      } else {
+        el.style.color = 'var(--gold)';
+        el.style.transform = 'scale(1)';
+      }
+    }
+  }
+
+  // ========================================================
+  // 3. EKRAN RENDER VE ARAYÜZ
+  // ========================================================
+  renderScreen() {
+    const container = document.getElementById('screen-kelime-islem-content');
+    if (!container) return;
+
+    if (this.stage === 'setup') {
+      container.innerHTML = this.renderSetupView();
+      this.bindSetupEvents();
+    } else if (this.stage === 'kelime_draw') {
+      container.innerHTML = this.renderKelimeDrawView();
+      this.bindKelimeDrawEvents();
+    } else if (this.stage === 'kelime_play') {
+      container.innerHTML = this.renderKelimePlayView();
+      this.bindKelimePlayEvents();
+    } else if (this.stage === 'kelime_result') {
+      container.innerHTML = this.renderKelimeResultView();
+      this.bindKelimeResultEvents();
+    } else if (this.stage === 'islem_play') {
+      container.innerHTML = this.renderIslemPlayView();
+      this.bindIslemPlayEvents();
+    } else if (this.stage === 'islem_result') {
+      container.innerHTML = this.renderIslemResultView();
+      this.bindIslemResultEvents();
+    } else if (this.stage === 'game_over') {
+      container.innerHTML = this.renderGameOverView();
+      this.bindGameOverEvents();
+    }
+  }
+
+  renderScoreHeader() {
+    if (this.playerMode === 'duel') {
+      return `
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+          <div style="background:rgba(239,68,68,0.15); border:1.5px solid ${this.currentTurn === 'red' ? '#EF4444' : 'rgba(239,68,68,0.3)'}; border-radius:14px; padding:8px 12px; text-align:left; box-shadow:${this.currentTurn === 'red' ? '0 0 15px rgba(239,68,68,0.35)' : 'none'};">
+            <div style="font-size:0.75rem; font-weight:800; color:#EF4444;">🔴 Kırmızı Takım ${this.currentTurn === 'red' ? '★ SIRADA' : ''}</div>
+            <div style="font-size:1.3rem; font-weight:900; color:#FFF;">${this.scores.red} P</div>
+          </div>
+          <div style="background:rgba(59,130,246,0.15); border:1.5px solid ${this.currentTurn === 'blue' ? '#3B82F6' : 'rgba(59,130,246,0.3)'}; border-radius:14px; padding:8px 12px; text-align:left; box-shadow:${this.currentTurn === 'blue' ? '0 0 15px rgba(59,130,246,0.35)' : 'none'};">
+            <div style="font-size:0.75rem; font-weight:800; color:#3B82F6;">🔵 Mavi Takım ${this.currentTurn === 'blue' ? '★ SIRADA' : ''}</div>
+            <div style="font-size:1.3rem; font-weight:900; color:#FFF;">${this.scores.blue} P</div>
+          </div>
+        </div>
+      `;
+    }
+    return `
+      <div style="background:rgba(251,191,36,0.12); border:1.5px solid var(--gold); border-radius:14px; padding:8px 14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.85rem; font-weight:800; color:var(--gold);">👤 TEK KİŞİLİK PRATİK</span>
+        <span style="font-size:1.3rem; font-weight:900; color:#FFF;">${this.scores.solo} PUAN</span>
+      </div>
+    `;
+  }
+
+  // --- 3.1. SETUP VIEW ---
+  renderSetupView() {
+    return `
+      <div class="card" style="text-align:center; padding:22px; max-width:480px; margin:0 auto; background:linear-gradient(135deg, rgba(30,27,75,0.9), rgba(15,23,42,0.95)); border:2px solid rgba(0,245,212,0.4); border-radius:20px;">
+        <div style="font-size:3rem; margin-bottom:8px;">🧠</div>
+        <h2 style="font-size:1.6rem; font-weight:900; color:#FFF; margin-bottom:6px;">BİR KELİME BİR İŞLEM</h2>
+        <p style="font-size:0.85rem; color:#CBD5E1; line-height:1.45; margin-bottom:18px;">
+          Efsane televizyon yarışması arenada! 8 harf + 1 joker ile en uzun kelimeyi bul, 6 sayı ile 4 işlemi konuşturup hedef sayıyı tam 12'den vur!
+        </p>
+
+        <!-- Oyun Türü Çipleri -->
+        <div style="font-size:0.78rem; font-weight:800; color:var(--gold); text-align:left; margin-bottom:6px;">OYUN MODU:</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:16px;">
+          <button type="button" id="btn-mode-full" class="rule-chip ${this.mode === 'full' ? 'active' : ''}" style="padding:10px 4px; font-size:0.78rem; font-weight:900; justify-content:center; border-radius:12px; cursor:pointer;">
+            🏆 1K + 1İ (Tam)
+          </button>
+          <button type="button" id="btn-mode-kelime" class="rule-chip ${this.mode === 'kelime' ? 'active' : ''}" style="padding:10px 4px; font-size:0.78rem; font-weight:900; justify-content:center; border-radius:12px; cursor:pointer;">
+            🔤 Kelime Avı
+          </button>
+          <button type="button" id="btn-mode-islem" class="rule-chip ${this.mode === 'islem' ? 'active' : ''}" style="padding:10px 4px; font-size:0.78rem; font-weight:900; justify-content:center; border-radius:12px; cursor:pointer;">
+            🧮 Sayı Ustası
+          </button>
+        </div>
+
+        <!-- Oyuncu Modu -->
+        <div style="font-size:0.78rem; font-weight:800; color:var(--primary); text-align:left; margin-bottom:6px;">YARIŞMA TÜRÜ:</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:20px;">
+          <button type="button" id="btn-pmode-duel" class="btn-main ${this.playerMode === 'duel' ? 'active' : ''}" style="padding:10px; border-radius:14px; font-size:0.85rem; font-weight:900; background:${this.playerMode === 'duel' ? 'rgba(0,245,212,0.2)' : 'rgba(255,255,255,0.06)'}; border:1.5px solid ${this.playerMode === 'duel' ? 'var(--primary)' : 'rgba(255,255,255,0.15)'}; color:#FFF; cursor:pointer;">
+            ⚔️ Takım Düellosu (Kırmızı vs Mavi)
+          </button>
+          <button type="button" id="btn-pmode-solo" class="btn-main ${this.playerMode === 'solo' ? 'active' : ''}" style="padding:10px; border-radius:14px; font-size:0.85rem; font-weight:900; background:${this.playerMode === 'solo' ? 'rgba(0,245,212,0.2)' : 'rgba(255,255,255,0.06)'}; border:1.5px solid ${this.playerMode === 'solo' ? 'var(--primary)' : 'rgba(255,255,255,0.15)'}; color:#FFF; cursor:pointer;">
+            👤 Bireysel Rekor Pratiği
+          </button>
+        </div>
+
+        <button type="button" id="btn-start-kelime-islem" class="btn-main primary" style="font-size:1.15rem; font-weight:900; padding:15px; border-radius:999px; width:100%; box-shadow:0 6px 25px rgba(0,245,212,0.4); cursor:pointer;">
+          🚀 YARIŞMAYI BAŞLAT!
+        </button>
+      </div>
+    `;
+  }
+
+  bindSetupEvents() {
+    document.getElementById('btn-mode-full')?.addEventListener('click', () => this.setMode('full'));
+    document.getElementById('btn-mode-kelime')?.addEventListener('click', () => this.setMode('kelime'));
+    document.getElementById('btn-mode-islem')?.addEventListener('click', () => this.setMode('islem'));
+
+    document.getElementById('btn-pmode-duel')?.addEventListener('click', () => this.setPlayerMode('duel'));
+    document.getElementById('btn-pmode-solo')?.addEventListener('click', () => this.setPlayerMode('solo'));
+
+    document.getElementById('btn-start-kelime-islem')?.addEventListener('click', () => this.startNewGame());
+  }
+
+  // --- 3.2. KELİME HARF ÇEKİLİŞ VIEW ---
+  renderKelimeDrawView() {
+    const slots = [];
+    for (let i = 0; i < 9; i++) {
+      const letter = this.letters[i] || '';
+      const isJoker = i === 8;
+      slots.push(`
+        <div style="width:48px; height:52px; border-radius:12px; background:${letter ? (isJoker ? 'linear-gradient(135deg, #FBBF24, #D97706)' : 'rgba(0,245,212,0.18)') : 'rgba(0,0,0,0.4)'}; border:2px solid ${letter ? (isJoker ? 'var(--gold)' : 'var(--primary)') : 'rgba(255,255,255,0.2)'}; display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:900; color:${isJoker ? '#0B0E14' : '#FFF'}; box-shadow:${letter ? '0 4px 15px rgba(0,245,212,0.25)' : 'none'}; animation:${letter ? 'popIn 0.3s ease' : 'none'};">
+          ${letter || (isJoker ? '⭐' : '?')}
+        </div>
+      `);
+    }
+
+    return `
+      <div class="card" style="text-align:center; padding:18px; max-width:480px; margin:0 auto; background:linear-gradient(135deg, rgba(30,27,75,0.9), rgba(15,23,42,0.95)); border-radius:20px;">
+        ${this.renderScoreHeader()}
+
+        <div style="background:rgba(0,245,212,0.1); border:1px solid var(--primary); border-radius:12px; padding:8px 12px; margin-bottom:14px; font-size:0.85rem; font-weight:800; color:var(--primary);">
+          🔤 1. ETAP: HARF ÇEKİLİŞİ (${this.letters.length}/8 Harf + ⭐ Joker)
+        </div>
+
+        <div style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap; margin-bottom:20px;">
+          ${slots.join('')}
+        </div>
+
+        <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:14px;">
+          Orijinal yarışmadaki gibi sesli ve sessiz harfleri seçerek torbadan çek:
+        </p>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+          <button type="button" id="btn-draw-vowel" class="btn-main" style="background:linear-gradient(135deg, #EF4444, #B91C1C); color:#FFF; font-size:0.95rem; font-weight:900; padding:14px; border-radius:14px; cursor:pointer;" ${this.letters.length >= 8 ? 'disabled' : ''}>
+            🔴 Sesli Harf Çek (+)
+          </button>
+          <button type="button" id="btn-draw-consonant" class="btn-main" style="background:linear-gradient(135deg, #3B82F6, #1D4ED8); color:#FFF; font-size:0.95rem; font-weight:900; padding:14px; border-radius:14px; cursor:pointer;" ${this.letters.length >= 8 ? 'disabled' : ''}>
+            🔵 Sessiz Harf Çek (+)
+          </button>
+        </div>
+
+        <button type="button" id="btn-draw-auto" class="btn-secondary" style="font-size:0.88rem; font-weight:800; padding:11px; border-radius:12px; width:100%; cursor:pointer;">
+          ⚡ Otomatik 9 Harf Dağıt ve Başla
+        </button>
+      </div>
+    `;
+  }
+
+  bindKelimeDrawEvents() {
+    document.getElementById('btn-draw-vowel')?.addEventListener('click', () => this.drawVowel());
+    document.getElementById('btn-draw-consonant')?.addEventListener('click', () => this.drawConsonant());
+    document.getElementById('btn-draw-auto')?.addEventListener('click', () => this.drawAutoLetters());
+  }
+
+  // --- 3.3. KELİME YAZMA / OYNAMA VIEW ---
+  renderKelimePlayView() {
+    const letterButtons = this.letters.map((letter, idx) => {
+      const isSelected = this.selectedLetterIndices.includes(idx);
+      const isJoker = letter === '★';
+      return `
+        <button type="button" class="btn-letter-choice" data-idx="${idx}" style="width:46px; height:50px; border-radius:12px; background:${isSelected ? 'rgba(255,255,255,0.1)' : (isJoker ? 'linear-gradient(135deg, #FBBF24, #D97706)' : 'linear-gradient(135deg, #00F5D4, #00ba9f)')}; border:2px solid ${isJoker ? 'var(--gold)' : (isSelected ? 'rgba(255,255,255,0.2)' : 'var(--primary)')}; color:${isJoker ? '#0B0E14' : (isSelected ? 'rgba(255,255,255,0.3)' : '#0B0E14')}; font-size:1.45rem; font-weight:900; cursor:pointer; opacity:${isSelected ? '0.4' : '1'}; transform:${isSelected ? 'scale(0.92)' : 'scale(1)'}; transition:all 0.15s ease;">
+          ${letter}
+        </button>
+      `;
+    });
+
+    return `
+      <div class="card" style="text-align:center; padding:18px; max-width:480px; margin:0 auto; background:linear-gradient(135deg, rgba(30,27,75,0.9), rgba(15,23,42,0.95)); border-radius:20px;">
+        ${this.renderScoreHeader()}
+
+        <!-- Süre Sayacı ve Etap Başlığı -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <span style="font-size:0.8rem; font-weight:800; background:rgba(0,245,212,0.15); color:var(--primary); padding:4px 12px; border-radius:999px;">
+            🔤 KELİME TÜRETME
+          </span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:0.8rem; font-weight:800; color:var(--text-muted);">SÜRE:</span>
+            <span id="ki-timer-seconds" style="font-size:1.6rem; font-weight:900; color:var(--gold); transition:transform 0.15s ease;">
+              ${this.currentSeconds}
+            </span>
+          </div>
+        </div>
+
+        <!-- Yazılan Kelime Panosu -->
+        <div style="background:rgba(0,0,0,0.6); border:2px solid var(--primary); border-radius:16px; padding:14px; min-height:64px; display:flex; align-items:center; justify-content:center; margin-bottom:14px; box-shadow:0 0 20px rgba(0,245,212,0.25);">
+          <div style="font-size:1.8rem; font-weight:900; color:#FFF; letter-spacing:4px;">
+            ${this.currentWord || '<span style="color:rgba(255,255,255,0.25); font-size:1.1rem; letter-spacing:1px;">Harflere Dokunarak Yaz</span>'}
+          </div>
+        </div>
+
+        <!-- Joker Harf Seçici (Eğer joker kullanıldıysa) -->
+        <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:14px; background:rgba(251,191,36,0.1); border:1px dashed var(--gold); border-radius:12px; padding:6px 10px;">
+          <span style="font-size:0.75rem; font-weight:800; color:var(--gold);">⭐ JOKERİN HARFİ:</span>
+          <select id="select-joker-letter" style="background:#0F172A; border:1px solid var(--gold); color:#FFF; font-weight:900; font-size:0.9rem; padding:4px 8px; border-radius:8px;">
+            ${TURKISH_VOWELS.concat(TURKISH_CONSONANTS).map(c => `<option value="${c}" ${this.jokerLetter === c ? 'selected' : ''}>${c}</option>`).join('')}
+          </select>
+        </div>
+
+        <!-- Kullanılabilir Harfler -->
+        <div style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap; margin-bottom:16px;">
+          ${letterButtons.join('')}
+        </div>
+
+        <!-- Aksiyonlar -->
+        <div style="display:grid; grid-template-columns:1fr 2fr; gap:8px;">
+          <button type="button" id="btn-clear-word" class="btn-secondary" style="font-size:0.85rem; font-weight:800; padding:12px; border-radius:12px; cursor:pointer;">
+            🗑️ Temizle
+          </button>
+          <button type="button" id="btn-submit-word" class="btn-main primary" style="font-size:1rem; font-weight:900; padding:12px; border-radius:12px; cursor:pointer;">
+            ✅ Kelimeyi Onayla (${this.currentWord.length} Harf)
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  bindKelimePlayEvents() {
+    document.querySelectorAll('.btn-letter-choice').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.getAttribute('data-idx'), 10);
+        this.toggleLetterInWord(idx);
+      });
+    });
+
+    document.getElementById('select-joker-letter')?.addEventListener('change', (e) => {
+      this.setJokerLetter(e.target.value);
+    });
+
+    document.getElementById('btn-clear-word')?.addEventListener('click', () => this.clearWord());
+    document.getElementById('btn-submit-word')?.addEventListener('click', () => this.finishKelimeStage());
+  }
+
+  // --- 3.4. KELİME SONUÇ VIEW ---
+  renderKelimeResultView() {
+    const word = this.currentWord.trim().toLocaleUpperCase('tr-TR');
+    const isSuccess = this.playerWordPoints > 0;
+    const compWord = this.computerBestWord || { word: 'BULUNAMADI', length: 0, points: 0 };
+
+    return `
+      <div class="card" style="text-align:center; padding:18px; max-width:480px; margin:0 auto; background:linear-gradient(135deg, rgba(30,27,75,0.9), rgba(15,23,42,0.95)); border-radius:20px;">
+        ${this.renderScoreHeader()}
+
+        <div style="font-size:2.4rem; margin-bottom:4px;">
+          ${isSuccess ? '🎉' : '❌'}
+        </div>
+        <h3 style="font-size:1.35rem; font-weight:900; color:#FFF; margin-bottom:12px;">
+          ${isSuccess ? 'TEBRİKLER! GEÇERLİ KELİME' : 'GEÇERSİZ VEYA BULUNAMADI'}
+        </h3>
+
+        <!-- Oyuncunun Kelimesi -->
+        <div style="background:rgba(0,0,0,0.4); border:1.5px solid ${isSuccess ? '#10B981' : '#EF4444'}; border-radius:16px; padding:14px; margin-bottom:12px;">
+          <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); margin-bottom:4px;">SENİN KELİMEN:</div>
+          <div style="font-size:1.6rem; font-weight:900; color:${isSuccess ? '#10B981' : '#EF4444'}; letter-spacing:2px;">
+            ${word || '(BOŞ)'}
+          </div>
+          <div style="font-size:1.1rem; font-weight:900; color:var(--gold); margin-top:4px;">
+            +${this.playerWordPoints} PUAN
+          </div>
+          ${!isSuccess && word.length >= 3 ? `
+            <button type="button" id="btn-jury-accept" style="margin-top:8px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.3); color:#FFF; font-size:0.78rem; font-weight:800; padding:6px 14px; border-radius:8px; cursor:pointer;">
+              ⚖️ Jüri / Masadakiler Onaylasın (Geçerli Say)
+            </button>
+          ` : ''}
+        </div>
+
+        <!-- Bilgisayarın En Uzun Kelimesi -->
+        <div style="background:linear-gradient(135deg, rgba(251,191,36,0.15), rgba(0,0,0,0.5)); border:1.5px solid var(--gold); border-radius:16px; padding:14px; margin-bottom:16px;">
+          <div style="font-size:0.75rem; font-weight:800; color:var(--gold); margin-bottom:4px;">🤖 BİLGİSAYARIN EN UZUN KELİMESİ:</div>
+          <div style="font-size:1.4rem; font-weight:900; color:#FFF; letter-spacing:2px;">
+            "${compWord.word}" (${compWord.length} Harf)
+          </div>
+          <div style="font-size:0.85rem; font-weight:800; color:var(--gold); margin-top:2px;">
+            Maksimum Puan: ${compWord.points} P
+          </div>
+        </div>
+
+        <!-- Sonraki Adım Butonu -->
+        ${this.mode === 'full' ? `
+          <button type="button" id="btn-goto-islem" class="btn-main primary" style="font-size:1.05rem; font-weight:900; padding:14px; border-radius:999px; width:100%; box-shadow:0 6px 20px rgba(0,245,212,0.4); cursor:pointer;">
+            ➡️ 2. Etap: Bir İşlem Etabına Geç
+          </button>
+        ` : `
+          <button type="button" id="btn-next-round" class="btn-main primary" style="font-size:1.05rem; font-weight:900; padding:14px; border-radius:999px; width:100%; cursor:pointer;">
+            🔄 Yeni Tur Başlat
+          </button>
+        `}
+      </div>
+    `;
+  }
+
+  bindKelimeResultEvents() {
+    document.getElementById('btn-jury-accept')?.addEventListener('click', () => this.acceptWordByJury());
+    document.getElementById('btn-goto-islem')?.addEventListener('click', () => this.startIslemStage());
+    document.getElementById('btn-next-round')?.addEventListener('click', () => this.nextRoundOrGameOver());
+  }
+
+  // --- 3.5. İŞLEM OYNAMA VIEW ---
+  renderIslemPlayView() {
+    const numCards = this.availableNumbers.map(c => {
+      if (c.used) return '';
+      const isSelected = this.selectedNum1 && this.selectedNum1.id === c.id;
+      return `
+        <button type="button" class="btn-islem-num" data-id="${c.id}" style="min-width:54px; height:54px; padding:0 12px; border-radius:14px; background:${isSelected ? 'linear-gradient(135deg, #00F5D4, #00ba9f)' : (c.isResult ? 'linear-gradient(135deg, #8B5CF6, #6D28D9)' : 'rgba(255,255,255,0.08)')}; border:2px solid ${isSelected ? '#FFF' : (c.isResult ? '#A78BFA' : 'rgba(255,255,255,0.25)')}; color:${isSelected ? '#0B0E14' : '#FFF'}; font-size:1.35rem; font-weight:900; cursor:pointer; box-shadow:${isSelected ? '0 0 20px rgba(0,245,212,0.6)' : 'none'}; transform:${isSelected ? 'scale(1.08)' : 'scale(1)'}; transition:all 0.15s ease;">
+          ${c.value}
+        </button>
+      `;
+    }).filter(Boolean);
+
+    const ops = ['+', '-', '×', '÷'].map(op => {
+      const isSelected = this.selectedOp === op;
+      return `
+        <button type="button" class="btn-islem-op" data-op="${op}" style="flex:1; height:48px; border-radius:12px; background:${isSelected ? 'linear-gradient(135deg, #FBBF24, #D97706)' : 'rgba(0,0,0,0.5)'}; border:2px solid ${isSelected ? '#FFF' : 'rgba(251,191,36,0.35)'}; color:${isSelected ? '#0B0E14' : 'var(--gold)'}; font-size:1.6rem; font-weight:900; cursor:pointer; transition:all 0.15s ease;">
+          ${op}
+        </button>
+      `;
+    });
+
+    const diff = Math.abs((this.bestPlayerValue || 0) - this.targetNumber);
+
+    return `
+      <div class="card" style="text-align:center; padding:18px; max-width:480px; margin:0 auto; background:linear-gradient(135deg, rgba(30,27,75,0.9), rgba(15,23,42,0.95)); border-radius:20px;">
+        ${this.renderScoreHeader()}
+
+        <!-- Hedef Sayı ve Kalan Süre -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <span style="font-size:0.8rem; font-weight:800; background:rgba(251,191,36,0.15); color:var(--gold); padding:4px 12px; border-radius:999px;">
+            🧮 2. ETAP: BİR İŞLEM
+          </span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:0.8rem; font-weight:800; color:var(--text-muted);">SÜRE:</span>
+            <span id="ki-timer-seconds" style="font-size:1.6rem; font-weight:900; color:var(--gold);">
+              ${this.currentSeconds}
+            </span>
+          </div>
+        </div>
+
+        <!-- HEDEF SAYI DEV PANELİ -->
+        <div style="background:linear-gradient(135deg, rgba(0,0,0,0.7), rgba(15,23,42,0.9)); border:2.5px solid var(--gold); border-radius:18px; padding:14px; margin-bottom:14px; box-shadow:0 0 25px rgba(251,191,36,0.25);">
+          <div style="font-size:0.75rem; font-weight:800; color:var(--gold); letter-spacing:1px; margin-bottom:2px;">HEDEF SAYI</div>
+          <div style="font-size:2.8rem; font-weight:900; color:#FFF; font-family:monospace; letter-spacing:3px; line-height:1;">
+            ${this.targetNumber}
+          </div>
+          <div style="font-size:0.8rem; font-weight:800; color:#CBD5E1; margin-top:6px;">
+            Şu anki En Yakın Değerin: <span style="color:#00F5D4; font-weight:900;">${this.bestPlayerValue || 0}</span> (Fark: ${diff})
+          </div>
+        </div>
+
+        <!-- Seçim Durumu Bilgi Çubuğu -->
+        <div style="background:rgba(0,0,0,0.35); border-radius:10px; padding:6px 12px; margin-bottom:12px; font-size:0.82rem; font-weight:800; color:var(--primary); min-height:30px; display:flex; align-items:center; justify-content:center;">
+          ${!this.selectedNum1 ? '👉 Birinci sayıyı seçin' : (!this.selectedOp ? `👉 Seçildi: [ ${this.selectedNum1.value} ] Şimdi bir işlem (+, -, ×, ÷) seçin` : `👉 Seçildi: [ ${this.selectedNum1.value} ] ${this.selectedOp} Şimdi ikinci sayıyı seçin`)}
+        </div>
+
+        <!-- Sayı Kartları -->
+        <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+          ${numCards.join('')}
+        </div>
+
+        <!-- İşlem Butonları -->
+        <div style="display:flex; gap:8px; margin-bottom:14px;">
+          ${ops.join('')}
+        </div>
+
+        <!-- Yapılan Adımlar Listesi -->
+        <div style="background:rgba(0,0,0,0.4); border-radius:12px; padding:10px; margin-bottom:14px; min-height:50px; text-align:left; font-size:0.82rem; font-weight:800; color:#FFF; max-height:100px; overflow-y:auto;">
+          ${this.calcHistory.length === 0 ? '<span style="color:var(--text-muted); font-size:0.75rem;">Henüz bir işlem yapılmadı...</span>' : this.calcHistory.map((h, i) => `<div>${i + 1}) ${h.num1Val} ${h.op} ${h.num2Val} = <strong>${h.resVal}</strong></div>`).join('')}
+        </div>
+
+        <!-- Alt Aksiyonlar -->
+        <div style="display:grid; grid-template-columns:1fr 2fr; gap:8px;">
+          <button type="button" id="btn-undo-islem" class="btn-secondary" style="font-size:0.85rem; font-weight:800; padding:12px; border-radius:12px; cursor:pointer;" ${this.calcHistory.length === 0 ? 'disabled' : ''}>
+            ↩️ Geri Al
+          </button>
+          <button type="button" id="btn-submit-islem" class="btn-main primary" style="font-size:1rem; font-weight:900; padding:12px; border-radius:12px; cursor:pointer;">
+            ✅ Tamamla (${this.bestPlayerValue || 0})
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  bindIslemPlayEvents() {
+    document.querySelectorAll('.btn-islem-num').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        this.selectNumberCard(id);
+      });
+    });
+
+    document.querySelectorAll('.btn-islem-op').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const op = e.currentTarget.getAttribute('data-op');
+        this.selectOperator(op);
+      });
+    });
+
+    document.getElementById('btn-undo-islem')?.addEventListener('click', () => this.undoLastCalculation());
+    document.getElementById('btn-submit-islem')?.addEventListener('click', () => this.finishIslemStage());
+  }
+
+  // --- 3.6. İŞLEM SONUÇ VIEW ---
+  renderIslemResultView() {
+    const diff = Math.abs(this.bestPlayerValue - this.targetNumber);
+    const comp = this.computerSolution || { bestVal: 0, bestDiff: 999, bestSteps: [] };
+
+    return `
+      <div class="card" style="text-align:center; padding:18px; max-width:480px; margin:0 auto; background:linear-gradient(135deg, rgba(30,27,75,0.9), rgba(15,23,42,0.95)); border-radius:20px;">
+        ${this.renderScoreHeader()}
+
+        <div style="font-size:2.4rem; margin-bottom:4px;">
+          ${diff === 0 ? '🎯' : (diff <= 5 ? '👏' : '🤔')}
+        </div>
+        <h3 style="font-size:1.35rem; font-weight:900; color:#FFF; margin-bottom:12px;">
+          ${diff === 0 ? 'TAM İSABET! (12\'DEN VURDUN)' : `HEDEFE ${diff} KALDI!`}
+        </h3>
+
+        <!-- Oyuncu Değeri -->
+        <div style="background:rgba(0,0,0,0.4); border:1.5px solid ${diff === 0 ? '#10B981' : '#FBBF24'}; border-radius:16px; padding:14px; margin-bottom:12px;">
+          <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted);">HEDEF: ${this.targetNumber} | SENİN DEĞERİN:</div>
+          <div style="font-size:2rem; font-weight:900; color:${diff === 0 ? '#10B981' : 'var(--gold)'}; font-family:monospace;">
+            ${this.bestPlayerValue}
+          </div>
+          <div style="font-size:1.1rem; font-weight:900; color:#FFF; margin-top:2px;">
+            +${this.playerNumberPoints} PUAN
+          </div>
+        </div>
+
+        <!-- Bilgisayarın Çözümü -->
+        <div style="background:linear-gradient(135deg, rgba(0,245,212,0.1), rgba(0,0,0,0.5)); border:1.5px solid var(--primary); border-radius:16px; padding:14px; margin-bottom:16px; text-align:left;">
+          <div style="font-size:0.75rem; font-weight:800; color:var(--primary); margin-bottom:6px; text-align:center;">
+            🤖 BİLGİSAYARIN ADIM ADIM ÇÖZÜMÜ:
+          </div>
+          <div style="font-size:0.85rem; font-weight:900; color:#FFF; line-height:1.6; font-family:monospace; background:rgba(0,0,0,0.4); padding:8px 12px; border-radius:10px;">
+            ${comp.bestSteps && comp.bestSteps.length > 0 ? comp.bestSteps.map((s, i) => `<div>${i + 1}) ${s}</div>`).join('') : 'Çözüm bulunamadı'}
+          </div>
+          <div style="font-size:0.75rem; color:#A78BFA; font-weight:800; text-align:center; margin-top:6px;">
+            Bilgisayar Değeri: ${comp.bestVal} (Fark: ${comp.bestDiff})
+          </div>
+        </div>
+
+        <button type="button" id="btn-next-action" class="btn-main primary" style="font-size:1.05rem; font-weight:900; padding:14px; border-radius:999px; width:100%; box-shadow:0 6px 20px rgba(0,245,212,0.4); cursor:pointer;">
+          ${this.mode === 'full' && this.playerMode === 'duel' && this.currentTurn === 'red' ? '🔵 Mavi Takımın Sırasına Geç ➔' : '🏆 Sonuç Tablosu / Yeni Tur ➔'}
+        </button>
+      </div>
+    `;
+  }
+
+  bindIslemResultEvents() {
+    document.getElementById('btn-next-action')?.addEventListener('click', () => this.nextRoundOrGameOver());
+  }
+
+  // --- 3.7. GAME OVER VIEW ---
+  renderGameOverView() {
+    let winnerText = '';
+    if (this.playerMode === 'duel') {
+      if (this.scores.red > this.scores.blue) {
+        winnerText = '🏆 KIRMIZI TAKIM KAZANDI!';
+      } else if (this.scores.blue > this.scores.red) {
+        winnerText = '🏆 MAVİ TAKIM KAZANDI!';
+      } else {
+        winnerText = '🤝 DOSTLUK KAZANDI! BERABERE!';
+      }
+    } else {
+      winnerText = `🏆 TEBRİKLER! TOPLAM SKORUN: ${this.scores.solo} PUAN`;
+    }
+
+    return `
+      <div class="card" style="text-align:center; padding:24px; max-width:480px; margin:0 auto; background:linear-gradient(135deg, rgba(30,27,75,0.95), rgba(15,23,42,0.98)); border:2px solid var(--gold); border-radius:24px; box-shadow:0 0 35px rgba(251,191,36,0.3);">
+        <div style="font-size:3.5rem; margin-bottom:8px;">🏆</div>
+        <h2 style="font-size:1.6rem; font-weight:900; color:var(--gold); margin-bottom:14px;">
+          ${winnerText}
+        </h2>
+
+        ${this.playerMode === 'duel' ? `
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+            <div style="background:rgba(239,68,68,0.2); border:2px solid #EF4444; border-radius:16px; padding:14px;">
+              <div style="font-size:0.85rem; font-weight:800; color:#EF4444;">🔴 KIRMIZI TAKIM</div>
+              <div style="font-size:2rem; font-weight:900; color:#FFF;">${this.scores.red} P</div>
+            </div>
+            <div style="background:rgba(59,130,246,0.2); border:2px solid #3B82F6; border-radius:16px; padding:14px;">
+              <div style="font-size:0.85rem; font-weight:800; color:#3B82F6;">🔵 MAVİ TAKIM</div>
+              <div style="font-size:2rem; font-weight:900; color:#FFF;">${this.scores.blue} P</div>
+            </div>
+          </div>
+        ` : `
+          <div style="background:rgba(251,191,36,0.15); border:2px solid var(--gold); border-radius:16px; padding:16px; margin-bottom:20px;">
+            <div style="font-size:0.85rem; font-weight:800; color:var(--gold);">TOPLAM KELİME & İŞLEM PUANI</div>
+            <div style="font-size:2.6rem; font-weight:900; color:#FFF;">${this.scores.solo}</div>
+          </div>
+        `}
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <button type="button" id="btn-play-again" class="btn-main primary" style="font-size:1rem; font-weight:900; padding:14px; border-radius:14px; cursor:pointer;">
+            🔄 Tekrar Oyna
+          </button>
+          <button type="button" id="btn-back-to-arena" class="btn-secondary" style="font-size:1rem; font-weight:800; padding:14px; border-radius:14px; cursor:pointer;">
+            ← Parti Arenası
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  bindGameOverEvents() {
+    document.getElementById('btn-play-again')?.addEventListener('click', () => this.startNewGame());
+    document.getElementById('btn-back-to-arena')?.addEventListener('click', () => {
+      this.game.showScreen('partyGames');
+    });
+  }
+}

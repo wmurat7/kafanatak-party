@@ -490,6 +490,30 @@
           </button>
         </div>
       </div>
+
+      <!-- 11. Bir Kelime Bir İşlem -->
+      <div class="party-game-card" style="background:linear-gradient(135deg, rgba(30,27,75,0.85), rgba(15,23,42,0.95)); border:2px solid rgba(0,245,212,0.45); border-radius:20px; padding:18px; box-shadow:0 10px 30px rgba(0,245,212,0.18);">
+        <div class="party-card-header">
+          <div class="party-card-tags">
+            <span class="party-tag party-tag-cyan">🔤 Kelime Avı</span>
+            <span class="party-tag party-tag-gold">🧮 Sayı Bulmaca</span>
+            <span class="party-tag party-tag-pink">⏱️ 45 Saniye</span>
+          </div>
+          <div class="party-card-icon-wrap" style="background:rgba(0,245,212,0.18); border:1.5px solid rgba(0,245,212,0.45); box-shadow:0 0 15px rgba(0,245,212,0.3);">
+            <span class="party-card-icon">🧠</span>
+          </div>
+        </div>
+        <h3 style="font-size:1.35rem; font-weight:900; color:#FFF; margin-bottom:4px;">Bir Kelime Bir İşlem</h3>
+        <p style="font-size:0.84rem; color:#CBD5E1; line-height:1.4; margin-bottom:14px;">TRT efsanesi yarışma! 8 harf + 1 joker ile en uzun kelimeyi türet; 6 sayı ve 4 işlem ile hedef sayıyı tam 12'den vur!</p>
+        <div style="display:grid; grid-template-columns:1fr 1.3fr; gap:8px;">
+          <button type="button" class="btn-party-guide" data-game-guide="kelime-islem" style="background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.2); border-radius:12px; color:#FFF; font-size:0.85rem; font-weight:800; padding:11px; cursor:pointer;">
+            📖 Nasıl Oynanır?
+          </button>
+          <button type="button" id="btn-open-kelime-islem-game" class="btn-main primary" style="font-size:0.92rem; font-weight:900; padding:11px 14px; border-radius:12px; display:flex; justify-content:center; align-items:center; gap:6px;">
+            <span>🧠 Yarışmayı Başlat</span> <span>➔</span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Parti Oyunları Ekranında Alt Dock Çubuğu -->
@@ -1853,6 +1877,23 @@
       </button>
     </div>
   </div>
+
+  <!-- =========================================
+       5.11. BİR KELİME BİR İŞLEM OYUN ALANI
+       ========================================= -->
+  <section id="screen-kelime-islem" class="screen kelime-islem-screen" style="padding: calc(env(safe-area-inset-top, 24px) + 20px) 16px 100px; max-width: 520px; margin: 0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <button type="button" id="btn-back-from-kelime-islem" class="btn-round-abort" style="margin:0; position:static;">
+        <span>← Parti Arenası</span>
+      </button>
+      <span style="font-size:0.8rem; font-weight:800; background:rgba(0,245,212,0.15); color:var(--primary); border:1px solid var(--primary); padding:4px 12px; border-radius:999px;">
+        🧠 BİR KELİME BİR İŞLEM
+      </span>
+    </div>
+
+    <!-- Dinamik Oyun İçerik Alanı -->
+    <div id="screen-kelime-islem-content"></div>
+  </section>
 
   <!-- =========================================
        VAMPİR - KÖYLÜ KURALLAR & REHBER MODALI

@@ -288,6 +288,32 @@ export const PARTY_GUIDES = {
       '💡 Cümleyi tahmin ederken acele etmeyin; harf açtırarak puanınızı iyice yükseltip son darbeyi vurun!'
     ],
     launchAction: 'carkifelek'
+  },
+
+  'kelime-islem': {
+    id: 'kelime-islem',
+    title: 'Bir Kelime Bir İşlem',
+    badge: '🔤 KELİME TÜRETME • 🧮 SAYI BULMACA • ⏱️ 45 SANİYE',
+    icon: '🧠',
+    players: '1-10 Kişi (Bireysel veya Takım)',
+    duration: '3 - 6 Dakika / Tur',
+    objective: '8 harf + 1 joker ile en uzun Türkçe kelimeyi türetmek ve 6 sayı ile 4 işlemi kullanarak hedef sayıyı tam vurmak!',
+    howToPlay: [
+      '1. 1. Etap (Bir Kelime): Sesli ve sessiz harf butonlarına basarak 8 harf çekin (9. harf altın ⭐ Jokerdir).',
+      '2. 45 saniye sürede harflere dokunarak en uzun geçerli Türkçe kelimeyi oluşturun.',
+      '3. 2. Etap (Bir İşlem): 3 basamaklı hedef sayı (Örn: 648) ve 6 sayı verilir (5 küçük + 1 büyük sayı).',
+      '4. Dört işlem (+, -, ×, ÷) kullanarak hedef sayıya tam isabet yapmaya veya en çok yaklaşmaya çalışın!',
+      '5. Süre bitince yapay zeka hakem hem en uzun kelimeyi hem de işlemin tam adımlarını ekrana yansıtır.'
+    ],
+    scoring: [
+      '🔤 Kelime Etabı: Harf sayısı x 10 puan (8 harfli ise +20 bonus, 9 harfli ise +50 bonus).',
+      '🎯 İşlem Etabı: Tam İsabet: 100 Puan | Fark 1: 90 Puan | Fark 2-5: 75 Puan | Fark 6-10: 50 Puan.'
+    ],
+    tips: [
+      '💡 Joker harfi istediğiniz herhangi bir harf yerine seçebilirsiniz; kök kelimelere takı ekleyerek kelimeyi uzatın!',
+      '💡 İşlem etabında büyük sayı ile küçük sayıları çarparak hedefin civarına yaklaşın, kalan farkı küçük sayılarla kapatın.'
+    ],
+    launchAction: 'kelime-islem'
   }
 };
 
@@ -357,6 +383,9 @@ export function triggerGameLaunch(action, appInstance) {
   } else if (action === 'carkifelek') {
     appInstance.showScreen('carkifelek');
     if (appInstance.carkifelekEngine) appInstance.carkifelekEngine.init();
+  } else if (action === 'kelime-islem') {
+    appInstance.showScreen('kelimeIslem');
+    if (appInstance.kelimeIslemEngine) appInstance.kelimeIslemEngine.init();
   }
 }
 
