@@ -570,28 +570,21 @@ export class VampireGameEngine {
       <div class="card" style="text-align:center; padding:35px; max-width:440px; margin:0 auto;">
         <div class="ai-spinner" style="width:40px; height:40px; border-width:4px; margin:0 auto 14px;"></div>
         <h3 style="color:#FFF; font-size:1.2rem; font-weight:900;">Bulut Oda Kuruluyor...</h3>
-        <p style="color:var(--text-dim); font-size:0.85rem; margin-top:6px;">Firebase üzerinden oda kodu oluşturuluyor...</p>
+        <p style="color:var(--text-dim); font-size:0.85rem; margin-top:6px;">Bulut odası ve QR kod oluşturuluyor...</p>
       </div>
     `;
 
-    const result = await this.createMultiplayerRoom(this.app?.profile?.name || 'Köy Muhtarı');
-    if (!result.success) {
-      container.innerHTML = `
-        <div class="card" style="text-align:center; max-width:460px; margin:0 auto; padding:22px; border:2px solid #EF4444;">
-          <div style="font-size:3rem; margin-bottom:6px;">⚠️</div>
-          <h2 style="font-size:1.4rem; font-weight:900; color:#EF4444; margin-bottom:8px;">Oda Kurulamadı!</h2>
-          <p style="font-size:0.86rem; color:#FCA5A5; line-height:1.4; margin-bottom:14px;">
-            ${result.error || 'İnternet bağlantınızı kontrol edin.'}
-          </p>
-          <button type="button" id="btn-retry-cloud-room" class="btn-main primary" style="font-size:1rem; padding:12px;">
-            🔄 Yeniden Dene
-          </button>
-        </div>
-      `;
-      document.getElementById('btn-retry-cloud-room').addEventListener('click', () => {
-        this.renderMultiLobbyScreen();
-      });
-    }
+    await this.createMultiplayerRoom(this.app?.profile?.name || 'Köy Muhtarı');
+    
+    // Lobi ekranını gecikmesiz aç
+    this.renderMultiHostScreen({
+      roomId: this.roomId,
+      phase: 'lobby',
+      dayNumber: 1,
+      players: this.players || [],
+      narratorText: 'Köy meydanında halk toplanıyor... Host oyunu başlattığında roller dağıtılacaktır.',
+      winner: null
+    });
   }
 
   async createMultiplayerRoom(hostName) {
@@ -620,9 +613,10 @@ export class VampireGameEngine {
       lastActive: Date.now()
     };
 
-    const res = await firebaseNetwork.createRoom('vampire', initialRoom);
-    if (!res.success && !res.fallback) {
-      return { success: false, error: res.error };
+    try {
+      await firebaseNetwork.createRoom('vampire', initialRoom);
+    } catch (err) {
+      console.warn('[Vampire] Firebase createRoom fallback:', err);
     }
 
     this.startHostFirebaseSync();
@@ -698,8 +692,8 @@ export class VampireGameEngine {
             Arkadaşlarınız kendi telefonlarından aşağıdaki QR kodu okutarak veya kodu girerek odaya katılabilir:
           </p>
 
-          <div id="vampire-qr-box" style="background:#FFF; padding:12px; border-radius:18px; display:inline-block; margin-bottom:14px; box-shadow:0 8px 30px rgba(0,245,212,0.4);">
-            <canvas id="vampire-qr-canvas" width="220" height="220" style="display:block;"></canvas>
+          <div id="vampire-qr-box" style="background:#FFF; padding:10px; border-radius:18px; display:inline-block; margin-bottom:14px; box-shadow:0 8px 30px rgba(0,245,212,0.4);">
+            <canvas id="vampire-qr-canvas" width="220" height="220" style="display:block; max-width:100%; border-radius:10px;"></canvas>
           </div>
 
           <div style="font-size:0.82rem; color:var(--text-dim); margin-bottom:10px; word-break:break-all;">

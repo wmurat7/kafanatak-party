@@ -583,12 +583,14 @@
     <!-- STAGE 1: LOBİ & ÇARK ÇEVİRME -->
     <div id="isim-stage-setup" class="card" style="margin-bottom:14px;">
       <!-- Mod Seçimi -->
-      <div style="display:flex; gap:8px; margin-bottom:14px;">
-        <button type="button" id="btn-isim-mode-local" class="btn-main active" style="flex:1; font-size:0.85rem; padding:10px 8px; border-radius:12px; background:rgba(0,245,212,0.2); border:1.5px solid var(--primary); color:#FFF;">
-          🎲 Tek Cihaz (Masada Oyna)
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <button type="button" id="btn-isim-mode-local" class="btn-main active" style="flex:1; padding:10px 8px; border-radius:14px; background:rgba(0,245,212,0.18); border:1.5px solid var(--primary); color:#FFF; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer;">
+          <div style="font-size:0.92rem; font-weight:900; letter-spacing:0.3px;">🎲 Tek Cihaz</div>
+          <div style="font-size:0.72rem; font-weight:700; color:var(--gold); opacity:0.95;">Masada Oyna</div>
         </button>
-        <button type="button" id="btn-isim-mode-wifi" class="btn-main" style="flex:1; font-size:0.85rem; padding:10px 8px; border-radius:12px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.15); color:var(--text-dim);">
-          ☁️ Çoklu Telefon (Bulut / QR)
+        <button type="button" id="btn-isim-mode-wifi" class="btn-main" style="flex:1; padding:10px 8px; border-radius:14px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.15); color:var(--text-dim); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer;">
+          <div style="font-size:0.92rem; font-weight:900; letter-spacing:0.3px;">☁️ Çoklu Cihaz</div>
+          <div style="font-size:0.72rem; font-weight:700; color:var(--primary); opacity:0.85;">Bulut / QR Bağlantı</div>
         </button>
       </div>
 
@@ -737,13 +739,54 @@
       <button type="button" id="btn-back-from-sarki-duello" class="btn-round-abort" style="margin:0; position:static;">
         <span>← Parti Arenası</span>
       </button>
-      <div id="sarki-score-box" style="display:none; gap:8px;">
+      <span style="font-size:0.8rem; font-weight:800; background:rgba(168,85,247,0.2); color:#C084FC; border:1px solid rgba(168,85,247,0.4); padding:4px 12px; border-radius:999px;">
+        🎤 MELODİ DÜELLOSU
+      </span>
+    </div>
+
+    <!-- Mod Seçimi (Tek Cihaz / Çoklu Cihaz) -->
+    <div style="display:flex; gap:10px; margin-bottom:14px;">
+      <button type="button" id="btn-sarki-mode-local" class="btn-main active" style="flex:1; padding:10px 8px; border-radius:14px; background:rgba(0,245,212,0.18); border:1.5px solid var(--primary); color:#FFF; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer;">
+        <div style="font-size:0.92rem; font-weight:900; letter-spacing:0.3px;">🎲 Tek Cihaz</div>
+        <div style="font-size:0.72rem; font-weight:700; color:var(--gold); opacity:0.95;">Masada Takımlar</div>
+      </button>
+      <button type="button" id="btn-sarki-mode-wifi" class="btn-main" style="flex:1; padding:10px 8px; border-radius:14px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.15); color:var(--text-dim); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer;">
+        <div style="font-size:0.92rem; font-weight:900; letter-spacing:0.3px;">☁️ Çoklu Cihaz</div>
+        <div style="font-size:0.72rem; font-weight:700; color:var(--primary); opacity:0.85;">Bulut / QR Buzzer</div>
+      </button>
+    </div>
+
+    <!-- Çoklu Cihaz Bulut Lobi Kutusu -->
+    <div id="sarki-wifi-box" style="display:none; background:rgba(0,0,0,0.35); border-radius:16px; padding:16px; margin-bottom:14px; text-align:center;">
+      <div style="font-size:0.8rem; font-weight:800; color:var(--text-dim); margin-bottom:4px;">YARIŞMACILAR BU QR'I OKUTARAK ODAYA BAĞLANSIN:</div>
+      <div style="font-size:0.75rem; color:#00F5D4; font-weight:800; margin-bottom:6px;">☁️ Herkes kendi telefonundan şarkıyı görür ve ilk basan söyler!</div>
+      <div id="sarki-qr-canvas" style="display:inline-block; margin:6px 0; border:2px solid var(--primary); border-radius:12px; padding:6px; background:#0B0E14;"></div>
+      <div style="font-size:1.1rem; font-weight:900; color:var(--gold); margin-top:2px;">
+        ODA KODU: <span id="lbl-sarki-room-code" style="letter-spacing:3px;">----</span>
+      </div>
+      <div id="sarki-player-count-badge" style="font-size:0.8rem; font-weight:800; color:var(--primary); margin-top:4px;">0 Oyuncu Bağlı</div>
+      <div id="sarki-connected-players" style="display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin:10px 0;"></div>
+      <button type="button" id="btn-sarki-start-multi" class="btn-main primary" style="font-size:1rem; font-weight:900; padding:12px; width:100%; border-radius:12px; box-shadow:0 0 20px rgba(0,245,212,0.4); margin-top:6px;">
+        🚀 ŞARKI DÜELLOSUNU BAŞLAT ➔
+      </button>
+    </div>
+
+    <!-- Aktif Yarışma Kartı -->
+    <div id="sarki-play-stage" class="card" style="text-align:center; padding:22px 18px;">
+      <!-- Skor Kutusu -->
+      <div id="sarki-score-box" style="display:none; justify-content:center; gap:8px; margin-bottom:12px;">
         <span id="sarki-score-a" style="font-size:0.8rem; font-weight:800; background:rgba(239,68,68,0.2); color:#EF4444; padding:4px 10px; border-radius:8px;">🔴 0 P</span>
         <span id="sarki-score-b" style="font-size:0.8rem; font-weight:800; background:rgba(59,130,246,0.2); color:#3B82F6; padding:4px 10px; border-radius:8px;">🔵 0 P</span>
       </div>
-    </div>
+      <div id="sarki-multi-scores-bar" style="display:none; flex-wrap:wrap; justify-content:center; gap:6px; margin-bottom:12px;"></div>
 
-    <div class="card" style="text-align:center; padding:22px 18px;">
+      <!-- Canlı Buzzer İhbar Kutusu -->
+      <div id="sarki-buzzer-alert" style="display:none; background:linear-gradient(135deg, rgba(239,68,68,0.3), rgba(251,191,36,0.3)); border:2px solid #FBBF24; border-radius:14px; padding:10px 14px; margin-bottom:12px; animation:pulse 0.8s infinite alternate;">
+        <div style="font-size:0.82rem; font-weight:800; color:#FBBF24;">🚨 BUTONA İLK BASAN YARIŞMACI:</div>
+        <div id="sarki-buzzer-player-name" style="font-size:1.25rem; font-weight:900; color:#FFF; margin-top:2px;">Ahmet</div>
+        <div style="font-size:0.75rem; color:#CBD5E1; margin-top:2px;">Sözleri sesli olarak tamamlaması bekleniyor!</div>
+      </div>
+
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <span id="sarki-genre" style="font-size:0.75rem; font-weight:800; background:rgba(168,85,247,0.2); color:#C084FC; padding:3px 10px; border-radius:999px;">🎸 Rock</span>
         <div id="sarki-timer" style="font-size:1.4rem; font-weight:900; color:var(--primary);">10s</div>
@@ -1486,12 +1529,14 @@
       </p>
 
       <!-- Mod Seçimi -->
-      <div style="display:flex; gap:8px; margin-bottom:14px;">
-        <button type="button" id="btn-passa-mode-local" class="btn-main active" style="flex:1; font-size:0.82rem; padding:10px 6px; border-radius:12px; background:rgba(0,245,212,0.2); border:1.5px solid var(--primary); color:#FFF;">
-          🎲 Masada Oyna (Sunucu & Yarışmacılar)
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <button type="button" id="btn-passa-mode-local" class="btn-main active" style="flex:1; padding:10px 8px; border-radius:14px; background:rgba(0,245,212,0.18); border:1.5px solid var(--primary); color:#FFF; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer;">
+          <div style="font-size:0.92rem; font-weight:900; letter-spacing:0.3px;">🎲 Tek Cihaz</div>
+          <div style="font-size:0.72rem; font-weight:700; color:var(--gold); opacity:0.95;">Sunucu Masada</div>
         </button>
-        <button type="button" id="btn-passa-mode-wifi" class="btn-main" style="flex:1; font-size:0.82rem; padding:10px 6px; border-radius:12px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.15); color:var(--text-dim);">
-          ☁️ Çoklu Telefon (Bulut / QR)
+        <button type="button" id="btn-passa-mode-wifi" class="btn-main" style="flex:1; padding:10px 8px; border-radius:14px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.15); color:var(--text-dim); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer;">
+          <div style="font-size:0.92rem; font-weight:900; letter-spacing:0.3px;">☁️ Çoklu Cihaz</div>
+          <div style="font-size:0.72rem; font-weight:700; color:var(--primary); opacity:0.85;">Bulut / QR Bağlantı</div>
         </button>
       </div>
 
@@ -1637,12 +1682,14 @@
     </div>
 
     <!-- Mod Seçimi -->
-    <div style="display:flex; gap:8px; margin-bottom:12px;">
-      <button type="button" id="btn-cark-mode-local" class="btn-main active" style="flex:1; font-size:0.82rem; padding:10px 6px; border-radius:12px; background:rgba(0,245,212,0.2); border:1.5px solid var(--primary); color:#FFF;">
-        🎲 Masada Oyna (Tek Cihaz)
+    <div style="display:flex; gap:10px; margin-bottom:12px;">
+      <button type="button" id="btn-cark-mode-local" class="btn-main active" style="flex:1; padding:10px 8px; border-radius:14px; background:rgba(0,245,212,0.18); border:1.5px solid var(--primary); color:#FFF; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer;">
+        <div style="font-size:0.92rem; font-weight:900; letter-spacing:0.3px;">🎲 Tek Cihaz</div>
+        <div style="font-size:0.72rem; font-weight:700; color:var(--gold); opacity:0.95;">Masada Oyna</div>
       </button>
-      <button type="button" id="btn-cark-mode-wifi" class="btn-main" style="flex:1; font-size:0.82rem; padding:10px 6px; border-radius:12px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.15); color:var(--text-dim);">
-        ☁️ Çoklu Telefon (Bulut / QR)
+      <button type="button" id="btn-cark-mode-wifi" class="btn-main" style="flex:1; padding:10px 8px; border-radius:14px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.15); color:var(--text-dim); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer;">
+        <div style="font-size:0.92rem; font-weight:900; letter-spacing:0.3px;">☁️ Çoklu Cihaz</div>
+        <div style="font-size:0.72rem; font-weight:700; color:var(--primary); opacity:0.85;">Bulut / QR Bağlantı</div>
       </button>
     </div>
 

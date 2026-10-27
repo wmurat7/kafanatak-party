@@ -352,6 +352,14 @@ class FirebaseNetworkManager {
     const webBase = this.getWebAppUrl();
     return `${webBase}/carkifelek.html?room=${encodeURIComponent(roomId)}&cloud=1`;
   }
+
+  /**
+   * İkinci telefonların açabileceği Şarkıyı Devam Ettir (Melodi Düellosu) URL'sini üretir
+   */
+  getSarkiDuelloUrl(roomId) {
+    const webBase = this.getWebAppUrl();
+    return `${webBase}/sarki-duello.html?room=${encodeURIComponent(roomId)}&cloud=1`;
+  }
 }
 
 export const firebaseNetwork = new FirebaseNetworkManager();

@@ -696,9 +696,70 @@ class SoundEngine {
     this.startPartyBeat();
   }
 
-  playClick() {
-    this.playBuffer('tick', 0.5, 1.4);
-    this.vibrate(15);
+  playClick(soft = false) {
+    if (this.muted) return;
+    this.unlockAudio();
+    this.vibrate(12);
+
+    // 1. Sıfır Gecikmeli Web Audio Profesyonel Doğal Haptic Klik Sentezi (Tok & Organik Tap)
+    if (this.ctx) {
+      try {
+        const now = this.ctx.currentTime;
+        const target = this.getOutputNode();
+
+        // Bileşen 1: Yüksek Frekanslı Geçici Vuruş (Mekanik Transient Click: 1600-2400Hz)
+        const oscHigh = this.ctx.createOscillator();
+        const gainHigh = this.ctx.createGain();
+        const filter = this.ctx.createBiquadFilter();
+
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1800, now);
+        filter.Q.setValueAtTime(3.0, now);
+
+        oscHigh.type = 'triangle';
+        oscHigh.frequency.setValueAtTime(soft ? 1400 : 1850, now);
+        oscHigh.frequency.exponentialRampToValueAtTime(300, now + 0.015);
+
+        gainHigh.gain.setValueAtTime(soft ? 0.20 : 0.30, now);
+        gainHigh.gain.exponentialRampToValueAtTime(0.001, now + 0.016);
+
+        oscHigh.connect(filter);
+        filter.connect(gainHigh);
+        gainHigh.connect(target);
+
+        // Bileşen 2: Tok ve Sıcak Ahşap/Gövde Rezonansı (Tok Alt Rezonans: 550Hz -> 180Hz)
+        const oscBody = this.ctx.createOscillator();
+        const gainBody = this.ctx.createGain();
+
+        oscBody.type = 'sine';
+        oscBody.frequency.setValueAtTime(soft ? 420 : 540, now);
+        oscBody.frequency.exponentialRampToValueAtTime(160, now + 0.022);
+
+        gainBody.gain.setValueAtTime(soft ? 0.22 : 0.35, now);
+        gainBody.gain.exponentialRampToValueAtTime(0.001, now + 0.024);
+
+        oscBody.connect(gainBody);
+        gainBody.connect(target);
+
+        oscHigh.start(now);
+        oscBody.start(now);
+        oscHigh.stop(now + 0.02);
+        oscBody.stop(now + 0.03);
+
+        this.activeOscillators.add(oscHigh);
+        this.activeOscillators.add(oscBody);
+        setTimeout(() => {
+          if (this.activeOscillators) {
+            this.activeOscillators.delete(oscHigh);
+            this.activeOscillators.delete(oscBody);
+          }
+        }, 50);
+        return;
+      } catch (e) {}
+    }
+
+    // Yedek Tampon
+    this.playBuffer('tick', 0.45, 1.5);
   }
 
   playSwipe() {

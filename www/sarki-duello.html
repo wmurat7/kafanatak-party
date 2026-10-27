@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Şarkıyı Devam Ettir | Yarışmacı Buzzer Ekranı</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0B0E14;
+      --card-bg: rgba(22, 27, 34, 0.85);
+      --primary: #00F5D4;
+      --gold: #FBBF24;
+      --purple: #A855F7;
+      --red: #EF4444;
+      --text-dim: #94A3B8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: var(--bg);
+      background-image: radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.22) 0%, transparent 65%);
+      color: #FFF;
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+    }
+    .container { width: 100%; max-width: 440px; margin: 0 auto; }
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      margin-bottom: 14px;
+    }
+    .btn-main {
+      background: linear-gradient(135deg, var(--primary), #00BBF9);
+      color: #0B0E14;
+      border: none;
+      border-radius: 14px;
+      font-size: 1.05rem;
+      font-weight: 900;
+      padding: 14px 20px;
+      width: 100%;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(0, 245, 212, 0.4);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn-main:active { transform: scale(0.97); }
+
+    /* DEV BUZZER BUTONU */
+    .btn-buzzer {
+      width: 190px;
+      height: 190px;
+      border-radius: 50%;
+      border: 6px solid #FBBF24;
+      background: radial-gradient(circle at 35% 35%, #EF4444, #991B1B);
+      color: #FFF;
+      font-size: 1.2rem;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      box-shadow: 0 0 45px rgba(239, 68, 68, 0.65), inset 0 0 20px rgba(0,0,0,0.5);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 18px auto;
+      transition: all 0.12s;
+      outline: none;
+      animation: buzzerPulse 1.8s infinite;
+    }
+    .btn-buzzer:active {
+      transform: scale(0.92);
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+    }
+    .btn-buzzer.locked {
+      background: radial-gradient(circle at 35% 35%, #475569, #1E293B);
+      border-color: #64748B;
+      box-shadow: none;
+      cursor: not-allowed;
+      animation: none;
+      transform: none;
+    }
+    .btn-buzzer.active-me {
+      background: radial-gradient(circle at 35% 35%, #10B981, #065F46);
+      border-color: #34D399;
+      box-shadow: 0 0 50px rgba(16, 185, 129, 0.8);
+      animation: mePulse 0.8s infinite alternate;
+    }
+    @keyframes buzzerPulse {
+      0% { transform: scale(1); box-shadow: 0 0 30px rgba(239, 68, 68, 0.5); }
+      50% { transform: scale(1.04); box-shadow: 0 0 55px rgba(239, 68, 68, 0.85); }
+      100% { transform: scale(1); box-shadow: 0 0 30px rgba(239, 68, 68, 0.5); }
+    }
+    @keyframes mePulse {
+      0% { transform: scale(1.02); }
+      100% { transform: scale(1.08); }
+    }
+    input {
+      width: 100%;
+      background: rgba(0,0,0,0.4);
+      border: 1.5px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      color: #FFF;
+      font-size: 1.05rem;
+      font-weight: 800;
+      padding: 12px 14px;
+      text-align: center;
+      outline: none;
+      margin-bottom: 12px;
+    }
+    input:focus { border-color: var(--primary); }
+    .avatar-picker {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .avatar-btn {
+      font-size: 1.6rem;
+      background: rgba(255,255,255,0.06);
+      border: 2px solid transparent;
+      border-radius: 12px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    .avatar-btn.selected {
+      border-color: var(--primary);
+      background: rgba(0,245,212,0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Üst Başlık -->
+    <div style="text-align:center; margin:10px 0 16px;">
+      <span style="font-size:0.75rem; font-weight:800; background:rgba(168,85,247,0.2); color:#C084FC; border:1px solid rgba(168,85,247,0.4); padding:4px 14px; border-radius:999px;">
+        🎤 ŞARKIYI DEVAM ETTİR
+      </span>
+      <h1 style="font-size:1.6rem; font-weight:900; margin-top:6px; letter-spacing:0.5px;">Melodi Düellosu</h1>
+    </div>
+
+    <!-- 1. GİRİŞ & KATILIM FORMU -->
+    <div id="join-view" class="card">
+      <div style="font-size:3rem; margin-bottom:8px;">🎵</div>
+      <h2 style="font-size:1.35rem; font-weight:900; margin-bottom:4px;">Sahneye Çık!</h2>
+      <p style="font-size:0.84rem; color:var(--text-dim); margin-bottom:14px;">
+        Oda kodunu ve adını girerek şarkı düellosuna katıl!
+      </p>
+
+      <input type="text" id="inp-room" placeholder="ODA KODU (Örn: 7482)" maxlength="6" style="letter-spacing:3px; text-transform:uppercase;">
+      <input type="text" id="inp-name" placeholder="Adın veya Takma Adın" maxlength="15">
+
+      <div class="avatar-picker" id="avatar-picker">
+        <button type="button" class="avatar-btn selected" data-av="🎤">🎤</button>
+        <button type="button" class="avatar-btn" data-av="🎸">🎸</button>
+        <button type="button" class="avatar-btn" data-av="🎷">🎷</button>
+        <button type="button" class="avatar-btn" data-av="⭐">⭐</button>
+        <button type="button" class="avatar-btn" data-av="🔥">🔥</button>
+      </div>
+
+      <button type="button" id="btn-join" class="btn-main">
+        🚀 ODAYA KATIL ➔
+      </button>
+    </div>
+
+    <!-- 2. CANLI OYUN & BUZZER EKRANI -->
+    <div id="game-view" class="card" style="display:none; text-align:center;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <span id="lbl-user-badge" style="font-size:0.8rem; font-weight:800; background:rgba(0,245,212,0.15); color:var(--primary); padding:4px 12px; border-radius:999px;">
+          🎤 Murat
+        </span>
+        <span id="lbl-my-score" style="font-size:0.85rem; font-weight:900; background:rgba(251,191,36,0.18); color:var(--gold); border:1px solid rgba(251,191,36,0.4); padding:4px 12px; border-radius:999px;">
+          0 Puan
+        </span>
+      </div>
+
+      <!-- Şarkı Bilgisi -->
+      <div style="background:rgba(0,0,0,0.35); border-radius:14px; padding:12px; margin-bottom:14px; text-align:left;">
+        <div id="song-genre" style="font-size:0.75rem; font-weight:800; color:#C084FC;">🎸 Rock</div>
+        <h3 id="song-title" style="font-size:1.25rem; font-weight:900; color:#FFF; margin:2px 0;">Şarkı Bekleniyor...</h3>
+        <div id="song-artist" style="font-size:0.85rem; font-weight:800; color:var(--gold);">🎤 Sanatçı</div>
+        <div id="song-lyrics" style="font-size:0.9rem; line-height:1.5; color:#CBD5E1; margin-top:8px; white-space:pre-line;">
+          Sunucu şarkıyı başlattığında sözler burada akacak...
+        </div>
+        <div style="margin-top:8px; font-weight:900; color:var(--gold); font-size:0.95rem;">
+          🎵 [ ??? DEVAMINI SEN SÖYLE ??? ] 🎵
+        </div>
+      </div>
+
+      <!-- BUZZER BUTONU -->
+      <button type="button" id="btn-buzzer" class="btn-buzzer">
+        <span style="font-size:2rem; margin-bottom:4px;">🚨</span>
+        <span>BEN SÖYLERİM!</span>
+        <span style="font-size:0.75rem; opacity:0.85; margin-top:2px;">(BUZZER)</span>
+      </button>
+
+      <!-- Durum Bildirimi -->
+      <div id="buzzer-status" style="font-size:0.88rem; font-weight:800; color:var(--text-dim); min-height:24px; margin-top:8px;">
+        Sözleri biliyorsan hemen butona bas!
+      </div>
+
+      <!-- Açılan Gerçek Söz -->
+      <div id="revealed-box" style="display:none; background:rgba(251,191,36,0.15); border:1.5px solid var(--gold); border-radius:14px; padding:12px; margin-top:14px; font-weight:900; color:#FFF;">
+        <div style="font-size:0.75rem; color:var(--gold); margin-bottom:2px;">DOĞRU DEVAM SÖZÜ:</div>
+        <div id="revealed-text" style="font-size:1.05rem;">...</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { firebaseNetwork } from './js/firebase-network.js';
+
+    let myPlayerId = 'p_' + Math.floor(Math.random() * 899999 + 100000);
+    let myName = '';
+    let myAvatar = '🎤';
+    let myScore = 0;
+    let currentRoomId = '';
+    let roomUnsub = null;
+    let isBuzzerLocked = false;
+
+    // URL Parametreleri
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomParam = urlParams.get('room');
+    if (roomParam) {
+      document.getElementById('inp-room').value = roomParam.trim().toUpperCase();
+    }
+
+    // Avatar Seçimi
+    document.querySelectorAll('.avatar-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        myAvatar = btn.getAttribute('data-av');
+      };
+    });
+
+    // Odaya Katıl
+    document.getElementById('btn-join').onclick = async () => {
+      const roomInp = document.getElementById('inp-room').value.trim().toUpperCase();
+      const nameInp = document.getElementById('inp-name').value.trim();
+
+      if (!roomInp || roomInp.length < 3) {
+        alert('Lütfen geçerli bir 4 haneli oda kodu girin!');
+        return;
+      }
+      if (!nameInp) {
+        alert('Lütfen adınızı girin!');
+        return;
+      }
+
+      currentRoomId = roomInp;
+      myName = nameInp;
+
+      // Oyuncuyu Kaydet
+      const playerObj = {
+        id: myPlayerId,
+        name: myName,
+        avatar: myAvatar,
+        score: 0,
+        joinedAt: Date.now()
+      };
+
+      try {
+        await firebaseNetwork.setPlayer('sarki', currentRoomId, playerObj);
+      } catch (e) {
+        console.warn('setPlayer fallback:', e);
+      }
+
+      document.getElementById('join-view').style.display = 'none';
+      document.getElementById('game-view').style.display = 'block';
+      document.getElementById('lbl-user-badge').textContent = `${myAvatar} ${myName}`;
+
+      listenRoom();
+    };
+
+    function listenRoom() {
+      if (roomUnsub) roomUnsub();
+      roomUnsub = firebaseNetwork.listenRoom('sarki', currentRoomId, (room) => {
+        if (!room) return;
+
+        // Kendi Skorunu Güncelle
+        if (room.players && room.players[myPlayerId]) {
+          myScore = room.players[myPlayerId].score || 0;
+          document.getElementById('lbl-my-score').textContent = `${myScore} Puan`;
+        }
+
+        // Şarkı Güncellemesi
+        if (room.currentSong) {
+          document.getElementById('song-title').textContent = room.currentSong.title;
+          document.getElementById('song-artist').textContent = `🎤 ${room.currentSong.artist}`;
+          document.getElementById('song-genre').textContent = room.currentSong.genre || '🎸 Rock';
+          document.getElementById('song-lyrics').textContent = room.currentSong.lyricsBefore || '';
+        }
+
+        // Buzzer Durumu
+        const btnBuzzer = document.getElementById('btn-buzzer');
+        const statusEl = document.getElementById('buzzer-status');
+
+        if (room.activeBuzzerPlayer) {
+          isBuzzerLocked = true;
+          if (room.activeBuzzerPlayer.id === myPlayerId) {
+            btnBuzzer.className = 'btn-buzzer active-me';
+            statusEl.textContent = '🎉 MİKROFON SENDE! Devamını söyle!';
+            statusEl.style.color = '#10B981';
+          } else {
+            btnBuzzer.className = 'btn-buzzer locked';
+            statusEl.textContent = `🎤 ${room.activeBuzzerPlayer.name} butona bastı, söylüyor...`;
+            statusEl.style.color = '#FBBF24';
+          }
+        } else {
+          isBuzzerLocked = false;
+          btnBuzzer.className = 'btn-buzzer';
+          statusEl.textContent = 'Sözleri biliyorsan hemen butona bas!';
+          statusEl.style.color = '#94A3B8';
+        }
+
+        // Açıklanan Söz
+        const revBox = document.getElementById('revealed-box');
+        const revText = document.getElementById('revealed-text');
+        if (room.revealed && room.missingLine) {
+          revBox.style.display = 'block';
+          revText.textContent = room.missingLine;
+        } else {
+          revBox.style.display = 'none';
+        }
+      });
+    }
+
+    // Buzzer'a Basma
+    document.getElementById('btn-buzzer').onclick = async () => {
+      if (isBuzzerLocked) return;
+      isBuzzerLocked = true;
+
+      if ('vibrate' in navigator) navigator.vibrate([80, 40, 80]);
+
+      const btnBuzzer = document.getElementById('btn-buzzer');
+      btnBuzzer.className = 'btn-buzzer active-me';
+      document.getElementById('buzzer-status').textContent = '🚨 Sinyal gönderildi...';
+
+      try {
+        await firebaseNetwork.updateRoom('sarki', currentRoomId, {
+          buzzerLocked: true,
+          activeBuzzerPlayer: {
+            id: myPlayerId,
+            name: myName,
+            avatar: myAvatar,
+            timestamp: Date.now()
+          }
+        });
+      } catch (e) {
+        console.warn('Buzzer updateRoom error:', e);
+      }
+    };
+  </script>
+</body>
+</html>

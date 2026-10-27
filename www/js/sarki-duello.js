@@ -126,17 +126,28 @@ export const TURKISH_SONGS = [
   }
 ];
 
+import { firebaseNetwork } from './firebase-network.js';
+import QRCode from './qrcode.esm.js';
+
 export class SarkiDuelloEngine {
   constructor(game) {
     this.game = game;
     this.songs = [...TURKISH_SONGS];
     this.currentIndex = 0;
     this.currentSong = null;
-    this.remainingSeconds = 10;
+    this.remainingSeconds = 15;
     this.timerInterval = null;
     this.revealed = false;
     this.scores = { teamA: 0, teamB: 0 };
     this.turn = 'teamA'; // 'teamA' veya 'teamB'
+
+    // ÇOKLU OYUNCU (BULUT / QR) ALTYAPISI
+    this.mode = 'local'; // 'local' | 'wifi'
+    this.roomId = '';
+    this.players = []; // [{ id, name, avatar, score }]
+    this.buzzerLocked = false;
+    this.activeBuzzerPlayer = null;
+    this.unsubscribeRoom = null;
   }
 
   init() {
@@ -144,7 +155,12 @@ export class SarkiDuelloEngine {
     this.currentIndex = 0;
     this.scores = { teamA: 0, teamB: 0 };
     this.turn = 'teamA';
+    this.mode = 'local';
+    this.players = [];
+    this.buzzerLocked = false;
+    this.activeBuzzerPlayer = null;
     this.bindEvents();
+    this.setMode('local');
     this.loadSong();
   }
 
@@ -156,6 +172,20 @@ export class SarkiDuelloEngine {
   }
 
   bindEvents() {
+    const btnModeLocal = document.getElementById('btn-sarki-mode-local');
+    const btnModeWifi = document.getElementById('btn-sarki-mode-wifi');
+    if (btnModeLocal) btnModeLocal.onclick = () => this.setMode('local');
+    if (btnModeWifi) btnModeWifi.onclick = () => this.setMode('wifi');
+
+    const btnStartMulti = document.getElementById('btn-sarki-start-multi');
+    if (btnStartMulti) {
+      btnStartMulti.onclick = () => {
+        const wifiBox = document.getElementById('sarki-wifi-box');
+        if (wifiBox) wifiBox.style.display = 'none';
+        this.loadSong();
+      };
+    }
+
     const btnReveal = document.getElementById('btn-sarki-reveal');
     if (btnReveal) {
       btnReveal.onclick = () => this.revealAnswer();
@@ -180,15 +210,167 @@ export class SarkiDuelloEngine {
     if (btnBack) {
       btnBack.onclick = () => {
         clearInterval(this.timerInterval);
+        if (this.unsubscribeRoom) {
+          this.unsubscribeRoom();
+          this.unsubscribeRoom = null;
+        }
         this.game.showScreen('party-games');
       };
     }
   }
 
+  setMode(mode) {
+    this.mode = mode;
+    const btnModeLocal = document.getElementById('btn-sarki-mode-local');
+    const btnModeWifi = document.getElementById('btn-sarki-mode-wifi');
+    const wifiBox = document.getElementById('sarki-wifi-box');
+    const playStage = document.getElementById('sarki-play-stage');
+
+    if (mode === 'local') {
+      if (btnModeLocal) {
+        btnModeLocal.classList.add('active');
+        btnModeLocal.style.background = 'rgba(0,245,212,0.18)';
+        btnModeLocal.style.borderColor = 'var(--primary)';
+        btnModeLocal.style.color = '#FFF';
+      }
+      if (btnModeWifi) {
+        btnModeWifi.classList.remove('active');
+        btnModeWifi.style.background = 'rgba(255,255,255,0.06)';
+        btnModeWifi.style.borderColor = 'rgba(255,255,255,0.15)';
+        btnModeWifi.style.color = 'var(--text-dim)';
+      }
+      if (wifiBox) wifiBox.style.display = 'none';
+      if (playStage) playStage.style.display = 'block';
+      this.updateScoresUI();
+    } else {
+      if (btnModeWifi) {
+        btnModeWifi.classList.add('active');
+        btnModeWifi.style.background = 'rgba(0,245,212,0.18)';
+        btnModeWifi.style.borderColor = 'var(--primary)';
+        btnModeWifi.style.color = '#FFF';
+      }
+      if (btnModeLocal) {
+        btnModeLocal.classList.remove('active');
+        btnModeLocal.style.background = 'rgba(255,255,255,0.06)';
+        btnModeLocal.style.borderColor = 'rgba(255,255,255,0.15)';
+        btnModeLocal.style.color = 'var(--text-dim)';
+      }
+      this.setupMultiplayerRoom();
+    }
+  }
+
+  async setupMultiplayerRoom() {
+    this.roomId = firebaseNetwork.generateRoomCode();
+    const wifiBox = document.getElementById('sarki-wifi-box');
+    if (wifiBox) wifiBox.style.display = 'block';
+
+    const lblRoom = document.getElementById('lbl-sarki-room-code');
+    if (lblRoom) lblRoom.textContent = this.roomId;
+
+    this.renderQrCode();
+
+    const initialRoom = {
+      roomId: this.roomId,
+      gameType: 'sarki-duello',
+      phase: 'lobby',
+      currentSong: null,
+      buzzerLocked: false,
+      activeBuzzerPlayer: null,
+      players: {},
+      scores: {},
+      createdAt: Date.now()
+    };
+
+    try {
+      await firebaseNetwork.createRoom('sarki', initialRoom);
+    } catch (e) {
+      console.warn('Firebase createRoom sarki fallback:', e);
+    }
+
+    if (this.unsubscribeRoom) this.unsubscribeRoom();
+    this.unsubscribeRoom = firebaseNetwork.listenRoom('sarki', this.roomId, (remoteRoom) => {
+      if (!remoteRoom) return;
+      this.handleRemoteRoomUpdate(remoteRoom);
+    });
+  }
+
+  renderQrCode() {
+    const qrContainer = document.getElementById('sarki-qr-canvas');
+    if (!qrContainer) return;
+    qrContainer.innerHTML = '';
+
+    const joinUrl = firebaseNetwork.getSarkiDuelloUrl(this.roomId);
+    try {
+      const cvs = document.createElement('canvas');
+      qrContainer.appendChild(cvs);
+      if (QRCode && QRCode.toCanvas) {
+        QRCode.toCanvas(cvs, joinUrl, {
+          width: 190,
+          margin: 1,
+          color: { dark: '#00F5D4', light: '#0B0E14' }
+        }).catch(() => {
+          this.renderQrImgFallback(qrContainer, joinUrl);
+        });
+      } else {
+        this.renderQrImgFallback(qrContainer, joinUrl);
+      }
+    } catch (e) {
+      this.renderQrImgFallback(qrContainer, joinUrl);
+    }
+  }
+
+  renderQrImgFallback(container, url) {
+    container.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=${encodeURIComponent(url)}" width="190" height="190" style="display:block; border-radius:10px;" />`;
+  }
+
+  handleRemoteRoomUpdate(remoteRoom) {
+    if (remoteRoom.players) {
+      const pArr = Object.values(remoteRoom.players);
+      this.players = pArr;
+      const countBadge = document.getElementById('sarki-player-count-badge');
+      if (countBadge) countBadge.textContent = `${pArr.length} Oyuncu Bağlı`;
+
+      const listEl = document.getElementById('sarki-connected-players');
+      if (listEl) {
+        listEl.innerHTML = pArr.map(p => `
+          <span style="background:rgba(0,245,212,0.15); border:1px solid var(--primary); color:#FFF; font-size:0.8rem; font-weight:800; padding:4px 10px; border-radius:999px;">
+            ${p.avatar || '🎤'} ${p.name} (${p.score || 0} P)
+          </span>
+        `).join('');
+      }
+
+      this.updateMultiScoresUI();
+    }
+
+    // Buzzer Dinleme
+    if (remoteRoom.activeBuzzerPlayer && !this.buzzerLocked) {
+      this.handlePlayerBuzzer(remoteRoom.activeBuzzerPlayer);
+    }
+  }
+
+  handlePlayerBuzzer(player) {
+    this.buzzerLocked = true;
+    this.activeBuzzerPlayer = player;
+    clearInterval(this.timerInterval);
+
+    sounds.playChime();
+    sounds.vibrate([100, 50, 100]);
+
+    const alertBox = document.getElementById('sarki-buzzer-alert');
+    const nameEl = document.getElementById('sarki-buzzer-player-name');
+    if (alertBox) alertBox.style.display = 'block';
+    if (nameEl) nameEl.textContent = `${player.avatar || '🎤'} ${player.name}`;
+  }
+
   loadSong() {
     clearInterval(this.timerInterval);
     this.revealed = false;
-    this.remainingSeconds = 10;
+    this.remainingSeconds = 15;
+    this.buzzerLocked = false;
+    this.activeBuzzerPlayer = null;
+
+    const alertBox = document.getElementById('sarki-buzzer-alert');
+    if (alertBox) alertBox.style.display = 'none';
 
     this.currentSong = this.songs[this.currentIndex % this.songs.length];
 
@@ -206,17 +388,41 @@ export class SarkiDuelloEngine {
 
     // Sıradaki Takım Rozeti
     const turnBadge = document.getElementById('sarki-turn-badge');
-    if (this.game.gameMode === 'teams') {
+    if (this.mode === 'local' && this.game.gameMode === 'teams') {
       turnBadge.style.display = 'inline-block';
       turnBadge.textContent = this.turn === 'teamA' ? '🔴 SIRA: 1. TAKIMDA' : '🔵 SIRA: 2. TAKIMDA';
       turnBadge.style.background = this.turn === 'teamA' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(59, 130, 246, 0.25)';
       turnBadge.style.color = this.turn === 'teamA' ? '#EF4444' : '#3B82F6';
+    } else if (this.mode === 'wifi') {
+      turnBadge.style.display = 'inline-block';
+      turnBadge.textContent = '☁️ İLK BUZZER\'A BASAN SÖYLER';
+      turnBadge.style.background = 'rgba(0,245,212,0.18)';
+      turnBadge.style.color = 'var(--primary)';
     } else {
       turnBadge.style.display = 'none';
     }
 
     this.updateScoresUI();
+    this.syncSongToCloud();
     this.startTimer();
+  }
+
+  async syncSongToCloud() {
+    if (this.mode !== 'wifi' || !this.roomId) return;
+    try {
+      await firebaseNetwork.updateRoom('sarki', this.roomId, {
+        phase: 'play',
+        currentSong: {
+          title: this.currentSong.title,
+          artist: this.currentSong.artist,
+          genre: this.currentSong.genre,
+          lyricsBefore: this.currentSong.lyricsBefore
+        },
+        revealed: false,
+        buzzerLocked: false,
+        activeBuzzerPlayer: null
+      });
+    } catch (e) {}
   }
 
   startTimer() {
@@ -252,32 +458,79 @@ export class SarkiDuelloEngine {
 
     document.getElementById('btn-sarki-reveal').style.display = 'none';
     document.getElementById('sarki-judge-btns').style.display = 'flex';
+
+    if (this.mode === 'wifi' && this.roomId) {
+      firebaseNetwork.updateRoom('sarki', this.roomId, {
+        revealed: true,
+        missingLine: this.currentSong.missingLine
+      }).catch(() => {});
+    }
   }
 
   handleScore(isCorrect) {
     if (isCorrect) {
       sounds.playCorrect();
-      if (this.turn === 'teamA') this.scores.teamA += 10;
-      else this.scores.teamB += 10;
+      if (this.mode === 'wifi' && this.activeBuzzerPlayer) {
+        // Çoklu modda basan oyuncuya puan ver
+        const p = this.players.find(x => x.id === this.activeBuzzerPlayer.id);
+        if (p) {
+          p.score = (p.score || 0) + 10;
+          firebaseNetwork.setPlayer('sarki', this.roomId, p).catch(() => {});
+        }
+      } else {
+        if (this.turn === 'teamA') this.scores.teamA += 10;
+        else this.scores.teamB += 10;
+      }
     } else {
       sounds.playPass();
+      if (this.mode === 'wifi' && this.activeBuzzerPlayer) {
+        const p = this.players.find(x => x.id === this.activeBuzzerPlayer.id);
+        if (p) {
+          p.score = Math.max(0, (p.score || 0) - 5);
+          firebaseNetwork.setPlayer('sarki', this.roomId, p).catch(() => {});
+        }
+      }
     }
 
-    // Sırayı diğer takıma geçir
-    this.turn = (this.turn === 'teamA') ? 'teamB' : 'teamA';
+    if (this.mode === 'local') {
+      this.turn = (this.turn === 'teamA') ? 'teamB' : 'teamA';
+    }
+
     this.updateScoresUI();
     this.nextSong();
   }
 
   updateScoresUI() {
     const scoreBox = document.getElementById('sarki-score-box');
-    if (this.game.gameMode === 'teams') {
-      scoreBox.style.display = 'flex';
-      document.getElementById('sarki-score-a').textContent = `🔴 ${this.scores.teamA} P`;
-      document.getElementById('sarki-score-b').textContent = `🔵 ${this.scores.teamB} P`;
+    const multiBar = document.getElementById('sarki-multi-scores-bar');
+
+    if (this.mode === 'local' && this.game.gameMode === 'teams') {
+      if (scoreBox) scoreBox.style.display = 'flex';
+      if (multiBar) multiBar.style.display = 'none';
+      document.getElementById('sarki-score-a').textContent = `🔴 1. Takım: ${this.scores.teamA} P`;
+      document.getElementById('sarki-score-b').textContent = `🔵 2. Takım: ${this.scores.teamB} P`;
+    } else if (this.mode === 'wifi') {
+      if (scoreBox) scoreBox.style.display = 'none';
+      if (multiBar) multiBar.style.display = 'flex';
+      this.updateMultiScoresUI();
     } else {
-      scoreBox.style.display = 'none';
+      if (scoreBox) scoreBox.style.display = 'none';
+      if (multiBar) multiBar.style.display = 'none';
     }
+  }
+
+  updateMultiScoresUI() {
+    const multiBar = document.getElementById('sarki-multi-scores-bar');
+    if (!multiBar) return;
+    if (this.players.length === 0) {
+      multiBar.innerHTML = `<span style="font-size:0.75rem; color:var(--text-dim);">Oyuncular bekleniyor...</span>`;
+      return;
+    }
+    multiBar.innerHTML = this.players.map(p => `
+      <span style="font-size:0.78rem; font-weight:800; background:rgba(251,191,36,0.18); border:1px solid rgba(251,191,36,0.4); color:var(--gold); padding:3px 10px; border-radius:999px;">
+        ${p.avatar || '🎤'} ${p.name}: ${p.score || 0}P
+      </span>
+    `).join('');
   }
 
   nextSong() {
