@@ -1305,8 +1305,12 @@
       inputRoom.focus();
     });
 
-    // Realtime Dinleme (SSE / BroadcastChannel)
+    // Realtime Dinleme (SSE / BroadcastChannel / Polling - Zaman Aşımına Uğramaz)
+    let sseReconnectTimer = null;
+    let isDisposed = false;
+
     function initRealtimeStreams() {
+      if (!currentRoom) return;
       if (broadcast) { try { broadcast.close(); } catch (e) {} }
       try {
         broadcast = new BroadcastChannel('kafanatak_spectator_' + currentRoom);
@@ -1316,6 +1320,8 @@
       } catch (e) {}
 
       if (sseSource) { try { sseSource.close(); } catch (e) {} }
+      if (sseReconnectTimer) clearTimeout(sseReconnectTimer);
+
       try {
         if (typeof EventSource !== 'undefined') {
           sseSource = new EventSource(`${FIREBASE_DB_URL}/kafanatak/spectator/${encodeURIComponent(currentRoom)}.json`);
@@ -1328,18 +1334,33 @@
           sseSource.addEventListener('patch', () => {
             pollState();
           });
+          sseSource.onerror = () => {
+            try { sseSource.close(); } catch (e) {}
+            // Zaman aşımına uğramadan 2.5 saniyede otomatik geri bağlan
+            if (isConnected && !isDisposed) {
+              sseReconnectTimer = setTimeout(() => {
+                if (isConnected && !isDisposed) initRealtimeStreams();
+              }, 2500);
+            }
+          };
         }
       } catch (err) {}
 
       clearInterval(pollInterval);
-      pollInterval = setInterval(pollState, 750);
+      pollInterval = setInterval(pollState, 800);
     }
 
     async function pollState() {
       if (!isConnected || !currentRoom) return;
 
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 3800) : null;
+
       try {
-        const fbRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/spectator/${encodeURIComponent(currentRoom)}.json`);
+        const fbRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/spectator/${encodeURIComponent(currentRoom)}.json`, {
+          signal: controller ? controller.signal : undefined
+        });
+        if (timeoutId) clearTimeout(timeoutId);
         if (fbRes.ok) {
           const data = await fbRes.json();
           if (data) {
@@ -1347,16 +1368,39 @@
             return;
           }
         }
-      } catch (err) {}
+      } catch (err) {
+        if (timeoutId) clearTimeout(timeoutId);
+      }
 
+      // Yedek yerel sunucu yoklaması
       try {
-        const res = await fetch(`/api/room/state?room=${encodeURIComponent(currentRoom)}`);
+        const localCtrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const localTimeout = localCtrl ? setTimeout(() => localCtrl.abort(), 2000) : null;
+        const res = await fetch(`/api/room/state?room=${encodeURIComponent(currentRoom)}`, {
+          signal: localCtrl ? localCtrl.signal : undefined
+        });
+        if (localTimeout) clearTimeout(localTimeout);
         if (res.ok) {
           const data = await res.json();
           if (data) renderState(data);
         }
       } catch (err) {}
     }
+
+    // Mobil ekran uyanması veya Wi-Fi/Hücresel geri gelmesinde anında yeniden senkronize et
+    window.addEventListener('online', () => {
+      if (isConnected && currentRoom) {
+        initRealtimeStreams();
+        pollState();
+      }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && isConnected && currentRoom) {
+        initRealtimeStreams();
+        pollState();
+      }
+    });
 
     function renderState(data) {
       if (!data) return;

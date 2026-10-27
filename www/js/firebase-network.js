@@ -147,14 +147,19 @@ class FirebaseNetworkManager {
 
     try {
       const url = this.buildPath(namespace, roomId);
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 4500) : null;
+      
       await fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: controller ? controller.signal : undefined
       });
+      if (timeoutId) clearTimeout(timeoutId);
       return true;
     } catch (err) {
-      console.warn(`[FirebaseNetwork] updateRoom hatası:`, err.message);
+      console.warn(`[FirebaseNetwork] updateRoom hatası (${namespace}/${roomId}):`, err.message);
       return false;
     }
   }
@@ -166,11 +171,17 @@ class FirebaseNetworkManager {
     if (!roomId) return null;
     try {
       const url = this.buildPath(namespace, roomId);
-      const res = await fetch(url);
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 4500) : null;
+
+      const res = await fetch(url, {
+        signal: controller ? controller.signal : undefined
+      });
+      if (timeoutId) clearTimeout(timeoutId);
       if (!res.ok) return null;
       return await res.json();
     } catch (err) {
-      console.warn(`[FirebaseNetwork] getRoom hatası:`, err.message);
+      console.warn(`[FirebaseNetwork] getRoom hatası (${namespace}/${roomId}):`, err.message);
       return null;
     }
   }
@@ -189,11 +200,16 @@ class FirebaseNetworkManager {
 
     try {
       const url = this.buildPath(namespace, roomId, 'actions');
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 4000) : null;
+
       await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(actionObj)
+        body: JSON.stringify(actionObj),
+        signal: controller ? controller.signal : undefined
       });
+      if (timeoutId) clearTimeout(timeoutId);
       return true;
     } catch (err) {
       console.warn(`[FirebaseNetwork] sendAction hatası:`, err.message);
@@ -208,11 +224,16 @@ class FirebaseNetworkManager {
     if (!roomId || !player || !player.id) return false;
     try {
       const url = this.buildPath(namespace, roomId, `players/${player.id}`);
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 4000) : null;
+
       await fetch(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(player)
+        body: JSON.stringify(player),
+        signal: controller ? controller.signal : undefined
       });
+      if (timeoutId) clearTimeout(timeoutId);
       return true;
     } catch (err) {
       console.warn(`[FirebaseNetwork] setPlayer hatası:`, err.message);
@@ -222,7 +243,7 @@ class FirebaseNetworkManager {
 
   /**
    * Odayı gerçek zamanlı (SSE / EventSource) dinler.
-   * Bağlantı koparsa veya EventSource desteklenmezse saniyede 1 polling yapar.
+   * Bağlantı zaman aşımına uğramaz; SSE koparsa otomatik yeniden bağlanır ve dual polling kesintisiz sürer.
    */
   listenRoom(namespace, roomId, onStateChange, onAction = null) {
     if (!roomId) return () => {};
@@ -233,70 +254,115 @@ class FirebaseNetworkManager {
     let eventSource = null;
     let fallbackPollTimer = null;
     let isSseActive = false;
+    let isDisposed = false;
+    let lastEventTime = 0;
+    let reconnectTimeout = null;
 
-    // SSE Dinleyicisi
-    try {
-      if (typeof EventSource !== 'undefined') {
-        eventSource = new EventSource(url);
-        
-        eventSource.addEventListener('put', (e) => {
-          isSseActive = true;
-          try {
-            const parsed = JSON.parse(e.data);
-            if (parsed && parsed.data !== undefined) {
-              if (parsed.path === '/' || parsed.path === '') {
-                if (onStateChange) onStateChange(parsed.data);
-              } else {
-                // Alt alan güncellemesi (Örn: /players/...)
+    const startEventSource = () => {
+      if (isDisposed) return;
+      try {
+        if (typeof EventSource !== 'undefined') {
+          if (eventSource) {
+            try { eventSource.close(); } catch(e) {}
+          }
+          eventSource = new EventSource(url);
+          
+          eventSource.addEventListener('put', (e) => {
+            isSseActive = true;
+            lastEventTime = Date.now();
+            try {
+              const parsed = JSON.parse(e.data);
+              if (parsed && parsed.data !== undefined) {
+                if (parsed.path === '/' || parsed.path === '') {
+                  if (onStateChange) onStateChange(parsed.data);
+                } else {
+                  this.getRoom(namespace, roomId).then(full => {
+                    if (full && onStateChange) onStateChange(full);
+                  });
+                }
+              }
+            } catch (err) {}
+          });
+
+          eventSource.addEventListener('patch', (e) => {
+            isSseActive = true;
+            lastEventTime = Date.now();
+            try {
+              const parsed = JSON.parse(e.data);
+              if (parsed && parsed.data) {
                 this.getRoom(namespace, roomId).then(full => {
                   if (full && onStateChange) onStateChange(full);
                 });
               }
-            }
-          } catch (err) {}
-        });
+            } catch (err) {}
+          });
 
-        eventSource.addEventListener('patch', (e) => {
-          isSseActive = true;
-          try {
-            const parsed = JSON.parse(e.data);
-            if (parsed && parsed.data) {
-              this.getRoom(namespace, roomId).then(full => {
-                if (full && onStateChange) onStateChange(full);
-              });
+          eventSource.onerror = () => {
+            isSseActive = false;
+            try { eventSource.close(); } catch (e) {}
+            // Zaman aşımına uğramaması için 2 saniye sonra otomatik yeniden bağlan
+            if (!isDisposed && !reconnectTimeout) {
+              reconnectTimeout = setTimeout(() => {
+                reconnectTimeout = null;
+                if (!isDisposed) startEventSource();
+              }, 2200);
             }
-          } catch (err) {}
-        });
-
-        eventSource.onerror = () => {
-          // SSE hatasında hafif polling'e geç
-          isSseActive = false;
-        };
+          };
+        }
+      } catch (err) {
+        console.warn('[FirebaseNetwork] SSE başlatılamadı, dual-polling devrede:', err);
       }
-    } catch (err) {
-      console.warn('[FirebaseNetwork] SSE başlatılamadı, polling modu aktif:', err);
-    }
+    };
 
-    // Yedek veya birincil Periyodik Polling (1.2 saniyede bir)
+    startEventSource();
+
+    // Dual-Layer Kesintisiz Polling (1.2 saniyede bir; SSE 3 saniyeden uzun sessizse anında yoklar)
     fallbackPollTimer = setInterval(async () => {
-      if (isSseActive) return; // SSE zaten canlıysa gereksiz istek atma
+      if (isDisposed) return;
+      const now = Date.now();
+      if (isSseActive && (now - lastEventTime) < 3200) {
+        return; // SSE zaten çok taze veri akıtıyor
+      }
       const room = await this.getRoom(namespace, roomId);
-      if (room && onStateChange) {
+      if (room && onStateChange && !isDisposed) {
         onStateChange(room);
       }
     }, 1200);
 
+    // Mobil cihaz arka plandan döndüğünde veya internet geri geldiğinde anında tetikle
+    const handleReactivation = () => {
+      if (isDisposed) return;
+      this.getRoom(namespace, roomId).then(r => {
+        if (r && onStateChange && !isDisposed) onStateChange(r);
+      });
+      if (!isSseActive) {
+        startEventSource();
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', handleReactivation);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') handleReactivation();
+      });
+    }
+
     // İlk durumu hemen al
     this.getRoom(namespace, roomId).then(r => {
-      if (r && onStateChange) onStateChange(r);
+      if (r && onStateChange && !isDisposed) onStateChange(r);
     });
 
     const cleanup = () => {
+      isDisposed = true;
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
       if (eventSource) {
         try { eventSource.close(); } catch (e) {}
       }
       if (fallbackPollTimer) {
         clearInterval(fallbackPollTimer);
+      }
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('online', handleReactivation);
       }
       this.activeListeners.delete(key);
     };

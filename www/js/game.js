@@ -615,14 +615,36 @@ class GameApp {
       });
     }
 
-    // Party Arcade: Hızlı Başla Hero Kartı
-    const btnHeroQuick = document.getElementById('hero-quick-play');
-    if (btnHeroQuick) {
-      btnHeroQuick.addEventListener('click', () => {
+    // Oyun Hub'ı: Sol (Klasik & Çeşitleri) ve Sağ (Parti Oyunları Arenası)
+    const btnHubClassic = document.getElementById('hero-hub-classic');
+    const btnHubParty = document.getElementById('hero-hub-party');
+
+    if (btnHubClassic) {
+      btnHubClassic.addEventListener('click', () => {
         sounds.playClick();
-        const unlocked = this.categories.filter(c => !this.isCategoryLocked(c.id));
-        const chosen = unlocked[Math.floor(Math.random() * unlocked.length)] || this.categories[0];
-        this.selectCategoryAndStart(chosen);
+        this.triggerHaptic('tick');
+        this.showScreen('home');
+        document.querySelectorAll('.dock-nav-item').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('dock-btn-home')?.classList.add('active');
+        
+        const target = document.querySelector('.rules-mode-bar') || document.getElementById('category-grid');
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        this.showToast('📱 Kafana Tak! Alna koyma ve kural modları seçildi');
+      });
+    }
+
+    if (btnHubParty) {
+      btnHubParty.addEventListener('click', () => {
+        sounds.playClick();
+        this.triggerHaptic('success');
+        this.stopSummaryVideo();
+        this.showScreen('partyGames');
+        document.querySelectorAll('.dock-nav-item').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('dock-btn-party-games')?.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        this.showToast('🎭 Parti Arenası açıldı: 12 Masa & Çoklu Cihaz Oyunu');
       });
     }
 
@@ -2011,11 +2033,11 @@ class GameApp {
     if (this.btnQuickWheelStart) {
       this.btnQuickWheelStart.addEventListener('click', () => {
         sounds.playClick();
-        this.gameMode = 'teams';
-        this.updateTeamModeUI();
-        this.currentRoundNumber = 1;
-        this.currentTeamIndex = 0;
-        this.teams.forEach(t => t.score = 0);
+        if (this.gameMode === 'teams') {
+          this.currentRoundNumber = 1;
+          this.currentTeamIndex = 0;
+          this.teams.forEach(t => t.score = 0);
+        }
         this.openTeamFortuneWheel();
       });
     }
@@ -2784,7 +2806,7 @@ class GameApp {
   }
 
   updateTeamModeUI() {
-    const heroCard = document.getElementById('hero-quick-play')?.parentElement;
+    const heroCard = document.querySelector('.hub-sections-hero-wrapper') || document.getElementById('hero-quick-play')?.parentElement;
     const rulesBar = document.querySelector('.rules-mode-bar');
     const specBar = document.querySelector('.spectator-quick-invite-wrapper');
 
@@ -4656,13 +4678,28 @@ class GameApp {
     // 2. İlk QR çizimini mevcut modla (Bulut/Firebase) anında yap
     await this.renderSpectatorQR();
 
-    // 3. Arka planda sunucu IP bilgisini yokla
+    // 3. Odayı anında Firebase'e yaz ve canlı tut (Seyirci bağlandığında asla beklemesin / düşmesin)
+    this.broadcastSpectatorState('idle');
+    this.startSpectatorHeartbeat();
+
+    // 4. Arka planda sunucu IP bilgisini yokla
     this.fetchServerInfo().then(() => {
       if (this.inputSpectatorIp && this.serverInfo && this.serverInfo.localIp && this.serverInfo.localIp !== 'localhost') {
         this.inputSpectatorIp.value = this.serverInfo.localIp;
       }
       this.renderSpectatorQR();
     });
+  }
+
+  startSpectatorHeartbeat() {
+    if (this.spectatorHeartbeatTimer) return;
+    this.spectatorHeartbeatTimer = setInterval(() => {
+      if (this.spectatorRoomId) {
+        firebaseNetwork.updateRoom('spectator', this.spectatorRoomId, {
+          lastActive: Date.now()
+        }).catch(() => {});
+      }
+    }, 10000);
   }
 
   async renderSpectatorQR() {
@@ -5602,14 +5639,9 @@ SADECE geçerli bir JSON array döndür. Başka hiçbir açıklama veya markdown
   }
 
   openTeamFortuneWheel() {
-    this.isFortuneWheelMatch = true;
+    this.isFortuneWheelMatch = (this.gameMode === 'teams');
     this.teamFortuneSpinTeamIndex = 0;
     this.teamFortuneSelections = [];
-
-    if (this.gameMode !== 'teams') {
-      this.gameMode = 'teams';
-      this.updateTeamModeUI();
-    }
 
     if (this.modalTeamFortune) {
       this.modalTeamFortune.classList.add('active');
@@ -5625,12 +5657,35 @@ SADECE geçerli bir JSON array döndür. Başka hiçbir açıklama veya markdown
     this.teamFortuneSelectedCategory = null;
     this.teamFortuneSelectedModifier = null;
 
-    const activeTeam = (this.teams && this.teams[this.teamFortuneSpinTeamIndex]) || { name: `Takım ${this.teamFortuneSpinTeamIndex + 1}`, color: '#FF2E93' };
-    const totalTeams = (this.teams && this.teams.length) || 2;
+    const isSolo = (this.gameMode === 'solo');
+    const playerName = (this.profile && this.profile.name) || localStorage.getItem('kafanatak_player_name') || 'Parti Canavarı';
+    const activeTeam = isSolo
+      ? { name: playerName, color: '#00F5D4' }
+      : ((this.teams && this.teams[this.teamFortuneSpinTeamIndex]) || { name: `Takım ${this.teamFortuneSpinTeamIndex + 1}`, color: '#FF2E93' });
+    const totalTeams = isSolo ? 1 : ((this.teams && this.teams.length) || 2);
+
+    const titleEl = document.querySelector('.team-fortune-card .fortune-main-title');
+    const subEl = document.querySelector('.team-fortune-card .fortune-main-sub');
+    if (titleEl) {
+      titleEl.textContent = isSolo ? 'Kader Çarkı' : 'Takım Kader Çarkı';
+    }
+    if (subEl) {
+      subEl.textContent = isSolo ? 'Sürpriz Kategori & Süre/Kural Şansı' : '2 Aşamalı Şans Çarkı (Kategori & Süre)';
+    }
 
     if (this.teamFortuneBadge) {
-      this.teamFortuneBadge.textContent = `${activeTeam.name} (${this.teamFortuneSpinTeamIndex + 1}/${totalTeams}. Takım Çevirisi)`;
-      this.teamFortuneBadge.style.color = activeTeam.color || '#FFD166';
+      if (isSolo) {
+        this.teamFortuneBadge.textContent = `🌟 ${activeTeam.name}`;
+        this.teamFortuneBadge.style.color = '#00F5D4';
+      } else {
+        this.teamFortuneBadge.textContent = `${activeTeam.name} (${this.teamFortuneSpinTeamIndex + 1}/${totalTeams}. Takım Çevirisi)`;
+        this.teamFortuneBadge.style.color = activeTeam.color || '#FFD166';
+      }
+    }
+
+    const hintEl = document.querySelector('#team-fortune-active-banner .team-fortune-hint');
+    if (hintEl) {
+      hintEl.textContent = isSolo ? 'kaderini belirliyor!' : 'şansını deniyor!';
     }
 
     if (this.fortuneStep1) this.fortuneStep1.className = 'fortune-step active';
@@ -5650,7 +5705,11 @@ SADECE geçerli bir JSON array döndür. Başka hiçbir açıklama veya markdown
       this.btnSpinTeamFortune.style.display = 'block';
       this.btnSpinTeamFortune.disabled = false;
       const span = this.btnSpinTeamFortune.querySelector('span');
-      if (span) span.textContent = `🎲 ${activeTeam.name}: Kategori Çarkını Çevir!`;
+      if (span) {
+        span.textContent = isSolo
+          ? `🎲 1. Aşama: Kategori Çarkını Çevir!`
+          : `🎲 ${activeTeam.name}: Kategori Çarkını Çevir!`;
+      }
     }
     if (this.btnTeamFortuneCenter) {
       this.btnTeamFortuneCenter.disabled = false;
@@ -5847,10 +5906,16 @@ SADECE geçerli bir JSON array döndür. Başka hiçbir açıklama veya markdown
           if (this.fortuneStep1) this.fortuneStep1.className = 'fortune-step completed';
           if (this.fortuneStep2) this.fortuneStep2.className = 'fortune-step active';
 
-          const activeTeam = (this.teams && this.teams[this.teamFortuneSpinTeamIndex]) || { name: 'Takım' };
+          const isSolo = (this.gameMode === 'solo');
+          const playerName = (this.profile && this.profile.name) || localStorage.getItem('kafanatak_player_name') || 'Parti Canavarı';
+          const activeTeam = isSolo ? { name: playerName } : ((this.teams && this.teams[this.teamFortuneSpinTeamIndex]) || { name: 'Takım' });
           if (this.btnSpinTeamFortune) {
             const span = this.btnSpinTeamFortune.querySelector('span');
-            if (span) span.textContent = `⏱️ ${activeTeam.name}: Süre & Kural Çarkını Çevir!`;
+            if (span) {
+              span.textContent = isSolo
+                ? `⏱️ 2. Aşama: Süre & Kural Çarkını Çevir!`
+                : `⏱️ ${activeTeam.name}: Süre & Kural Çarkını Çevir!`;
+            }
           }
           this.drawTeamFortuneWheel(0);
         } else {
@@ -5864,7 +5929,12 @@ SADECE geçerli bir JSON array döndür. Başka hiçbir açıklama veya markdown
           }
           if (this.fortuneStep2) this.fortuneStep2.className = 'fortune-step completed';
 
-          const activeTeam = (this.teams && this.teams[this.teamFortuneSpinTeamIndex]) || { name: `Takım ${this.teamFortuneSpinTeamIndex + 1}`, color: '#FF2E93' };
+          const isSolo = (this.gameMode === 'solo');
+          const playerName = (this.profile && this.profile.name) || localStorage.getItem('kafanatak_player_name') || 'Parti Canavarı';
+          const activeTeam = isSolo
+            ? { name: playerName, color: '#00F5D4' }
+            : ((this.teams && this.teams[this.teamFortuneSpinTeamIndex]) || { name: `Takım ${this.teamFortuneSpinTeamIndex + 1}`, color: '#FF2E93' });
+          
           this.teamFortuneSelections[this.teamFortuneSpinTeamIndex] = {
             teamIndex: this.teamFortuneSpinTeamIndex,
             team: activeTeam,
@@ -5872,7 +5942,7 @@ SADECE geçerli bir JSON array döndür. Başka hiçbir açıklama veya markdown
             modifier: this.teamFortuneSelectedModifier
           };
 
-          const totalTeams = (this.teams && this.teams.length) || 2;
+          const totalTeams = isSolo ? 1 : ((this.teams && this.teams.length) || 2);
           const hasMoreTeams = this.teamFortuneSpinTeamIndex < totalTeams - 1;
 
           if (hasMoreTeams) {
@@ -5884,17 +5954,26 @@ SADECE geçerli bir JSON array döndür. Başka hiçbir açıklama veya markdown
               this.btnNextTeamSpin.style.display = 'block';
             }
           } else {
-            // Tüm takımlar çarklarını çevirdi!
+            // Çark çevirme tamamlandı!
             if (this.btnSpinTeamFortune) this.btnSpinTeamFortune.style.display = 'none';
             if (this.btnNextTeamSpin) this.btnNextTeamSpin.style.display = 'none';
 
-            this.renderTeamFortuneMatchupSummary();
-
-            if (this.btnLaunchFortuneRound) {
-              const firstTeam = this.teams[0] || { name: '1. Takım' };
-              const span = this.btnLaunchFortuneRound.querySelector('span');
-              if (span) span.textContent = `🚀 [${firstTeam.name}] İle SAVAŞI BAŞLAT!`;
-              this.btnLaunchFortuneRound.style.display = 'block';
+            if (isSolo) {
+              this.renderSoloFortuneSummary();
+              if (this.btnLaunchFortuneRound) {
+                const catName = this.teamFortuneSelectedCategory ? (this.teamFortuneSelectedCategory.title || this.teamFortuneSelectedCategory.name) : 'Kategori';
+                const span = this.btnLaunchFortuneRound.querySelector('span');
+                if (span) span.textContent = `🚀 [${catName}] İLE HEMEN OYNA!`;
+                this.btnLaunchFortuneRound.style.display = 'block';
+              }
+            } else {
+              this.renderTeamFortuneMatchupSummary();
+              if (this.btnLaunchFortuneRound) {
+                const firstTeam = this.teams[0] || { name: '1. Takım' };
+                const span = this.btnLaunchFortuneRound.querySelector('span');
+                if (span) span.textContent = `🚀 [${firstTeam.name}] İle SAVAŞI BAŞLAT!`;
+                this.btnLaunchFortuneRound.style.display = 'block';
+              }
             }
           }
         }
@@ -5904,9 +5983,58 @@ SADECE geçerli bir JSON array döndür. Başka hiçbir açıklama veya markdown
     requestAnimationFrame(animate);
   }
 
+  renderSoloFortuneSummary() {
+    if (!this.fortuneMatchupTeamsList) return;
+    this.fortuneMatchupTeamsList.innerHTML = '';
+
+    const sel = this.teamFortuneSelections[0];
+    if (!sel) return;
+
+    const heading = document.querySelector('.team-fortune-matchup-box .fortune-matchup-heading');
+    if (heading) {
+      heading.textContent = '🌟 KADERİN BELİRLENDİ 🌟';
+      heading.style.color = '#00F5D4';
+    }
+
+    const item = document.createElement('div');
+    item.className = 'fortune-matchup-team-item';
+    item.style.textAlign = 'center';
+    item.innerHTML = `
+      <div class="team-tag" style="background:linear-gradient(135deg, #00F5D4, #0072FF); color:#0B0E14; font-weight:950; padding:8px 18px; border-radius:14px; display:inline-flex; align-items:center; gap:8px; font-size:1.05rem;">
+        <span>🦁</span>
+        <span>${sel.team.name} (Tekli Mod)</span>
+      </div>
+      <div class="team-choice-chips" style="display:flex; justify-content:center; flex-wrap:wrap; gap:10px; margin-top:14px;">
+        <span class="fortune-detail-chip cat-chip" style="background:rgba(0,245,212,0.18); border:1.5px solid #00F5D4; color:#00F5D4; padding:8px 16px; border-radius:14px; font-size:0.95rem; font-weight:900;">
+          ${sel.category.icon || '🎯'} ${sel.category.title || sel.category.name}
+        </span>
+        <span class="fortune-detail-chip dur-chip" style="background:rgba(255,46,147,0.18); border:1.5px solid #FF2E93; color:#FF2E93; padding:8px 16px; border-radius:14px; font-size:0.95rem; font-weight:900;">
+          ${sel.modifier.icon || '⏱️'} ${sel.modifier.text}
+        </span>
+      </div>
+      <p style="margin-top:12px; font-size:0.84rem; color:#CBD5E1; line-height:1.45;">
+        Telefonu alnına koymaya hazır ol! Çarkın seçtiği kategori ve süreyle tekli tur başlıyor.
+      </p>
+    `;
+    this.fortuneMatchupTeamsList.appendChild(item);
+
+    if (this.teamFortuneWheelStage) this.teamFortuneWheelStage.style.display = 'none';
+    if (this.teamFortuneResultBox) this.teamFortuneResultBox.style.display = 'none';
+    if (this.fortuneStep1 && this.fortuneStep1.parentElement) this.fortuneStep1.parentElement.style.display = 'none';
+    if (this.teamFortuneMatchupSummary) {
+      this.teamFortuneMatchupSummary.style.display = 'block';
+    }
+  }
+
   renderTeamFortuneMatchupSummary() {
     if (!this.fortuneMatchupTeamsList) return;
     this.fortuneMatchupTeamsList.innerHTML = '';
+
+    const heading = document.querySelector('.team-fortune-matchup-box .fortune-matchup-heading');
+    if (heading) {
+      heading.textContent = '⚔️ KADER ÇARKI MAÇ EŞLEŞMESİ ⚔️';
+      heading.style.color = '#FFE600';
+    }
 
     this.teamFortuneSelections.forEach((sel, idx) => {
       const item = document.createElement('div');
@@ -5946,7 +6074,9 @@ SADECE geçerli bir JSON array döndür. Başka hiçbir açıklama veya markdown
   async launchTeamFortuneRound() {
     if (!this.teamFortuneSelections || this.teamFortuneSelections.length === 0) return;
     this.closeTeamFortuneWheel();
-    this.isFortuneWheelMatch = true;
+
+    const isSolo = (this.gameMode === 'solo');
+    this.isFortuneWheelMatch = !isSolo;
     this.currentTeamIndex = 0;
     this.currentRoundNumber = 1;
 
@@ -6335,7 +6465,9 @@ const unlockAllAudio = () => {
   window.addEventListener(evt, unlockAllAudio, { passive: true });
 });
 
-document.addEventListener('DOMContentLoaded', () => {
+const initGameApp = () => {
+  if (window.__gameAppInitialized) return;
+  window.__gameAppInitialized = true;
   if ('scrollRestoration' in history) {
     history.scrollRestoration = 'manual';
   }
@@ -6343,4 +6475,10 @@ document.addEventListener('DOMContentLoaded', () => {
   window.gameApp = new GameApp();
   window.game = window.gameApp;
   unlockAllAudio();
-});
+};
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initGameApp);
+} else {
+  initGameApp();
+}
