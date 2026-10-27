@@ -37,7 +37,11 @@ class HostModerationPanelController {
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 14px;
+        padding-top: max(20px, calc(env(safe-area-inset-top, 24px) + 16px));
+        padding-bottom: max(32px, calc(env(safe-area-inset-bottom, 20px) + 32px));
+        padding-left: max(14px, calc(env(safe-area-inset-left, 0px) + 14px));
+        padding-right: max(14px, calc(env(safe-area-inset-right, 0px) + 14px));
+        box-sizing: border-box;
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.25s ease;
@@ -52,7 +56,8 @@ class HostModerationPanelController {
         border-radius: 24px;
         width: 100%;
         max-width: 520px;
-        max-height: 90vh;
+        height: auto;
+        max-height: calc(100dvh - max(36px, calc(env(safe-area-inset-top, 24px) + 24px)) - max(48px, calc(env(safe-area-inset-bottom, 20px) + 40px)));
         display: flex;
         flex-direction: column;
         box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(0, 245, 212, 0.15);
@@ -143,9 +148,11 @@ class HostModerationPanelController {
 
       /* Gövde / İçerik */
       .host-mod-body {
-        padding: 16px 20px;
+        padding: 16px 20px calc(env(safe-area-inset-bottom, 0px) + 20px) 20px;
         overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
         flex: 1;
+        min-height: 0;
       }
       .host-mod-panel-view {
         display: none;

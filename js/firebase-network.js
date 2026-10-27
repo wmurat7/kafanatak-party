@@ -586,7 +586,7 @@ class FirebaseNetworkManager {
       toast.id = 'fb-announcement-banner';
       toast.style.cssText = `
         position: fixed;
-        top: 20px;
+        top: max(20px, calc(env(safe-area-inset-top, 24px) + 16px));
         left: 50%;
         transform: translateX(-50%) translateY(-30px);
         background: linear-gradient(135deg, rgba(245, 158, 11, 0.96), rgba(217, 119, 6, 0.96));
