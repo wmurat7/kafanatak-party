@@ -584,11 +584,11 @@
     <div id="isim-stage-setup" class="card" style="margin-bottom:14px;">
       <!-- Mod Seçimi -->
       <div style="display:flex; gap:8px; margin-bottom:14px;">
-        <button type="button" id="btn-isim-mode-wifi" class="btn-main active" style="flex:1; font-size:0.85rem; padding:10px 8px; border-radius:12px; background:rgba(0,245,212,0.2); border:1.5px solid var(--primary); color:#FFF;">
-          ☁️ Çoklu Telefon (Bulut / İnternet)
-        </button>
-        <button type="button" id="btn-isim-mode-local" class="btn-main" style="flex:1; font-size:0.85rem; padding:10px 8px; border-radius:12px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.15); color:var(--text-dim);">
+        <button type="button" id="btn-isim-mode-local" class="btn-main active" style="flex:1; font-size:0.85rem; padding:10px 8px; border-radius:12px; background:rgba(0,245,212,0.2); border:1.5px solid var(--primary); color:#FFF;">
           🎲 Tek Cihaz (Masada Oyna)
+        </button>
+        <button type="button" id="btn-isim-mode-wifi" class="btn-main" style="flex:1; font-size:0.85rem; padding:10px 8px; border-radius:12px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.15); color:var(--text-dim);">
+          ☁️ Çoklu Telefon (Bulut / QR)
         </button>
       </div>
 
@@ -675,9 +675,9 @@
       <!-- Oyuncu Seçici Sekmeleri (Tek Cihazda Çok Oyuncu İçin) -->
       <div id="isim-play-player-tabs" style="display:none; gap:8px; overflow-x:auto; padding-bottom:6px; margin:10px 0; -webkit-overflow-scrolling:touch;"></div>
 
-      <!-- Cevap Yazma Formu -->
+      <!-- Cevap / Kategori Tablosu Alanı -->
       <div style="margin:10px 0 14px; text-align:left;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <div id="isim-play-form-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
           <span style="font-size:0.8rem; font-weight:800; color:var(--gold);">📝 CEVAPLARINIZI YAZIN:</span>
           <span id="isim-play-filled-badge" style="font-size:0.75rem; font-weight:800; color:var(--primary); background:rgba(0,245,212,0.12); padding:2px 8px; border-radius:999px;">0 / 6 Dolu</span>
         </div>

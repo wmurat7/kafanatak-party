@@ -287,6 +287,21 @@ export class IsimSehirGameEngine {
     this.players = this.localPlayers;
     clearInterval(this.pollInterval);
 
+    const btnModeWifi = document.getElementById('btn-isim-mode-wifi');
+    const btnModeLocal = document.getElementById('btn-isim-mode-local');
+    if (btnModeLocal) {
+      btnModeLocal.classList.add('active');
+      btnModeLocal.style.background = 'rgba(0,245,212,0.2)';
+      btnModeLocal.style.borderColor = 'var(--primary)';
+      btnModeLocal.style.color = '#FFF';
+    }
+    if (btnModeWifi) {
+      btnModeWifi.classList.remove('active');
+      btnModeWifi.style.background = 'rgba(255,255,255,0.06)';
+      btnModeWifi.style.borderColor = 'rgba(255,255,255,0.15)';
+      btnModeWifi.style.color = 'var(--text-dim)';
+    }
+
     const wifiBox = document.getElementById('isim-wifi-box');
     const localBox = document.getElementById('isim-local-box');
     if (wifiBox) wifiBox.style.display = 'none';
@@ -731,11 +746,52 @@ export class IsimSehirGameEngine {
     const filledBadge = document.getElementById('isim-play-filled-badge');
     if (!inputsContainer) return;
 
+    // TEK CİHAZ (MASADA OYNA) MODU:
+    // Oyuncular masanın etrafında kağıt ve kalemle oynar.
+    // Ekrana tek tek kelime girmeye gerek yoktur; telefon kategorileri ve süreyi gösteren masa hakemidir.
+    if (this.mode === 'local') {
+      if (tabsContainer) tabsContainer.style.display = 'none';
+      if (filledBadge) filledBadge.style.display = 'none';
+
+      const formHeader = document.getElementById('isim-play-form-header');
+      if (formHeader) {
+        formHeader.innerHTML = `
+          <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.85rem; font-weight:800; color:var(--gold);">📋 AKTİF KATEGORİLER</span>
+            <span style="font-size:0.75rem; font-weight:800; color:var(--primary); background:rgba(0,245,212,0.12); padding:3px 10px; border-radius:999px;">✍️ Kağıtlara Yazın</span>
+          </div>
+        `;
+      }
+
+      inputsContainer.innerHTML = `
+        <div style="background:rgba(251,191,36,0.12); border:1.5px solid rgba(251,191,36,0.35); border-radius:14px; padding:12px 14px; margin-bottom:8px; text-align:center;">
+          <div style="font-size:0.92rem; font-weight:900; color:var(--gold); margin-bottom:2px;">
+            ✍️ HERKES KAĞIDINA YAZIYOR!
+          </div>
+          <div style="font-size:0.78rem; color:#CBD5E1; line-height:1.35;">
+            <strong>'${this.currentLetter}'</strong> harfi ile başlayan kelimeleri kağıtlarınıza yazın. İlk bitiren alttaki <strong>BİTTİ</strong> butonuna basar!
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          ${this.categories.map(c => `
+            <div style="background:linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); border:1.5px solid rgba(0,245,212,0.25); border-radius:14px; padding:14px 10px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+              <div style="font-size:1.05rem; font-weight:900; color:#FFF; margin-bottom:4px;">${c.name}</div>
+              <div style="font-size:0.75rem; font-weight:800; color:var(--primary); background:rgba(0,245,212,0.15); padding:3px 10px; border-radius:999px; display:inline-block;">
+                ${this.currentLetter} ile başlar
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      return;
+    }
+
     const activePlayer = this.players.find(p => p.id === this.activePlayerId) || this.players[0];
     if (!activePlayer) return;
     if (!activePlayer.answers) activePlayer.answers = {};
 
-    // 1. Çoklu Oyuncu Sekmeleri (Masada sırayla veya beraber yazarken oyuncu seçimi)
+    // 1. Çoklu Oyuncu Sekmeleri (Wi-Fi Modunda)
     if (tabsContainer) {
       if (this.players.length > 1) {
         tabsContainer.style.display = 'flex';
@@ -1014,7 +1070,16 @@ export class IsimSehirGameEngine {
       const catKey = c.id;
       this.catScores[catKey] = {};
 
-      // Otomatik puanlama: Harf uyumlu ve özgünse 10, aynıysa 5, boş/hatalıysa 0
+      if (this.mode === 'local') {
+        // Tek cihaz masa modunda kağıt oyunu: Varsayılan olarak her oyuncu doğru/özgün (+10) başlar.
+        // İncelemede aynı kelime yazanlar +5'e, boş veya hatalı olanlar 0'a tek dokunuşla ayarlanır.
+        this.players.forEach(p => {
+          this.catScores[catKey][p.id] = 10;
+        });
+        return;
+      }
+
+      // Otomatik puanlama: Harf uyumlu ve özgünse 10, aynıysa 5, boş/hatalıysa 0 (Wi-Fi modu için)
       const textMap = {};
       const curLetter = (this.currentLetter || '').toLocaleUpperCase('tr-TR');
 
@@ -1107,7 +1172,7 @@ export class IsimSehirGameEngine {
 
       return `
         <div style="background:rgba(255,255,255,0.06); border:1.5px solid ${isFirst ? 'var(--gold)' : 'rgba(255,255,255,0.1)'}; border-radius:14px; padding:12px; margin-bottom:10px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:${this.mode === 'local' ? '10px' : '8px'};">
             <div style="display:flex; align-items:center; gap:8px;">
               <span style="font-size:1.3rem;">${p.avatar}</span>
               <span style="font-weight:900; font-size:0.95rem; color:#FFF;">${p.name}</span>
@@ -1118,21 +1183,23 @@ export class IsimSehirGameEngine {
             </span>
           </div>
 
-          <!-- Söylenen / Yazılan Kelime Inputu (Masada düzenlenebilir) -->
+          ${this.mode === 'local' ? '' : `
+          <!-- Söylenen / Yazılan Kelime Inputu (Wi-Fi modunda) -->
           <div style="margin-bottom:8px;">
             <input type="text" placeholder="Kelime girilmedi..." value="${ans.replace(/"/g, '&quot;')}" class="inp-review-word" data-pid="${p.id}" data-cat="${catKey}" style="width:100%; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:8px 12px; color:#00F5D4; font-weight:800; font-size:0.95rem; outline:none;" />
           </div>
+          `}
 
           <!-- Puan Seçici Butonları -->
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
             <button type="button" class="btn-score-tag pts-10 ${currentPts === 10 ? 'active' : ''}" onclick="window.overrideScore('${p.id}', 10)">
-              🟢 +10 Tek / Özgün
+              🟢 +10 Tek
             </button>
             <button type="button" class="btn-score-tag pts-5 ${currentPts === 5 ? 'active' : ''}" onclick="window.overrideScore('${p.id}', 5)">
-              🟡 +5 Ortak
+              🟡 +5 Aynı
             </button>
             <button type="button" class="btn-score-tag pts-0 ${currentPts === 0 ? 'active' : ''}" onclick="window.overrideScore('${p.id}', 0)">
-              🔴 0 Boş / Hata
+              🔴 0 Boş
             </button>
           </div>
         </div>
