@@ -57,6 +57,7 @@ export class GulmemeMeydaniEngine {
     this.timerInterval = null;
     this.promptInterval = null;
     this.tensionInterval = null;
+    this.motionInterval = null;
     this.remainingSeconds = 60;
     this.scores = { player1: 0, player2: 0 };
     this.currentPrompt = '';
@@ -92,6 +93,7 @@ export class GulmemeMeydaniEngine {
         clearInterval(this.timerInterval);
         clearInterval(this.promptInterval);
         clearInterval(this.tensionInterval);
+        if (this.motionInterval) clearInterval(this.motionInterval);
         this.game.showScreen('party-games');
       };
     }
@@ -108,8 +110,18 @@ export class GulmemeMeydaniEngine {
       btnWater.onclick = () => {
         this.isWaterMode = !this.isWaterMode;
         sounds.playClick();
-        btnWater.textContent = this.isWaterMode ? '💧 Ağza Su Al: AÇIK!' : '💧 Ağza Su Al: Kapalı';
-        btnWater.style.background = this.isWaterMode ? 'rgba(0,245,212,0.35)' : 'rgba(0,245,212,0.15)';
+        const lbl = document.getElementById('lbl-water-mode-text');
+        if (this.isWaterMode) {
+          if (lbl) lbl.innerHTML = 'Ağza Su Alma Modu: <strong style="color:#00F5D4;">AÇIK (Püskürten Elenir!)</strong>';
+          btnWater.style.background = 'linear-gradient(135deg, rgba(6,182,212,0.25), rgba(8,145,178,0.4))';
+          btnWater.style.borderColor = '#00F5D4';
+          btnWater.style.boxShadow = '0 0 16px rgba(0,245,212,0.4)';
+        } else {
+          if (lbl) lbl.innerHTML = 'Ağza Su Alma Modu: <strong style="color:#94A3B8;">KAPALI</strong>';
+          btnWater.style.background = 'rgba(255,255,255,0.05)';
+          btnWater.style.borderColor = 'rgba(0,245,212,0.35)';
+          btnWater.style.boxShadow = 'none';
+        }
         const banner = document.getElementById('water-mode-banner');
         if (banner) banner.style.display = this.isWaterMode ? 'block' : 'none';
       };
@@ -179,7 +191,8 @@ export class GulmemeMeydaniEngine {
         audio: false
       });
       video.srcObject = this.stream;
-      video.play();
+      await video.play().catch(() => {});
+      this.startMotionTracking();
     } catch (e) {
       console.warn('Kamera açılamadı, simülasyon modu:', e);
       const fallback = document.getElementById('gulmeme-cam-fallback');
@@ -187,7 +200,80 @@ export class GulmemeMeydaniEngine {
     }
   }
 
+  startMotionTracking() {
+    if (this.motionInterval) clearInterval(this.motionInterval);
+    const video = document.getElementById('gulmeme-video');
+    if (!video) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 48;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    let prevData = null;
+
+    this.motionInterval = setInterval(() => {
+      if (!this.stream || video.paused || video.ended) return;
+      try {
+        ctx.drawImage(video, 0, 0, 64, 48);
+        const frame = ctx.getImageData(0, 0, 64, 48);
+        const data = frame.data;
+
+        if (prevData) {
+          // Sol ve Sağ yüzlerin alt mimik (ağız/çene) alanlarını analiz et
+          let diffP1 = 0, countP1 = 0;
+          let diffP2 = 0, countP2 = 0;
+
+          for (let y = 20; y < 44; y++) {
+            for (let x = 6; x < 28; x++) {
+              const idx = (y * 64 + x) * 4;
+              const curLum = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+              const prevLum = 0.299 * prevData[idx] + 0.587 * prevData[idx + 1] + 0.114 * prevData[idx + 2];
+              diffP1 += Math.abs(curLum - prevLum);
+              countP1++;
+            }
+            for (let x = 36; x < 58; x++) {
+              const idx = (y * 64 + x) * 4;
+              const curLum = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+              const prevLum = 0.299 * prevData[idx] + 0.587 * prevData[idx + 1] + 0.114 * prevData[idx + 2];
+              diffP2 += Math.abs(curLum - prevLum);
+              countP2++;
+            }
+          }
+
+          const avgP1 = diffP1 / (countP1 || 1);
+          const avgP2 = diffP2 / (countP2 || 1);
+          const maxMotion = Math.max(avgP1, avgP2);
+
+          // Normalizasyon: 0-25 -> %12 - %95
+          const motionPct = Math.min(95, Math.max(12, Math.round(maxMotion * 3.8)));
+          const bar = document.getElementById('gulmeme-tension-bar');
+          if (bar) bar.style.width = `${motionPct}%`;
+
+          const detectorBadge = document.getElementById('detector-status-badge');
+          if (detectorBadge) {
+            if (motionPct > 65) {
+              detectorBadge.textContent = '⚠️ MİMİK!';
+              detectorBadge.style.color = '#EF4444';
+              detectorBadge.style.background = 'rgba(239,68,68,0.2)';
+            } else {
+              detectorBadge.textContent = '● AKTİF';
+              detectorBadge.style.color = '#10B981';
+              detectorBadge.style.background = 'rgba(16,185,129,0.12)';
+            }
+          }
+        }
+        prevData = new Uint8ClampedArray(data);
+      } catch (e) {
+        // Fallback
+      }
+    }, 150);
+  }
+
   stopCamera() {
+    if (this.motionInterval) {
+      clearInterval(this.motionInterval);
+      this.motionInterval = null;
+    }
     if (this.stream) {
       this.stream.getTracks().forEach(t => t.stop());
       this.stream = null;
@@ -198,6 +284,7 @@ export class GulmemeMeydaniEngine {
     clearInterval(this.timerInterval);
     clearInterval(this.promptInterval);
     clearInterval(this.tensionInterval);
+    if (this.motionInterval) clearInterval(this.motionInterval);
     this.remainingSeconds = 60;
 
     document.getElementById('gulmeme-timer').textContent = '60s';
@@ -207,8 +294,9 @@ export class GulmemeMeydaniEngine {
     this.nextPrompt();
     this.promptInterval = setInterval(() => this.nextPrompt(), 6500);
 
-    // Canlı Gerginlik Barı Simülasyonu
+    // Canlı Gerginlik Barı Yedek Simülasyonu (Kamera kapalıysa)
     this.tensionInterval = setInterval(() => {
+      if (this.stream) return; // Kamera açıksa gerçek motion tracker yönetir
       const bar = document.getElementById('gulmeme-tension-bar');
       if (bar) {
         const randWidth = Math.floor(20 + Math.random() * 65);
