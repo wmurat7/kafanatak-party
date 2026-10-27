@@ -51,6 +51,34 @@ export const CARKIFELEK_PUZZLES = [
   { category: '📺 Dizi & Karakter', phrase: 'EZEL VE RAMİZ DAYI' }
 ];
 
+export const CARKIFELEK_KIDS_PUZZLES = [
+  { category: '🎬 Çizgi Film & Kahraman', phrase: 'KRAL ŞAKİR VE NECATİ' },
+  { category: '🎬 Çizgi Film & Kahraman', phrase: 'RAFADAN TAYFA HAYRİ' },
+  { category: '🎬 Çizgi Film & Kahraman', phrase: 'PEPEE VE ŞİLA' },
+  { category: '🎬 Çizgi Film & Kahraman', phrase: 'SÜNGERBOB KAREŞORT' },
+  { category: '🎬 Çizgi Film & Kahraman', phrase: 'ARABALAR ŞİMŞEK MCQUEEN' },
+  { category: '🎬 Çizgi Film & Kahraman', phrase: 'MAŞA İLE KOCA AYI' },
+  { category: '🎬 Çizgi Film & Kahraman', phrase: 'MİCKEY MOUSE VE DONALD' },
+  { category: '🎬 Çizgi Film & Kahraman', phrase: 'KUKULİ VE TİNKİ' },
+  { category: '🎬 Çizgi Film & Kahraman', phrase: 'NİLOYA VE TOSBİK' },
+  { category: '🦁 Sevimli Hayvanlar', phrase: 'ORMANLAR KRALI ASLAN' },
+  { category: '🦁 Sevimli Hayvanlar', phrase: 'UZUN BOYUNLU ZÜRAFA' },
+  { category: '🦁 Sevimli Hayvanlar', phrase: 'UÇAN RENKLİ PAPAĞAN' },
+  { category: '🦁 Sevimli Hayvanlar', phrase: 'SEVİMLİ YAVRU KÖPEK' },
+  { category: '🦁 Sevimli Hayvanlar', phrase: 'DENİZDEKİ YUNUS BALIĞI' },
+  { category: '🦁 Sevimli Hayvanlar', phrase: 'KUTUP AYISI VE PENGUEN' },
+  { category: '🧚 Masal Dünyası', phrase: 'KIRMIZI BAŞLIKLI KIZ' },
+  { category: '🧚 Masal Dünyası', phrase: 'PAMUK PRENSES VE YEDİ CÜCELER' },
+  { category: '🧚 Masal Dünyası', phrase: 'ÇİZMELİ KEDİ' },
+  { category: '🧚 Masal Dünyası', phrase: 'ALADDİN VE SİHİRLİ LAMBASI' },
+  { category: '🧚 Masal Dünyası', phrase: 'PİNOKYO VE UZUN BURNU' },
+  { category: '🧚 Masal Dünyası', phrase: 'BREMEN MIZIKACILARI' },
+  { category: '🎶 Çocuk Şarkıları & Oyun', phrase: 'ALİ BABANIN BİR ÇİFTLİĞİ VAR' },
+  { category: '🎶 Çocuk Şarkıları & Oyun', phrase: 'KIRMIZI BALIK GÖLDE KIVRILIYOR' },
+  { category: '🎶 Çocuk Şarkıları & Oyun', phrase: 'KÖREBE VE SAKLAMBAÇ OYUNU' },
+  { category: '🎶 Çocuk Şarkıları & Oyun', phrase: 'YAĞ SATARIM BAL SATARIM' }
+];
+
 export const TURKISH_CONSONANTS = ['B', 'C', 'Ç', 'D', 'F', 'G', 'Ğ', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'Ş', 'T', 'V', 'Y', 'Z'];
 export const TURKISH_VOWELS = ['A', 'E', 'I', 'İ', 'O', 'Ö', 'U', 'Ü'];
 
@@ -58,6 +86,7 @@ export class CarkifelekEngine {
   constructor(game) {
     this.game = game;
     this.mode = 'local'; // 'local' (tek cihaz) | 'wifi' (bulut oda / QR)
+    this.categoryMode = 'adult'; // 'adult' | 'kids'
     this.roomId = 'CARK';
     this.hostId = 'host_' + Math.random().toString(36).substring(2, 7);
 
@@ -153,6 +182,16 @@ export class CarkifelekEngine {
       btnNewPuzzle.onclick = () => this.newRound();
     }
 
+    // Kategori Modu Butonları (Klasik / Çocuk)
+    const btnCatAdult = document.getElementById('btn-cark-cat-adult');
+    const btnCatKids = document.getElementById('btn-cark-cat-kids');
+    if (btnCatAdult) {
+      btnCatAdult.onclick = () => this.setCategoryMode('adult');
+    }
+    if (btnCatKids) {
+      btnCatKids.onclick = () => this.setCategoryMode('kids');
+    }
+
     const btnBack = document.getElementById('btn-back-from-carkifelek');
     if (btnBack) {
       btnBack.onclick = () => {
@@ -173,6 +212,16 @@ export class CarkifelekEngine {
         }
       };
     }
+  }
+
+  setCategoryMode(cat) {
+    this.categoryMode = cat;
+    const btnAdult = document.getElementById('btn-cark-cat-adult');
+    const btnKids = document.getElementById('btn-cark-cat-kids');
+    if (btnAdult) btnAdult.classList.toggle('active', cat === 'adult');
+    if (btnKids) btnKids.classList.toggle('active', cat === 'kids');
+    sounds.playClick();
+    this.newRound();
   }
 
   setupLocalMode() {
@@ -351,8 +400,9 @@ export class CarkifelekEngine {
   }
 
   newRound() {
-    // Rastgele yeni bulmaca seç
-    this.currentPuzzle = CARKIFELEK_PUZZLES[Math.floor(Math.random() * CARKIFELEK_PUZZLES.length)];
+    // Rastgele yeni bulmaca seç (Yetişkin veya Çocuk Modu)
+    const pool = (this.categoryMode === 'kids') ? CARKIFELEK_KIDS_PUZZLES : CARKIFELEK_PUZZLES;
+    this.currentPuzzle = pool[Math.floor(Math.random() * pool.length)];
     this.guessedLetters = new Set();
     this.currentSlice = null;
     this.isSpinning = false;

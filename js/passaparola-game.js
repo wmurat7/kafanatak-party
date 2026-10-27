@@ -72,12 +72,68 @@ export const PASSAPAROLA_QUESTIONS_DB = [
   { letter: 'Z', question: 'Okulda teneffüsü, kapıda misafiri haber veren çınlamalı ses aleti', answer: 'ZİL' }
 ];
 
+export const PASSAPAROLA_KIDS_QUESTIONS_DB = [
+  { letter: 'A', question: 'Ormanlar kralı olarak bilinen, kocaman yelesi olan güçlü hayvan', answer: 'ASLAN' },
+  { letter: 'A', question: 'Dört tekerleği olan, ailenizle seyahat ettiğiniz binek taşıt', answer: 'ARABA' },
+  { letter: 'B', question: 'Denizlerde yaşayan, yüzgeçleri olan ve suda nefes alan sevimli canlı', answer: 'BALIK' },
+  { letter: 'B', question: 'Üfleyince şişen, rengarenk uçan hafif oyuncak', answer: 'BALON' },
+  { letter: 'C', question: 'Tavuğun yumurtasından "cik cik" diyerek çıkan sarı minik yavru', answer: 'CİVCİV' },
+  { letter: 'C', question: 'Sert kabuğu kırıldığında beyni andıran faydalı kuruyemiş', answer: 'CEVİZ' },
+  { letter: 'Ç', question: 'Doğum günlerinde ve bayramlarda severek yediğimiz lezzetli tatlı', answer: 'ÇİKOLATA' },
+  { letter: 'Ç', question: 'Okula giderken kitap ve defterlerimizi içine koyduğumuz sırt eşyası', answer: 'ÇANTA' },
+  { letter: 'D', question: 'Yazın külahın içinde yediğimiz buz gibi lezzetli tatlı', answer: 'DONDURMA' },
+  { letter: 'D', question: 'Hastalandığımızda bizi muayene edip iyileştiren beyaz önlüklü kişi', answer: 'DOKTOR' },
+  { letter: 'E', question: 'Amasya\'nın meşhur, kırmızı veya yeşil sulu kütür kütür meyvesi', answer: 'ELMA' },
+  { letter: 'E', question: 'Her sabah kahvaltıda tereyağı sürüp yediğimiz fırın yiyeceği', answer: 'EKMEK' },
+  { letter: 'F', question: 'Upuzun hortumu ve kocaman yelpaze kulakları olan dev hayvan', answer: 'FİL' },
+  { letter: 'F', question: 'Karadeniz\'de yetişen, kırılıp yenen yuvarlak kabuklu kuruyemiş', answer: 'FINDIK' },
+  { letter: 'G', question: 'Gündüz gökyüzünde parlayan, dünyamızı ısıtan sıcacık yıldız', answer: 'GÜNEŞ' },
+  { letter: 'G', question: 'Gözlerimizi güneşten korumak veya daha net görmek için taktığımız camlı eşya', answer: 'GÖZLÜK' },
+  { letter: 'H', question: 'Tavşanların bayılarak yediği turuncu renkli kıtır kıtır sebze', answer: 'HAVUÇ' },
+  { letter: 'H', question: 'Birçok farklı vahşi ve sevimli hayvanı görebildiğimiz büyük park', answer: 'HAYVANAT BAHÇESİ' },
+  { letter: 'I', question: 'Karanlık odaya girip elektrik düğmesine basınca odayı aydınlatan enerji', answer: 'IŞIK' },
+  { letter: 'I', question: 'Temel Reis\'in yediğinde kaslarını güçlendiren yeşil yapraklı sebze', answer: 'ISPANAK' },
+  { letter: 'İ', question: 'Bize her sabah taze süt veren "möö" diyen çiftlik hayvanı', answer: 'İNEK' },
+  { letter: 'İ', question: 'Uçurtmanın gökyüzünde uçması için elimizde tuttuğumuz uzun bağ', answer: 'İP' },
+  { letter: 'K', question: 'Miyav miyav diyen, süt içmeyi ve yün yumağıyla oynamayı çok seven evcil dostumuz', answer: 'KEDİ' },
+  { letter: 'K', question: 'Sadık dostumuz olan, hav hav diyerek kuyruk sallayan sevimli hayvan', answer: 'KÖPEK' },
+  { letter: 'L', question: 'Çorbaya ve salataya sıkılan, çok ekşi ve sapsarı narenciye meyvesi', answer: 'LİMON' },
+  { letter: 'L', question: 'Karanlıkta odamızı aydınlatan elektrikli masa veya tavan aracı', answer: 'LAMBA' },
+  { letter: 'M', question: 'Maymunların bayılarak yediği, kabuğu soyulan tatlı sarı meyve', answer: 'MUZ' },
+  { letter: 'M', question: 'Uyumadan önce anne veya babamızın bize anlattığı sihirli hikaye', answer: 'MASAL' },
+  { letter: 'N', question: 'Kırmızı kabuğu kırılınca içinden yüzlerce tatlı yakut tanesi çıkan meyve', answer: 'NAR' },
+  { letter: 'N', question: 'Bebeklerin mışıl mışıl uyuması için söylenen sakinleştirici ezgi', answer: 'NİNNİ' },
+  { letter: 'O', question: 'Öğretmenimiz ve arkadaşlarımızla buluşup yeni bilgiler öğrendiğimiz bina', answer: 'OKUL' },
+  { letter: 'O', question: 'Oyun oynarken en çok sevdiğimiz araba, bebek ve yapboz gibi nesneler', answer: 'OYUNCAK' },
+  { letter: 'Ö', question: 'Suda "vak vak" diyerek yüzen, sarı yassı gagalı sevimli kuş', answer: 'ÖRDEK' },
+  { letter: 'Ö', question: 'Okulda bize okumayı, yazmayı ve güzel şeyleri öğreten değerli kişi', answer: 'ÖĞRETMEN' },
+  { letter: 'P', question: 'Doğum günlerinde üzerine mum dikip üflediğimiz kremalı tatlı', answer: 'PASTA' },
+  { letter: 'P', question: 'Karlar ve buzlar üzerinde paytak paytak yürüyen smokinli sevimli kuş', answer: 'PENGUEN' },
+  { letter: 'R', question: 'Boya kalemleriyle kağıda çizdiğimiz rengarenk görsel çalışma', answer: 'RESİM' },
+  { letter: 'R', question: 'Kırmızı, mavi, sarı, yeşil gibi dünyayı süsleyen tüm tonlar', answer: 'RENK' },
+  { letter: 'S', question: 'Canımız her susadığında kana kana içtiğimiz en sağlıklı ve temel sıvı', answer: 'SU' },
+  { letter: 'S', question: 'Kemiklerimizi ve dişlerimizi güçlendiren bembeyaz faydalı içecek', answer: 'SÜT' },
+  { letter: 'Ş', question: 'Yağmur yağdığında ıslanmamak için başımızın üzerinde açtığımız siperlik', answer: 'ŞEMSİYE' },
+  { letter: 'Ş', question: 'Bayramlarda çocuklara ikram edilen renkli tatlı yiyecek', answer: 'ŞEKER' },
+  { letter: 'T', question: 'Raylar üzerinde "çuf çuf" diyerek ilerleyen uzun vagonlu taşıt', answer: 'TREN' },
+  { letter: 'T', question: 'Uzun kulakları olan, zıp zıp zıplayan ve havuç seven sevimli hayvan', answer: 'TAVŞAN' },
+  { letter: 'U', question: 'Gökyüzünde bulutların arasında kanatlarıyla hızla uçan büyük yolcu taşıtı', answer: 'UÇAK' },
+  { letter: 'U', question: 'Rüzgarlı havalarda gökyüzünde iple uçurduğumuz rengarenk hafif oyuncak', answer: 'UÇURTMA' },
+  { letter: 'V', question: 'Denizde "düüt" diye düdük çalarak iskeleler arası yolcu taşıyan deniz aracı', answer: 'VAPUR' },
+  { letter: 'V', question: 'Çiçekleri içine koyup masamızı süslediğimiz cam veya porselen kap', answer: 'VAZO' },
+  { letter: 'Y', question: 'Gece gökyüzünde pırıl pırıl parıldayan minik ışık noktaları', answer: 'YILDIZ' },
+  { letter: 'Y', question: 'Kahvaltıda rafadan veya haşlanmış yediğimiz, tavuğun hediyesi', answer: 'YUMURTA' },
+  { letter: 'Z', question: 'Upuzun boynuyla ağaçların tepesindeki yaprakları yiyen benekli hayvan', answer: 'ZÜRAFA' },
+  { letter: 'Z', question: 'Okulda dersin bittiğini ve teneffüse çıkma vaktini haber veren ses', answer: 'ZİL' }
+];
+
 export const LOCAL_AVATARS = ['🦁', '🦊', '🐼', '🐯', '🦄', '🐸', '🐶', '🐱'];
 
 export class PassaparolaEngine {
   constructor(game) {
     this.game = game;
     this.mode = 'local'; // 'local' (sunucu masada) | 'wifi' (bulut / QR)
+    this.categoryMode = 'adult'; // 'adult' | 'kids'
     this.roomId = 'PASS';
     this.hostId = 'host';
     this.currentIndex = 0;
@@ -214,6 +270,16 @@ export class PassaparolaEngine {
       };
     }
 
+    // Kategori Modu Butonları (Genel Kültür / Çocuk)
+    const btnCatAdult = document.getElementById('btn-passa-cat-adult');
+    const btnCatKids = document.getElementById('btn-passa-cat-kids');
+    if (btnCatAdult) {
+      btnCatAdult.onclick = () => this.setCategoryMode('adult');
+    }
+    if (btnCatKids) {
+      btnCatKids.onclick = () => this.setCategoryMode('kids');
+    }
+
     // Geri Dön
     const btnBack = document.getElementById('btn-back-from-passaparola');
     if (btnBack) {
@@ -228,6 +294,18 @@ export class PassaparolaEngine {
           this.game.showScreen('partyGames');
         }
       };
+    }
+  }
+
+  setCategoryMode(cat) {
+    this.categoryMode = cat;
+    const btnAdult = document.getElementById('btn-passa-cat-adult');
+    const btnKids = document.getElementById('btn-passa-cat-kids');
+    if (btnAdult) btnAdult.classList.toggle('active', cat === 'adult');
+    if (btnKids) btnKids.classList.toggle('active', cat === 'kids');
+    sounds.playClick();
+    if (!this.isPlaying) {
+      this.resetGame();
     }
   }
 
@@ -394,7 +472,8 @@ export class PassaparolaEngine {
 
     PASSAPAROLA_LETTERS.forEach(letter => {
       this.letterStates[letter] = 'pending';
-      const pool = PASSAPAROLA_QUESTIONS_DB.filter(q => q.letter === letter);
+      const db = (this.categoryMode === 'kids') ? PASSAPAROLA_KIDS_QUESTIONS_DB : PASSAPAROLA_QUESTIONS_DB;
+      const pool = db.filter(q => q.letter === letter);
       if (pool.length > 0) {
         this.currentQuestions[letter] = pool[Math.floor(Math.random() * pool.length)];
       } else {
@@ -428,7 +507,8 @@ export class PassaparolaEngine {
     // Harf durumlarını sıfırla
     PASSAPAROLA_LETTERS.forEach(letter => {
       this.letterStates[letter] = 'pending';
-      const pool = PASSAPAROLA_QUESTIONS_DB.filter(q => q.letter === letter);
+      const db = (this.categoryMode === 'kids') ? PASSAPAROLA_KIDS_QUESTIONS_DB : PASSAPAROLA_QUESTIONS_DB;
+      const pool = db.filter(q => q.letter === letter);
       if (pool.length > 0) {
         this.currentQuestions[letter] = pool[Math.floor(Math.random() * pool.length)];
       } else {

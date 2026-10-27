@@ -1566,7 +1566,7 @@
       </p>
 
       <!-- Mod Seçimi -->
-      <div style="display:flex; gap:10px; margin-bottom:14px;">
+      <div style="display:flex; gap:10px; margin-bottom:12px;">
         <button type="button" id="btn-passa-mode-local" class="btn-main active" style="flex:1; padding:10px 8px; border-radius:14px; background:rgba(0,245,212,0.18); border:1.5px solid var(--primary); color:#FFF; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer;">
           <div style="font-size:0.92rem; font-weight:900; letter-spacing:0.3px;">🎲 Tek Cihaz</div>
           <div style="font-size:0.72rem; font-weight:700; color:var(--gold); opacity:0.95;">Sunucu Masada</div>
@@ -1574,6 +1574,16 @@
         <button type="button" id="btn-passa-mode-wifi" class="btn-main" style="flex:1; padding:10px 8px; border-radius:14px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.15); color:var(--text-dim); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer;">
           <div style="font-size:0.92rem; font-weight:900; letter-spacing:0.3px;">☁️ Çoklu Cihaz</div>
           <div style="font-size:0.72rem; font-weight:700; color:var(--primary); opacity:0.85;">Bulut / QR Bağlantı</div>
+        </button>
+      </div>
+
+      <!-- Kategori Modu: Klasik vs Çocuk -->
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <button type="button" id="btn-passa-cat-adult" class="rule-chip active" style="flex:1; padding:8px 6px; justify-content:center; font-size:0.82rem; border-radius:12px; cursor:pointer;">
+          🌟 Genel Kültür
+        </button>
+        <button type="button" id="btn-passa-cat-kids" class="rule-chip" style="flex:1; padding:8px 6px; justify-content:center; font-size:0.82rem; border-radius:12px; cursor:pointer;">
+          🧒 Çocuk Modu (7-12 Yaş)
         </button>
       </div>
 
@@ -1735,11 +1745,21 @@
       </button>
     </div>
 
+    <!-- Kategori Modu: Klasik vs Çocuk -->
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <button type="button" id="btn-cark-cat-adult" class="rule-chip active" style="flex:1; padding:8px 6px; justify-content:center; font-size:0.82rem; border-radius:12px; cursor:pointer;">
+        🌟 Klasik Bulmacalar
+      </button>
+      <button type="button" id="btn-cark-cat-kids" class="rule-chip" style="flex:1; padding:8px 6px; justify-content:center; font-size:0.82rem; border-radius:12px; cursor:pointer;">
+        🧒 Çocuk Modu (Çizgi Film & Masal)
+      </button>
+    </div>
+
     <!-- Wi-Fi / Bulut Bağlantı Kutusu -->
     <div id="cark-wifi-box" style="display:none; background:rgba(0,0,0,0.35); border-radius:16px; padding:14px; margin-bottom:14px; text-align:center;">
       <div style="font-size:0.8rem; font-weight:800; color:var(--text-dim); margin-bottom:4px;">YARIŞMACILAR BU QR'I OKUTARAK ODAYA BAĞLANSIN:</div>
       <div style="font-size:0.75rem; color:#00F5D4; font-weight:800; margin-bottom:6px;">☁️ Sırası gelen kendi telefonundan çarkı çevirir ve harf seçer!</div>
-      <div id="cark-qr-canvas" style="display:inline-block; margin:6px 0; border:2px solid var(--primary); border-radius:12px; padding:6px; background:#0B0E14;"></div>
+      <div id="cark-qr-canvas" style="display:inline-block; margin:8px auto; border:2.5px solid var(--primary); border-radius:14px; padding:8px; background:#FFFFFF; box-shadow:0 0 25px rgba(0,245,212,0.4);"></div>
       <div style="font-size:1.1rem; font-weight:900; color:var(--gold); margin-top:2px;">
         ODA KODU: <span id="lbl-cark-room-code" style="letter-spacing:3px;">----</span>
       </div>
