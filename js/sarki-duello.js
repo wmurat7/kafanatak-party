@@ -4,6 +4,7 @@
 import { sounds } from './audio.js';
 import { firebaseNetwork } from './firebase-network.js';
 import { HostModerationPanel } from './host-moderation-panel.js';
+import QRCode from './qrcode.esm.js';
 
 export const TURKISH_SONGS = [
   {
@@ -127,9 +128,6 @@ export const TURKISH_SONGS = [
     options: ['Beni böyle yarım bırakma nolur!', 'Yağmur gibi yağ üzerime bu gece', 'Sensiz geçen günlerin hesabını kim verir']
   }
 ];
-
-import { firebaseNetwork } from './firebase-network.js';
-import QRCode from './qrcode.esm.js';
 
 export class SarkiDuelloEngine {
   constructor(game) {
