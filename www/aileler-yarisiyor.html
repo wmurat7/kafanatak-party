@@ -184,13 +184,91 @@
       cursor: pointer;
     }
     .btn-react:active { transform: scale(0.9); }
+
+    .header-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 6px;
+    }
+    .btn-leave-header {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #F87171;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .btn-leave-header:active { transform: scale(0.95); background: rgba(239, 68, 68, 0.3); }
+
+    /* Çıkış Onay Modalı */
+    .confirm-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 9999;
+    }
+    .confirm-modal-card {
+      background: #161B2E;
+      border: 1.5px solid rgba(239, 68, 68, 0.4);
+      border-radius: 22px;
+      padding: 24px 20px;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7);
+      animation: popIn 0.2s ease-out;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .confirm-modal-icon { font-size: 2.8rem; margin-bottom: 8px; }
+    .btn-cancel-modal {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      color: #E2E8F0;
+      font-weight: 800;
+      padding: 12px;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    .btn-danger-modal {
+      background: linear-gradient(135deg, #EF4444, #B91C1C);
+      border: none;
+      color: #FFF;
+      font-weight: 900;
+      padding: 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+    }
   </style>
 </head>
 <body>
 
   <div class="container">
     <header>
-      <div class="header-logo">👨‍👩‍👧‍👦</div>
+      <div class="header-top-row">
+        <div style="width:70px;"></div>
+        <div class="header-logo">👨‍👩‍👧‍👦</div>
+        <div style="width:70px; text-align:right;">
+          <button type="button" id="btn-leave-room" class="btn-leave-header" style="display:none;">🚪 Çıkış</button>
+        </div>
+      </div>
       <h1>Aileler Yarışıyor</h1>
       <div id="room-badge" class="room-badge" style="display:none;">
         <span>ODA:</span> <b id="room-code-text">----</b>
@@ -298,6 +376,24 @@
       </div>
     </section>
 
+    <!-- ÇIKIŞ ONAY MODALI -->
+    <div id="modal-confirm-exit" class="confirm-modal-overlay" style="display:none;">
+      <div class="confirm-modal-card">
+        <div class="confirm-modal-icon">⚠️</div>
+        <h3 style="color:#FFF; font-size:1.15rem; font-weight:900; margin-bottom:6px;">Odadan Çıkmak İstiyor Musunuz?</h3>
+        <p style="font-size:0.85rem; color:#94A3B8; line-height:1.4; margin-bottom:18px;">
+          Bağlantınız kesilecek ve masadaki ailenizden ayrılacaksınız.
+        </p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <button type="button" id="btn-cancel-exit" class="btn-cancel-modal">Vazgeç</button>
+          <button type="button" id="btn-do-exit" class="btn-danger-modal">Evet, Ayrıl</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Bildirimi -->
+    <div id="toast-notify" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(80px); background:rgba(15,23,42,0.95); border:1.5px solid var(--gold); color:#FFF; padding:8px 18px; border-radius:999px; font-size:0.85rem; font-weight:800; z-index:9999; pointer-events:none; transition:transform 0.25s ease; box-shadow:0 6px 20px rgba(0,0,0,0.6);"></div>
+
   </div>
 
   <script type="module">
@@ -306,6 +402,7 @@
     let currentRoomId = '';
     let playerName = '';
     let playerTeam = 'red'; // 'red' or 'blue'
+    let myPlayerId = '';
     let roomUnsubscribe = null;
     let hasBuzzedThisRound = false;
 
@@ -328,33 +425,52 @@
       document.getElementById('btn-choose-red').classList.remove('active');
     };
 
-    // Katıl
-    document.getElementById('btn-join-room').onclick = () => {
+    // Katıl (Mükerrer bağlantı engellemeli)
+    let isConnecting = false;
+    const btnJoin = document.getElementById('btn-join-room');
+    btnJoin.onclick = () => {
+      if (isConnecting || btnJoin.disabled) return;
       const roomIn = document.getElementById('input-room-code').value.trim().toUpperCase();
       const nameIn = document.getElementById('input-player-name').value.trim() || 'Yarışmacı';
       if (!roomIn) {
         alert('Lütfen oda kodunu girin!');
         return;
       }
+      if (currentRoomId === roomIn && roomUnsubscribe) {
+        // Zaten bu odaya bağlı
+        document.getElementById('section-join').style.display = 'none';
+        document.getElementById('section-waiting').style.display = 'block';
+        return;
+      }
+
+      isConnecting = true;
+      btnJoin.disabled = true;
+      btnJoin.textContent = 'Bağlanılıyor...';
+
       currentRoomId = roomIn;
       playerName = nameIn;
+      myPlayerId = firebaseNetwork.getOrCreatePlayerId('aileler_yarisiyor', currentRoomId, nameIn);
 
       document.getElementById('section-join').style.display = 'none';
       document.getElementById('section-waiting').style.display = 'block';
       document.getElementById('room-badge').style.display = 'inline-flex';
+      document.getElementById('btn-leave-room').style.display = 'inline-flex';
       document.getElementById('room-code-text').textContent = currentRoomId;
       document.getElementById('waiting-player-info').textContent = `${playerTeam === 'red' ? '🔴 Kırmızı Aile' : '🔵 Mavi Aile'} • ${playerName}`;
 
       connectToRoom();
+      setTimeout(() => { isConnecting = false; }, 1000);
     };
 
     function connectToRoom() {
-      if (roomUnsubscribe) roomUnsubscribe();
+      if (roomUnsubscribe) {
+        try { roomUnsubscribe(); } catch (e) {}
+        roomUnsubscribe = null;
+      }
 
-      // Oyuncuyu kaydet
-      const pId = 'ay_' + Date.now();
+      // Oyuncuyu tekil ID ile kaydet (Yeniden bağlanma mükerrer kayıt yaratmaz)
       firebaseNetwork.setPlayer('aileler_yarisiyor', currentRoomId, {
-        id: pId,
+        id: myPlayerId,
         name: playerName,
         team: playerTeam,
         joinedAt: Date.now()
@@ -365,6 +481,33 @@
         handleRoomSync(roomData);
       });
     }
+
+    // --- ÇIKIŞ ONAYI YÖNETİMİ ---
+    document.getElementById('btn-leave-room').onclick = () => {
+      document.getElementById('modal-confirm-exit').style.display = 'flex';
+    };
+    document.getElementById('btn-cancel-exit').onclick = () => {
+      document.getElementById('modal-confirm-exit').style.display = 'none';
+    };
+    document.getElementById('btn-do-exit').onclick = () => {
+      if (roomUnsubscribe) {
+        roomUnsubscribe();
+        roomUnsubscribe = null;
+      }
+      if (myPlayerId && currentRoomId) {
+        firebaseNetwork.removePlayer('aileler_yarisiyor', currentRoomId, myPlayerId);
+      }
+      document.getElementById('modal-confirm-exit').style.display = 'none';
+      document.getElementById('btn-leave-room').style.display = 'none';
+      document.getElementById('room-badge').style.display = 'none';
+      document.getElementById('section-waiting').style.display = 'none';
+      document.getElementById('section-faceoff').style.display = 'none';
+      document.getElementById('section-board').style.display = 'none';
+      document.getElementById('section-join').style.display = 'block';
+      btnJoin.disabled = false;
+      btnJoin.textContent = '🔔 OYUNA GİR & ZİLE GEÇ';
+      currentRoomId = '';
+    };
 
     function handleRoomSync(room) {
       const stage = room.stage;
@@ -486,13 +629,26 @@
       }, 3500);
     };
 
+    function showReactionToast(msg) {
+      const toast = document.getElementById('toast-notify');
+      if (!toast) return;
+      toast.textContent = msg;
+      toast.style.transform = 'translateX(-50%) translateY(0)';
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => {
+        toast.style.transform = 'translateX(-50%) translateY(80px)';
+      }, 2000);
+    }
+
     window.sendReaction = (text) => {
       if (!currentRoomId) return;
+      try { if (navigator.vibrate) navigator.vibrate(40); } catch(e) {}
       firebaseNetwork.sendAction('aileler_yarisiyor', currentRoomId, 'reaction', {
         playerName,
         team: playerTeam,
         text
       });
+      showReactionToast(`💬 "${text}" stüdyoya iletildi!`);
     };
   </script>
 </body>

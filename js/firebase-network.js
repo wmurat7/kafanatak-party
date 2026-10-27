@@ -192,9 +192,20 @@ class FirebaseNetworkManager {
 
   /**
    * Odaya bir aksiyon (tezahürat, bitti çağrısı, oy vb.) ekler
+   * Odaya bir aksiyon (tezahürat, bitti çağrısı, oy vb.) ekler (Mükerrer gönderim korumalı)
    */
   async sendAction(namespace, roomId, actionType, payload = {}) {
     if (!roomId) return false;
+
+    // 350ms içinde aynı tür mükerrer tıklamayı önle
+    if (!this.lastActionTimes) this.lastActionTimes = new Map();
+    const dedupKey = `${namespace}_${roomId}_${actionType}_${payload.sender || payload.playerId || ''}_${payload.cheer || ''}`;
+    const now = Date.now();
+    if (this.lastActionTimes.has(dedupKey) && (now - this.lastActionTimes.get(dedupKey) < 350)) {
+      return false;
+    }
+    this.lastActionTimes.set(dedupKey, now);
+
     const actionObj = {
       type: actionType,
       ...payload,
@@ -222,6 +233,34 @@ class FirebaseNetworkManager {
   }
 
   /**
+   * Oyuncu ID'sini yerel depolamadan alır veya tekil olarak oluşturur (Mükerrer bağlantıyı önler)
+   * playerName opsiyoneldir; verilirse ada göre eşleşme de korunur.
+   */
+  getOrCreatePlayerId(namespace, roomId, playerName = '') {
+    if (typeof localStorage === 'undefined') return 'p_' + Date.now();
+    const cleanNs = String(namespace || '').trim().toLowerCase();
+    const cleanRoom = String(roomId || '').trim().toUpperCase();
+    const cleanName = playerName ? String(playerName).trim().toLowerCase().replace(/[^a-z0-9]/gi, '') : '';
+
+    const nameKey = cleanName ? `kafanatak_pid_${cleanNs}_${cleanRoom}_${cleanName}` : null;
+    const roomKey = `kafanatak_pid_${cleanNs}_${cleanRoom}`;
+
+    let pid = nameKey ? localStorage.getItem(nameKey) : null;
+    if (!pid) pid = localStorage.getItem(roomKey);
+
+    if (!pid) {
+      pid = 'p_' + Math.random().toString(36).substring(2, 8) + '_' + Date.now().toString(36);
+    }
+
+    try {
+      localStorage.setItem(roomKey, pid);
+      if (nameKey) localStorage.setItem(nameKey, pid);
+    } catch (e) {}
+
+    return pid;
+  }
+
+  /**
    * Odaya oyuncu ekler / günceller
    */
   async setPlayer(namespace, roomId, player) {
@@ -246,24 +285,47 @@ class FirebaseNetworkManager {
   }
 
   /**
+   * Odadan oyuncuyu siler (Çıkış onayında)
+   */
+  async removePlayer(namespace, roomId, playerId) {
+    if (!roomId || !playerId) return false;
+    try {
+      const url = this.buildPath(namespace, roomId, `players/${playerId}`);
+      await fetch(url, { method: 'DELETE' });
+      return true;
+    } catch (err) {
+      console.warn(`[FirebaseNetwork] removePlayer hatası:`, err.message);
+      return false;
+    }
+  }
+
+  /**
    * Odayı gerçek zamanlı (SSE / EventSource) dinler.
    * Bağlantı zaman aşımına uğramaz; SSE koparsa otomatik yeniden bağlanır ve dual polling kesintisiz sürer.
+   * Mükerrer dinleyici (duplicate listener) ve sızıntı korumalıdır.
    */
   listenRoom(namespace, roomId, onStateChange, onAction = null) {
     if (!roomId) return () => {};
-    const key = `${namespace}/${roomId}`;
+    const cleanRoom = String(roomId).trim().toUpperCase();
+    const cleanNs = String(namespace).trim().toLowerCase();
+    const key = `${cleanNs}/${cleanRoom}`;
     this.stopListening(key);
 
-    const url = this.buildPath(namespace, roomId);
+    const url = this.buildPath(cleanNs, cleanRoom);
     let eventSource = null;
     let fallbackPollTimer = null;
     let isSseActive = false;
     let isDisposed = false;
+    let isPolling = false;
     let lastEventTime = 0;
     let reconnectTimeout = null;
 
     const startEventSource = () => {
       if (isDisposed) return;
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+        reconnectTimeout = null;
+      }
       try {
         if (typeof EventSource !== 'undefined') {
           if (eventSource) {
@@ -280,8 +342,8 @@ class FirebaseNetworkManager {
                 if (parsed.path === '/' || parsed.path === '') {
                   if (onStateChange) onStateChange(parsed.data);
                 } else {
-                  this.getRoom(namespace, roomId).then(full => {
-                    if (full && onStateChange) onStateChange(full);
+                  this.getRoom(cleanNs, cleanRoom).then(full => {
+                    if (full && onStateChange && !isDisposed) onStateChange(full);
                   });
                 }
               }
@@ -294,8 +356,8 @@ class FirebaseNetworkManager {
             try {
               const parsed = JSON.parse(e.data);
               if (parsed && parsed.data) {
-                this.getRoom(namespace, roomId).then(full => {
-                  if (full && onStateChange) onStateChange(full);
+                this.getRoom(cleanNs, cleanRoom).then(full => {
+                  if (full && onStateChange && !isDisposed) onStateChange(full);
                 });
               }
             } catch (err) {}
@@ -322,21 +384,26 @@ class FirebaseNetworkManager {
 
     // Dual-Layer Kesintisiz Polling (1.2 saniyede bir; SSE 3 saniyeden uzun sessizse anında yoklar)
     fallbackPollTimer = setInterval(async () => {
-      if (isDisposed) return;
+      if (isDisposed || isPolling) return;
       const now = Date.now();
       if (isSseActive && (now - lastEventTime) < 3200) {
         return; // SSE zaten çok taze veri akıtıyor
       }
-      const room = await this.getRoom(namespace, roomId);
-      if (room && onStateChange && !isDisposed) {
-        onStateChange(room);
+      isPolling = true;
+      try {
+        const room = await this.getRoom(cleanNs, cleanRoom);
+        if (room && onStateChange && !isDisposed) {
+          onStateChange(room);
+        }
+      } finally {
+        isPolling = false;
       }
     }, 1200);
 
     // Mobil cihaz arka plandan döndüğünde veya internet geri geldiğinde anında tetikle
     const handleReactivation = () => {
       if (isDisposed) return;
-      this.getRoom(namespace, roomId).then(r => {
+      this.getRoom(cleanNs, cleanRoom).then(r => {
         if (r && onStateChange && !isDisposed) onStateChange(r);
       });
       if (!isSseActive) {
@@ -344,15 +411,17 @@ class FirebaseNetworkManager {
       }
     };
 
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') handleReactivation();
+    };
+
     if (typeof window !== 'undefined') {
       window.addEventListener('online', handleReactivation);
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') handleReactivation();
-      });
+      document.addEventListener('visibilitychange', handleVisibility);
     }
 
     // İlk durumu hemen al
-    this.getRoom(namespace, roomId).then(r => {
+    this.getRoom(cleanNs, cleanRoom).then(r => {
       if (r && onStateChange && !isDisposed) onStateChange(r);
     });
 
@@ -361,12 +430,15 @@ class FirebaseNetworkManager {
       if (reconnectTimeout) clearTimeout(reconnectTimeout);
       if (eventSource) {
         try { eventSource.close(); } catch (e) {}
+        eventSource = null;
       }
       if (fallbackPollTimer) {
         clearInterval(fallbackPollTimer);
+        fallbackPollTimer = null;
       }
       if (typeof window !== 'undefined') {
         window.removeEventListener('online', handleReactivation);
+        document.removeEventListener('visibilitychange', handleVisibility);
       }
       this.activeListeners.delete(key);
     };
@@ -376,6 +448,16 @@ class FirebaseNetworkManager {
   }
 
   stopListening(key) {
+    if (!key) return;
+    const cleanKey = String(key).includes('/')
+      ? `${String(key).split('/')[0].trim().toLowerCase()}/${String(key).split('/')[1].trim().toUpperCase()}`
+      : String(key).trim();
+
+    if (this.activeListeners.has(cleanKey)) {
+      const cleanup = this.activeListeners.get(cleanKey);
+      try { cleanup(); } catch (e) {}
+      this.activeListeners.delete(cleanKey);
+    }
     if (this.activeListeners.has(key)) {
       const cleanup = this.activeListeners.get(key);
       try { cleanup(); } catch (e) {}

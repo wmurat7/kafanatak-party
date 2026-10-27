@@ -284,8 +284,21 @@
     // Firebase REST polling/event listener
     const dbUrl = 'https://kafanatak-party-default-rtdb.europe-west1.firebasedatabase.app';
 
+    let isRegistering = false;
     async function registerPlayer() {
+      if (isRegistering) return;
+      const btn = document.getElementById('btn-join-room');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Bağlanılıyor...';
+      }
+      isRegistering = true;
       const name = (document.getElementById('inp-player-name').value || '').trim() || 'Yarışmacı';
+      const cleanName = name.trim().toLowerCase().replace(/[^a-z0-9]/gi, '');
+      myPlayerId = localStorage.getItem(`kafanatak_pid_passa_${roomId}_${cleanName}`) || localStorage.getItem(`kafanatak_pid_passa_${roomId}`) || myPlayerId;
+      localStorage.setItem(`kafanatak_pid_passa_${roomId}_${cleanName}`, myPlayerId);
+      localStorage.setItem(`kafanatak_pid_passa_${roomId}`, myPlayerId);
+
       try {
         await fetch(`${dbUrl}/kafanatak/passaparola/${roomId}/players/${myPlayerId}.json`, {
           method: 'PUT',
@@ -304,6 +317,12 @@
         document.getElementById('lobby-wait-text').style.display = 'block';
       } catch (e) {
         console.error('Join error:', e);
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '🚀 Odaya Katıl';
+        }
+      } finally {
+        isRegistering = false;
       }
     }
 

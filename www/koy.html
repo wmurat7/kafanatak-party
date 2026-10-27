@@ -76,12 +76,90 @@
 
     /* Dead Overlay */
     .dead-banner { background: rgba(239, 68, 68, 0.15); border: 1.5px solid #EF4444; color: #FCA5A5; padding: 10px; border-radius: 12px; font-size: 0.82rem; font-weight: 800; text-align: center; margin-bottom: 12px; }
+
+    .header-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 4px;
+    }
+    .btn-leave-header {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #F87171;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .btn-leave-header:active { transform: scale(0.95); background: rgba(239, 68, 68, 0.3); }
+
+    /* Çıkış Onay Modalı */
+    .confirm-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 9999;
+    }
+    .confirm-modal-card {
+      background: #161B2E;
+      border: 1.5px solid rgba(239, 68, 68, 0.4);
+      border-radius: 22px;
+      padding: 24px 20px;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7);
+      animation: popIn 0.2s ease-out;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .confirm-modal-icon { font-size: 2.8rem; margin-bottom: 8px; }
+    .btn-cancel-modal {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      color: #E2E8F0;
+      font-weight: 800;
+      padding: 12px;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    .btn-danger-modal {
+      background: linear-gradient(135deg, #EF4444, #B91C1C);
+      border: none;
+      color: #FFF;
+      font-weight: 900;
+      padding: 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <div class="header-logo" id="header-icon">🧛‍♂️</div>
+      <div class="header-top-row">
+        <div style="width:70px;"></div>
+        <div class="header-logo" id="header-icon">🧛‍♂️</div>
+        <div style="width:70px; text-align:right;">
+          <button type="button" id="btn-leave-room" class="btn-leave-header" style="display:none;">🚪 Çıkış</button>
+        </div>
+      </div>
       <h1>VAMPİR - KÖYLÜ</h1>
       <div id="room-badge" class="room-badge">ODA: BEKLENİYOR</div>
     </header>
@@ -174,6 +252,21 @@
         <div id="game-players-list" class="player-pills"></div>
       </div>
     </div>
+
+    <!-- ÇIKIŞ ONAY MODALI -->
+    <div id="modal-confirm-exit" class="confirm-modal-overlay" style="display:none;">
+      <div class="confirm-modal-card">
+        <div class="confirm-modal-icon">⚠️</div>
+        <h3 style="color:#FFF; font-size:1.15rem; font-weight:900; margin-bottom:6px;">Köyden Ayrılmak İstiyor Musunuz?</h3>
+        <p style="font-size:0.85rem; color:#94A3B8; line-height:1.4; margin-bottom:18px;">
+          Bağlantınız kesilecek ve köy meydanındaki rolünüz boşa çıkacak.
+        </p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <button type="button" id="btn-cancel-exit" class="btn-cancel-modal">Vazgeç</button>
+          <button type="button" id="btn-do-exit" class="btn-danger-modal">Evet, Ayrıl</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -206,8 +299,11 @@
       });
     });
 
-    // Odaya Katıl
-    document.getElementById('btn-join-room').addEventListener('click', async () => {
+    // Odaya Katıl (Mükerrer bağlantı engellemeli)
+    let isJoining = false;
+    const btnJoinRoom = document.getElementById('btn-join-room');
+    btnJoinRoom.addEventListener('click', async () => {
+      if (isJoining || btnJoinRoom.disabled) return;
       const roomCode = document.getElementById('input-room-code').value.trim().toUpperCase();
       const playerName = document.getElementById('input-player-name').value.trim();
 
@@ -220,6 +316,15 @@
         return;
       }
 
+      if (currentRoomId === roomCode && myPlayerId && document.getElementById('screen-join').style.display === 'none') {
+        document.getElementById('screen-lobby').style.display = 'block';
+        return;
+      }
+
+      isJoining = true;
+      btnJoinRoom.disabled = true;
+      btnJoinRoom.textContent = 'Bağlanılıyor...';
+
       // 1. Önce Firebase Bulut Odayı Kontrol Et (Wi-Fi hotspot gerektirmez)
       try {
         const fbRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/vampire/${roomCode}.json`);
@@ -228,7 +333,17 @@
           if (roomData && (roomData.roomId || roomData.phase)) {
             networkMode = 'firebase';
             currentRoomId = roomCode;
-            myPlayerId = 'p_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 4);
+
+            const cleanName = playerName.trim().toLowerCase().replace(/[^a-z0-9]/gi, '');
+            let existingId = localStorage.getItem(`kafanatak_pid_vampire_${roomCode}_${cleanName}`) || localStorage.getItem(`kafanatak_pid_vampire_${roomCode}`);
+            if (!existingId && roomData.players) {
+              const pList = Array.isArray(roomData.players) ? roomData.players : Object.values(roomData.players);
+              const found = pList.find(p => p && p.name && p.name.trim().toLowerCase() === playerName.toLowerCase());
+              if (found) existingId = found.id;
+            }
+            myPlayerId = existingId || ('p_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 4));
+            localStorage.setItem(`kafanatak_pid_vampire_${roomCode}`, myPlayerId);
+            localStorage.setItem(`kafanatak_pid_vampire_${roomCode}_${cleanName}`, myPlayerId);
 
             const playerObj = {
               id: myPlayerId,
@@ -246,10 +361,12 @@
             });
 
             document.getElementById('room-badge').textContent = 'BULUT ODA: ' + currentRoomId;
+            document.getElementById('btn-leave-room').style.display = 'inline-flex';
             document.getElementById('screen-join').style.display = 'none';
             document.getElementById('screen-lobby').style.display = 'block';
 
             startPolling();
+            setTimeout(() => { isJoining = false; }, 1000);
             return;
           }
         }
@@ -267,6 +384,9 @@
         const data = await res.json();
         if (!res.ok || data.error) {
           alert(data.error || 'Odaya katılırken bir hata oluştu!');
+          btnJoinRoom.disabled = false;
+          btnJoinRoom.textContent = 'Köy Halkına Katıl ➔';
+          isJoining = false;
           return;
         }
 
@@ -274,14 +394,48 @@
         currentRoomId = data.roomId;
         myPlayerId = data.playerId;
         document.getElementById('room-badge').textContent = 'ODA: ' + currentRoomId;
+        document.getElementById('btn-leave-room').style.display = 'inline-flex';
 
         document.getElementById('screen-join').style.display = 'none';
         document.getElementById('screen-lobby').style.display = 'block';
 
         startPolling();
+        setTimeout(() => { isJoining = false; }, 1000);
       } catch (e) {
         alert('Odaya bağlanılamadı! Oda kodunu kontrol edin veya internet bağlantınızı kontrol edin.');
+        btnJoinRoom.disabled = false;
+        btnJoinRoom.textContent = 'Köy Halkına Katıl ➔';
+        isJoining = false;
       }
+    });
+
+    // --- ÇIKIŞ ONAYI YÖNETİMİ ---
+    document.getElementById('btn-leave-room').addEventListener('click', () => {
+      document.getElementById('modal-confirm-exit').style.display = 'flex';
+    });
+    document.getElementById('btn-cancel-exit').addEventListener('click', () => {
+      document.getElementById('modal-confirm-exit').style.display = 'none';
+    });
+    document.getElementById('btn-do-exit').addEventListener('click', async () => {
+      document.getElementById('modal-confirm-exit').style.display = 'none';
+      if (pollInterval) clearInterval(pollInterval);
+      if (fbEventSource) {
+        try { fbEventSource.close(); } catch(e) {}
+        fbEventSource = null;
+      }
+      if (currentRoomId && myPlayerId && networkMode === 'firebase') {
+        try {
+          await fetch(`${FIREBASE_DB_URL}/kafanatak/vampire/${currentRoomId}/players/${myPlayerId}.json`, { method: 'DELETE' });
+        } catch(e) {}
+      }
+      document.getElementById('btn-leave-room').style.display = 'none';
+      document.getElementById('room-badge').textContent = 'ODA: BEKLENİYOR';
+      document.getElementById('screen-lobby').style.display = 'none';
+      document.getElementById('screen-game').style.display = 'none';
+      document.getElementById('screen-join').style.display = 'block';
+      btnJoinRoom.disabled = false;
+      btnJoinRoom.textContent = 'Köy Halkına Katıl ➔';
+      currentRoomId = '';
     });
 
     // Rol Kartı Basılı Tutma (Gizli İntro)

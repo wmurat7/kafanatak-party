@@ -4681,6 +4681,7 @@ class GameApp {
     // 3. Odayı anında Firebase'e yaz ve canlı tut (Seyirci bağlandığında asla beklemesin / düşmesin)
     this.broadcastSpectatorState('idle');
     this.startSpectatorHeartbeat();
+    this.startCheerPolling();
 
     // 4. Arka planda sunucu IP bilgisini yokla
     this.fetchServerInfo().then(() => {
@@ -4785,16 +4786,18 @@ class GameApp {
       if (roomData && roomData.actions) {
         const actList = Array.isArray(roomData.actions) ? roomData.actions : Object.values(roomData.actions);
         const now = Date.now();
+        if (!this.processedCheerIds) this.processedCheerIds = new Set();
         actList.forEach(a => {
-          if (a.timestamp && (now - a.timestamp) < 4000 && (!this.processedCheerIds || !this.processedCheerIds.has(a.id || a.timestamp))) {
-            if (!this.processedCheerIds) this.processedCheerIds = new Set();
-            this.processedCheerIds.add(a.id || a.timestamp);
+          if (!a) return;
+          const actId = a.id || (a.timestamp + '_' + a.cheer);
+          if (!this.processedCheerIds.has(actId) && (!a.timestamp || (now - a.timestamp) < 6000)) {
+            this.processedCheerIds.add(actId);
             if (a.cheer === 'buzzer') {
               this.triggerBuzzerAlert(a.sender || 'İkinci Telefon (Zil)');
             } else {
               sounds.playCheerSound(a.cheer);
-              const emoji = a.cheer === 'horn' ? '🎺 Vuvuzela!' : (a.cheer === 'bell' ? '🔔 Çan!' : (a.cheer === 'boo' ? '😱 Abooov!' : '👏 Alkış!'));
-              this.showToast(`📣 Seyirci: ${emoji}`);
+              const emoji = a.cheer === 'horn' ? '🎺 Vuvuzela!' : (a.cheer === 'bell' ? '🔔 Çan!' : (a.cheer === 'boo' ? '😱 Abooov!' : (a.cheer === 'party' ? '🎉 Coşku!' : '👏 Alkış!')));
+              this.showToast(`📣 ${a.sender || 'Seyirci'}: ${emoji}`);
             }
           }
         });
@@ -4808,13 +4811,18 @@ class GameApp {
         if (res.ok) {
           const data = await res.json();
           if (data && data.cheers && data.cheers.length > 0) {
+            if (!this.processedCheerIds) this.processedCheerIds = new Set();
             data.cheers.forEach(c => {
-              if (c.cheer === 'buzzer') {
-                this.triggerBuzzerAlert(c.sender || 'İkinci Telefon (Zil)');
-              } else {
-                sounds.playCheerSound(c.cheer);
-                const emoji = c.cheer === 'horn' ? '🎺 Vuvuzela!' : (c.cheer === 'bell' ? '🔔 Çan!' : (c.cheer === 'boo' ? '😱 Abooov!' : '👏 Alkış!'));
-                this.showToast(`📣 Seyirci: ${emoji}`);
+              const actId = c.id || (c.timestamp + '_' + c.cheer);
+              if (!this.processedCheerIds.has(actId)) {
+                this.processedCheerIds.add(actId);
+                if (c.cheer === 'buzzer') {
+                  this.triggerBuzzerAlert(c.sender || 'İkinci Telefon (Zil)');
+                } else {
+                  sounds.playCheerSound(c.cheer);
+                  const emoji = c.cheer === 'horn' ? '🎺 Vuvuzela!' : (c.cheer === 'bell' ? '🔔 Çan!' : (c.cheer === 'boo' ? '😱 Abooov!' : (c.cheer === 'party' ? '🎉 Coşku!' : '👏 Alkış!')));
+                  this.showToast(`📣 ${c.sender || 'Seyirci'}: ${emoji}`);
+                }
               }
             });
           }

@@ -450,11 +450,16 @@ export class AilelerYarisiyorEngine {
       }
       if (room.actions) {
         const actionList = Object.values(room.actions);
-        const lastAction = actionList[actionList.length - 1];
-        if (lastAction && (!this._lastHandledActionId || this._lastHandledActionId !== lastAction.id)) {
-          this._lastHandledActionId = lastAction.id;
-          this.handleIncomingAction(lastAction);
-        }
+        if (!this.processedActionIds) this.processedActionIds = new Set();
+        const now = Date.now();
+        actionList.forEach(act => {
+          if (!act) return;
+          const actId = act.id || (act.timestamp + '_' + act.type);
+          if (!this.processedActionIds.has(actId) && (!act.timestamp || (now - act.timestamp) < 8000)) {
+            this.processedActionIds.add(actId);
+            this.handleIncomingAction(act);
+          }
+        });
       }
     });
   }
@@ -471,7 +476,18 @@ export class AilelerYarisiyorEngine {
       this.game.showToast(`📱 [${action.playerName}]: "${action.answer}" cevabını verdi!`);
       this.handleUserAnswer(action.answer);
     } else if (action.type === 'reaction') {
-      sounds.playPop();
+      const text = (action.text || '').toLowerCase();
+      if (text.includes('alkış') || text.includes('👏')) {
+        sounds.playApplause();
+      } else if (text.includes('zil') || text.includes('🔔')) {
+        sounds.playBell();
+      } else if (text.includes('dıııt') || text.includes('yanlış') || text.includes('❌')) {
+        sounds.playWrong();
+      } else if (text.includes('şampiyon') || text.includes('puan') || text.includes('🔥') || text.includes('oha') || text.includes('😱')) {
+        sounds.playCheer();
+      } else {
+        sounds.playPop();
+      }
       this.game.showToast(`💬 ${action.playerName}: ${action.text}`);
     }
   }

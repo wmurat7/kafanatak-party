@@ -322,15 +322,27 @@
       };
     });
 
-    // Odaya Katıl Butonu
-    document.getElementById('btn-join-room').onclick = async () => {
+    // Odaya Katıl Butonu (Mükerrer bağlantı engellemeli)
+    let isJoining = false;
+    const btnJoinCark = document.getElementById('btn-join-room');
+    btnJoinCark.onclick = async () => {
+      if (isJoining || btnJoinCark.disabled) return;
       const name = document.getElementById('inp-player-name').value.trim();
       if (!name) {
         alert('Lütfen adınızı girin!');
         return;
       }
+      isJoining = true;
+      btnJoinCark.disabled = true;
+      btnJoinCark.textContent = 'Bağlanılıyor...';
+
       myPlayerName = name;
       localStorage.setItem('cark_player_name', name);
+
+      const cleanName = name.trim().toLowerCase().replace(/[^a-z0-9]/gi, '');
+      myPlayerId = localStorage.getItem(`kafanatak_pid_cark_${roomId}_${cleanName}`) || localStorage.getItem(`kafanatak_pid_cark_${roomId}`) || myPlayerId;
+      localStorage.setItem(`kafanatak_pid_cark_${roomId}_${cleanName}`, myPlayerId);
+      localStorage.setItem(`kafanatak_pid_cark_${roomId}`, myPlayerId);
 
       try {
         const res = await fetch(`${dbUrl}/kafanatak/carkifelek/${roomId}.json`);
@@ -338,20 +350,24 @@
         let players = room.players || [];
         if (!Array.isArray(players)) players = Object.values(players);
 
-        const existing = players.find(p => p.id === myPlayerId);
-        if (!existing) {
+        const existingIndex = players.findIndex(p => p && (p.id === myPlayerId || (p.name && p.name.trim().toLowerCase() === name.toLowerCase())));
+        if (existingIndex >= 0) {
+          myPlayerId = players[existingIndex].id;
+          players[existingIndex].name = myPlayerName;
+          players[existingIndex].color = myColor;
+        } else {
           players.push({
             id: myPlayerId,
             name: myPlayerName,
             color: myColor,
             score: 0
           });
-          await fetch(`${dbUrl}/kafanatak/carkifelek/${roomId}/players.json`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(players)
-          });
         }
+        await fetch(`${dbUrl}/kafanatak/carkifelek/${roomId}/players.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(players)
+        });
 
         isRegistered = true;
         document.getElementById('stage-join').style.display = 'none';
@@ -359,6 +375,10 @@
         fetchState();
       } catch (e) {
         alert('Odaya bağlanırken hata oluştu. Lütfen tekrar deneyin.');
+      } finally {
+        isJoining = false;
+        btnJoinCark.disabled = false;
+        btnJoinCark.textContent = '🚀 ODAYA KATIL';
       }
     };
 

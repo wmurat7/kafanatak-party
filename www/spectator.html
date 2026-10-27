@@ -881,6 +881,71 @@
     .toast-pill.show {
       transform: translateX(-50%) translateY(0);
     }
+
+    .btn-leave-header {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #F87171;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .btn-leave-header:active { transform: scale(0.95); background: rgba(239, 68, 68, 0.3); }
+
+    /* Çıkış Onay Modalı */
+    .confirm-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 9999;
+    }
+    .confirm-modal-card {
+      background: #161B2E;
+      border: 1.5px solid rgba(239, 68, 68, 0.4);
+      border-radius: 22px;
+      padding: 24px 20px;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7);
+      animation: popIn 0.2s ease-out;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .confirm-modal-icon { font-size: 2.8rem; margin-bottom: 8px; }
+    .btn-cancel-modal {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      color: #E2E8F0;
+      font-weight: 800;
+      padding: 12px;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    .btn-danger-modal {
+      background: linear-gradient(135deg, #EF4444, #B91C1C);
+      border: none;
+      color: #FFF;
+      font-weight: 900;
+      padding: 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+    }
   </style>
 </head>
 <body>
@@ -892,6 +957,7 @@
       <span class="brand-title">KAFANA TAK!</span>
     </div>
     <div class="header-actions">
+      <button type="button" id="btn-leave-spectator" class="btn-leave-header" style="display:none;">🚪 Çıkış</button>
       <div id="btn-header-room-badge" class="room-badge" title="Oda kodunu değiştirmek için tıkla">
         <span id="room-status-dot" class="room-dot"></span>
         <span id="lbl-header-room">ODA: ----</span>
@@ -1114,6 +1180,21 @@
 
   <div id="toast-pill" class="toast-pill"></div>
 
+  <!-- ÇIKIŞ ONAY MODALI -->
+  <div id="modal-confirm-exit" class="confirm-modal-overlay" style="display:none;">
+    <div class="confirm-modal-card">
+      <div class="confirm-modal-icon">⚠️</div>
+      <h3 style="color:#FFF; font-size:1.15rem; font-weight:900; margin-bottom:6px;">Odadan Çıkmak İstiyor Musunuz?</h3>
+      <p style="font-size:0.85rem; color:#94A3B8; line-height:1.4; margin-bottom:18px;">
+        Canlı seyirci yayını durdurulacak ve bağlantınız kesilecek.
+      </p>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <button type="button" id="btn-cancel-exit" class="btn-cancel-modal">Vazgeç</button>
+        <button type="button" id="btn-do-exit" class="btn-danger-modal">Evet, Ayrıl</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // URL Parametreleri
     const urlParams = new URLSearchParams(window.location.search);
@@ -1133,6 +1214,8 @@
     const roomStatusDot = document.getElementById('room-status-dot');
     const btnHeaderRoomBadge = document.getElementById('btn-header-room-badge');
     const btnChangeRoom = document.getElementById('btn-change-room');
+    const btnLeaveSpectator = document.getElementById('btn-leave-spectator');
+    const btnSubmitConnect = document.getElementById('btn-submit-connect');
 
     const countdownVal = document.getElementById('countdown-val-text');
     const countdownCat = document.getElementById('countdown-cat-text');
@@ -1191,9 +1274,11 @@
       if (currentRoom && isConnected) {
         lblHeaderRoom.textContent = `ODA: ${currentRoom}`;
         roomStatusDot.classList.remove('offline');
+        if (btnLeaveSpectator) btnLeaveSpectator.style.display = 'inline-flex';
       } else {
         lblHeaderRoom.textContent = currentRoom ? `ODA: ${currentRoom}` : 'BAĞLAN';
         roomStatusDot.classList.add('offline');
+        if (btnLeaveSpectator) btnLeaveSpectator.style.display = 'none';
       }
     }
 
@@ -1267,13 +1352,28 @@
       showToast('🔔 Zil test edildi!');
     });
 
-    // Odaya Bağlan
+    let isConnecting = false;
+    // Odaya Bağlan (Mükerrer bağlantı korumalı)
     function connectToRoom(roomCode) {
       if (!roomCode) {
         showToast('Lütfen geçerli bir oda kodu girin!');
         return;
       }
-      currentRoom = roomCode.trim().toUpperCase();
+      const cleanCode = roomCode.trim().toUpperCase();
+      if (isConnected && currentRoom === cleanCode) {
+        showToast(`🟢 Zaten ${currentRoom} odasına bağlısınız!`);
+        switchView(viewWaiting);
+        return;
+      }
+      if (isConnecting) return;
+      isConnecting = true;
+
+      if (btnSubmitConnect) {
+        btnSubmitConnect.disabled = true;
+        btnSubmitConnect.innerHTML = '<span>Bağlanılıyor...</span>';
+      }
+
+      currentRoom = cleanCode;
       localStorage.setItem('kafanatak_last_spec_room', currentRoom);
 
       const nameVal = inputName.value.trim() || spectatorName || 'Seyirci';
@@ -1285,9 +1385,39 @@
       switchView(viewWaiting);
       showToast(`🟢 ${currentRoom} odasına bağlanıldı!`);
 
+      setTimeout(() => {
+        isConnecting = false;
+        if (btnSubmitConnect) {
+          btnSubmitConnect.disabled = false;
+          btnSubmitConnect.innerHTML = '<span>🚀 Odaya Canlı Bağlan</span>';
+        }
+      }, 800);
+
       initRealtimeStreams();
       pollState();
     }
+
+    // ÇIKIŞ ONAYI YÖNETİMİ
+    btnLeaveSpectator?.addEventListener('click', () => {
+      const modal = document.getElementById('modal-confirm-exit');
+      if (modal) modal.style.display = 'flex';
+    });
+    document.getElementById('btn-cancel-exit')?.addEventListener('click', () => {
+      const modal = document.getElementById('modal-confirm-exit');
+      if (modal) modal.style.display = 'none';
+    });
+    document.getElementById('btn-do-exit')?.addEventListener('click', () => {
+      const modal = document.getElementById('modal-confirm-exit');
+      if (modal) modal.style.display = 'none';
+      if (sseSource) { try { sseSource.close(); } catch (e) {} sseSource = null; }
+      if (broadcast) { try { broadcast.close(); } catch (e) {} broadcast = null; }
+      if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+      isConnected = false;
+      currentRoom = '';
+      updateHeaderBadge();
+      switchView(viewConnect);
+      showToast('Odadan ayrıldınız.');
+    });
 
     formJoin.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -1296,13 +1426,18 @@
     });
 
     btnHeaderRoomBadge?.addEventListener('click', () => {
-      switchView(viewConnect);
-      inputRoom.focus();
+      if (isConnected) {
+        const modal = document.getElementById('modal-confirm-exit');
+        if (modal) modal.style.display = 'flex';
+      } else {
+        switchView(viewConnect);
+        inputRoom.focus();
+      }
     });
 
     btnChangeRoom?.addEventListener('click', () => {
-      switchView(viewConnect);
-      inputRoom.focus();
+      const modal = document.getElementById('modal-confirm-exit');
+      if (modal) modal.style.display = 'flex';
     });
 
     // Realtime Dinleme (SSE / BroadcastChannel / Polling - Zaman Aşımına Uğramaz)

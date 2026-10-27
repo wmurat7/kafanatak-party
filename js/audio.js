@@ -495,8 +495,46 @@ class SoundEngine {
       this.playBell();
     } else if (type === 'vuvuzela') {
       this.playVuvuzela();
+    } else if (type === 'boo') {
+      this.playClownHorn();
+    } else if (type === 'party' || type === 'cheer') {
+      this.playCheer();
     } else {
       this.playApplause();
+    }
+  }
+
+  playPop() {
+    if (this.muted) return;
+    this.unlockAudio();
+    this.vibrate(30);
+    this.init();
+    try {
+      const ctx = this.ctx;
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.exponentialRampToValueAtTime(320, now + 0.08);
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      osc.connect(gain);
+      gain.connect(this.masterGain || this.getOutputNode());
+      osc.start(now);
+      osc.stop(now + 0.09);
+    } catch (e) {}
+  }
+
+  playDing() {
+    if (this.muted) return;
+    this.unlockAudio();
+    this.vibrate([40, 30]);
+    if (!this.playBuffer('triangle', 0.95)) {
+      if (!this.playBuffer('bell', 0.85)) {
+        this.fallbackChime();
+      }
     }
   }
 

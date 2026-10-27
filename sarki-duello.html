@@ -243,8 +243,11 @@
       };
     });
 
-    // Odaya Katıl
-    document.getElementById('btn-join').onclick = async () => {
+    // Odaya Katıl (Mükerrer bağlantı korumalı)
+    let isJoining = false;
+    const btnJoin = document.getElementById('btn-join');
+    btnJoin.onclick = async () => {
+      if (isJoining || btnJoin.disabled) return;
       const roomInp = document.getElementById('inp-room').value.trim().toUpperCase();
       const nameInp = document.getElementById('inp-name').value.trim();
 
@@ -257,8 +260,19 @@
         return;
       }
 
+      if (currentRoomId === roomInp && roomUnsub) {
+        document.getElementById('join-view').style.display = 'none';
+        document.getElementById('game-view').style.display = 'block';
+        return;
+      }
+
+      isJoining = true;
+      btnJoin.disabled = true;
+      btnJoin.textContent = 'Bağlanılıyor...';
+
       currentRoomId = roomInp;
       myName = nameInp;
+      myPlayerId = firebaseNetwork.getOrCreatePlayerId('sarki', currentRoomId, myName);
 
       // Oyuncuyu Kaydet
       const playerObj = {
@@ -280,6 +294,11 @@
       document.getElementById('lbl-user-badge').textContent = `${myAvatar} ${myName}`;
 
       listenRoom();
+      setTimeout(() => {
+        isJoining = false;
+        btnJoin.disabled = false;
+        btnJoin.textContent = '🚀 ODAYA KATIL ➔';
+      }, 1000);
     };
 
     function listenRoom() {
