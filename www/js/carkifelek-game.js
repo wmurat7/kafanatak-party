@@ -1,8 +1,10 @@
 // js/carkifelek-game.js
 // Kafana Tak! - Klasik Çarkıfelek (Puan Çarkı & Gizli Kelime Panosu) Motoru
 // TV formatında, ses efektli, takım ve oyuncu savaşlı parti oyunu
+// ÇOKLU OYUNCU BULUT / ODA SİSTEMİ (Firebase Realtime DB + QR Kod)
 
 import { sounds } from './audio.js';
+import { firebaseNetwork } from './firebase-network.js';
 
 export const CARKIFELEK_SLICES = [
   { text: '500', value: 500, color: '#00F5D4', type: 'points' },
@@ -28,17 +30,25 @@ export const CARKIFELEK_PUZZLES = [
   { category: '🎬 Popüler Türk Filmi', phrase: 'TOSUN PAŞA' },
   { category: '🎬 Popüler Türk Filmi', phrase: 'HER ŞEY ÇOK GÜZEL OLACAK' },
   { category: '🎬 Popüler Türk Filmi', phrase: 'SÜT KARDEŞLER' },
+  { category: '🎬 Popüler Türk Filmi', phrase: 'HABABAM SINIFI' },
+  { category: '🎬 Popüler Türk Filmi', phrase: 'GORA BİR UZAY FİLMİ' },
+  { category: '🎬 Popüler Türk Filmi', phrase: 'KİBAR FEYZO' },
   { category: '📜 Atasözü & Deyim', phrase: 'DAM ÜSTÜNDE SAKSAĞAN' },
   { category: '📜 Atasözü & Deyim', phrase: 'TATLI DİL YILANI DELİĞİNDEN ÇIKARIR' },
   { category: '📜 Atasözü & Deyim', phrase: 'BİR ELİN NESİ VAR İKİ ELİN SESİ VAR' },
   { category: '📜 Atasözü & Deyim', phrase: 'GÜLME KOMŞUNA GELİR BAŞINA' },
   { category: '📜 Atasözü & Deyim', phrase: 'SAKLA SAMANI GELİR ZAMANI' },
+  { category: '📜 Atasözü & Deyim', phrase: 'AYAĞINI YORGANINA GÖRE UZAT' },
+  { category: '📜 Atasözü & Deyim', phrase: 'ÜZÜM ÜZÜME BAKA BAKA KARARIR' },
   { category: '🎵 Efsane Şarkı', phrase: 'ARKADAŞIM EŞEK' },
   { category: '🎵 Efsane Şarkı', phrase: 'ŞIKIDIM ŞIKIDIM' },
   { category: '🎵 Efsane Şarkı', phrase: 'GÜLBEYAZ GÜLÜM' },
+  { category: '🎵 Efsane Şarkı', phrase: 'ELE GÜNE KARŞI YAPAYALNIZ' },
+  { category: '🎵 Efsane Şarkı', phrase: 'BİR DERDİM VAR ARTIK' },
   { category: '📺 Dizi & Karakter', phrase: 'AVRUPA YAKASI BURHAN ALTINTOP' },
   { category: '📺 Dizi & Karakter', phrase: 'LEYLA İLE MECNUN' },
-  { category: '📺 Dizi & Karakter', phrase: 'YALAN DÜNYA VASIYET' }
+  { category: '📺 Dizi & Karakter', phrase: 'YALAN DÜNYA VASIYET' },
+  { category: '📺 Dizi & Karakter', phrase: 'EZEL VE RAMİZ DAYI' }
 ];
 
 export const TURKISH_CONSONANTS = ['B', 'C', 'Ç', 'D', 'F', 'G', 'Ğ', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'Ş', 'T', 'V', 'Y', 'Z'];
@@ -47,22 +57,35 @@ export const TURKISH_VOWELS = ['A', 'E', 'I', 'İ', 'O', 'Ö', 'U', 'Ü'];
 export class CarkifelekEngine {
   constructor(game) {
     this.game = game;
-    this.teams = [
-      { name: 'Kırmızı Takım', score: 0, color: '#EF4444' },
-      { name: 'Mavi Takım', score: 0, color: '#3B82F6' }
+    this.mode = 'local'; // 'local' (tek cihaz) | 'wifi' (bulut oda / QR)
+    this.roomId = 'CARK';
+    this.hostId = 'host_' + Math.random().toString(36).substring(2, 7);
+
+    // Yerel Takımlar
+    this.localTeams = [
+      { id: 'team_red', name: 'Kırmızı Takım', score: 0, color: '#EF4444' },
+      { id: 'team_blue', name: 'Mavi Takım', score: 0, color: '#3B82F6' }
     ];
+    this.teams = this.localTeams;
+
+    // Wi-Fi / Bulut Odadaki Oyuncular
+    this.wifiPlayers = [];
     this.currentTeamIndex = 0;
+
     this.currentPuzzle = null;
     this.guessedLetters = new Set();
     this.currentSlice = null;
     this.isSpinning = false;
     this.canPickLetter = false;
+    this.statusMessage = '🎡 Çarkı çevirerek başlayın!';
 
     this.wheelRotation = 0;
     this.canvas = null;
     this.ctx = null;
-    this.isSpinning = false;
     this.spinAnimId = null;
+
+    this.processedActionIds = new Set();
+    this.unsubscribeRoom = null;
 
     window.__carkifelek = this;
   }
@@ -86,10 +109,30 @@ export class CarkifelekEngine {
       this.drawWheel();
     }
     this.bindEvents();
+    this.setupLocalMode();
     this.newGame();
   }
 
   bindEvents() {
+    // Mod Butonları
+    const btnLocal = document.getElementById('btn-cark-mode-local');
+    const btnWifi = document.getElementById('btn-cark-mode-wifi');
+
+    if (btnLocal) {
+      btnLocal.onclick = () => {
+        sounds.playClick();
+        this.setupLocalMode();
+      };
+    }
+
+    if (btnWifi) {
+      btnWifi.onclick = () => {
+        sounds.playClick();
+        this.createWifiRoom();
+      };
+    }
+
+    // Çark ve Tahmin Butonları
     const btnSpin = document.getElementById('btn-cark-spin');
     if (btnSpin) {
       btnSpin.onclick = () => this.spinWheel();
@@ -120,6 +163,9 @@ export class CarkifelekEngine {
               this.spinAnimId = null;
             }
             this.isSpinning = false;
+            if (this.unsubscribeRoom) {
+              try { this.unsubscribeRoom(); } catch (e) {}
+            }
             try { sounds.stopAll(); } catch (e) {}
           });
         } else {
@@ -127,6 +173,173 @@ export class CarkifelekEngine {
         }
       };
     }
+  }
+
+  setupLocalMode() {
+    this.mode = 'local';
+    this.teams = this.localTeams;
+
+    const btnLocal = document.getElementById('btn-cark-mode-local');
+    const btnWifi = document.getElementById('btn-cark-mode-wifi');
+    if (btnLocal) {
+      btnLocal.classList.add('active');
+      btnLocal.style.background = 'rgba(0,245,212,0.2)';
+      btnLocal.style.borderColor = 'var(--primary)';
+      btnLocal.style.color = '#FFF';
+    }
+    if (btnWifi) {
+      btnWifi.classList.remove('active');
+      btnWifi.style.background = 'rgba(255,255,255,0.06)';
+      btnWifi.style.borderColor = 'rgba(255,255,255,0.15)';
+      btnWifi.style.color = 'var(--text-dim)';
+    }
+
+    const wifiBox = document.getElementById('cark-wifi-box');
+    if (wifiBox) wifiBox.style.display = 'none';
+
+    this.updateTurnUI();
+  }
+
+  async createWifiRoom() {
+    this.mode = 'wifi';
+    this.roomId = firebaseNetwork.generateRoomCode();
+
+    const btnLocal = document.getElementById('btn-cark-mode-local');
+    const btnWifi = document.getElementById('btn-cark-mode-wifi');
+    if (btnWifi) {
+      btnWifi.classList.add('active');
+      btnWifi.style.background = 'rgba(0,245,212,0.2)';
+      btnWifi.style.borderColor = 'var(--primary)';
+      btnWifi.style.color = '#FFF';
+    }
+    if (btnLocal) {
+      btnLocal.classList.remove('active');
+      btnLocal.style.background = 'rgba(255,255,255,0.06)';
+      btnLocal.style.borderColor = 'rgba(255,255,255,0.15)';
+      btnLocal.style.color = 'var(--text-dim)';
+    }
+
+    const wifiBox = document.getElementById('cark-wifi-box');
+    if (wifiBox) wifiBox.style.display = 'block';
+
+    const lblCode = document.getElementById('lbl-cark-room-code');
+    if (lblCode) lblCode.textContent = this.roomId;
+
+    const joinUrl = firebaseNetwork.getCarkifelekUrl(this.roomId);
+    const cvs = document.getElementById('cark-qr-canvas');
+    if (cvs && window.QRCode) {
+      cvs.innerHTML = '';
+      window.QRCode.toCanvas(cvs, joinUrl, {
+        width: 140,
+        margin: 1,
+        color: { dark: '#00F5D4', light: '#0B0E14' }
+      }, (err) => {
+        if (err) console.error('Çarkıfelek QR error:', err);
+      });
+    }
+
+    // Host olarak kendini ilk oyuncu yap veya bağlı oyuncuları bekle
+    this.wifiPlayers = [
+      { id: this.hostId, name: 'Sunucu (Ana Ekran)', score: 0, color: '#EF4444' }
+    ];
+    this.teams = this.wifiPlayers;
+
+    const initialRoom = {
+      roomId: this.roomId,
+      namespace: 'carkifelek',
+      phase: 'playing',
+      createdAt: Date.now(),
+      activePlayerIndex: 0,
+      activePlayerName: this.getActivePlayer().name,
+      activePlayerId: this.getActivePlayer().id,
+      category: this.currentPuzzle ? this.currentPuzzle.category : 'Popüler Türk Filmi',
+      puzzleWords: this.currentPuzzle ? this.currentPuzzle.phrase.split(' ').map(w => w.length) : [],
+      revealedLetters: Array.from(this.guessedLetters),
+      isSpinning: false,
+      canPickLetter: false,
+      currentSlice: null,
+      statusMsg: 'Odaya bağlanan oyuncular sırayla yarışır!',
+      players: this.wifiPlayers
+    };
+
+    await firebaseNetwork.createRoom('carkifelek', initialRoom);
+
+    // Odayı dinle
+    if (this.unsubscribeRoom) {
+      try { this.unsubscribeRoom(); } catch (e) {}
+    }
+
+    this.unsubscribeRoom = firebaseNetwork.listenRoom('carkifelek', this.roomId, (room) => {
+      if (!room) return;
+      this.handleRemoteRoomUpdate(room);
+    });
+
+    this.updateConnectedPlayersUI();
+    this.syncToFirebase();
+  }
+
+  handleRemoteRoomUpdate(room) {
+    // 1. Oyuncu Listesini Senkronize Et
+    if (room.players && Array.isArray(room.players)) {
+      if (room.players.length !== this.wifiPlayers.length) {
+        // Yeni oyuncu bağlandı
+        const oldLength = this.wifiPlayers.length;
+        this.wifiPlayers = room.players;
+        this.teams = this.wifiPlayers;
+        if (this.wifiPlayers.length > oldLength) {
+          sounds.playChime();
+        }
+        this.updateConnectedPlayersUI();
+        this.updateTurnUI();
+      }
+    }
+
+    // 2. Uzaktan Gelen Aksiyonları Dinle (Sırası gelen yarışmacı telefonundan bastı)
+    if (room.actions) {
+      const actionKeys = Object.keys(room.actions);
+      for (const actId of actionKeys) {
+        if (this.processedActionIds.has(actId)) continue;
+        this.processedActionIds.add(actId);
+
+        const action = room.actions[actId];
+        const activePlayer = this.getActivePlayer();
+
+        // Aksiyonu sadece sırası olan oyuncu yapabilir (veya sunucu)
+        if (action.playerId === activePlayer.id || action.playerId === this.hostId) {
+          if (action.type === 'spin' && !this.isSpinning && !this.canPickLetter) {
+            this.spinWheel();
+          } else if (action.type === 'pick_letter' && this.canPickLetter) {
+            this.pickLetter(action.char);
+          } else if (action.type === 'buy_vowel') {
+            this.buyVowel(action.char);
+          } else if (action.type === 'solve') {
+            this.checkRemoteSolve(action.guess, action.playerId);
+          }
+        }
+      }
+    }
+  }
+
+  updateConnectedPlayersUI() {
+    const badge = document.getElementById('cark-player-count-badge');
+    const list = document.getElementById('cark-connected-players');
+    if (badge) {
+      badge.textContent = `${this.wifiPlayers.length} Oyuncu Bağlı`;
+    }
+    if (list) {
+      list.innerHTML = this.wifiPlayers.map((p, idx) => `
+        <span style="display:inline-block; background:${p.color || '#3B82F6'}; color:#FFF; font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:999px; margin:2px;">
+          ${idx === this.currentTeamIndex ? '🎯 ' : ''}${p.name} (${p.score || 0} P)
+        </span>
+      `).join('');
+    }
+  }
+
+  getActivePlayer() {
+    if (!this.teams || this.teams.length === 0) {
+      return { id: 'p1', name: 'Yarışmacı', score: 0, color: '#EF4444' };
+    }
+    return this.teams[this.currentTeamIndex % this.teams.length];
   }
 
   newGame() {
@@ -150,6 +363,8 @@ export class CarkifelekEngine {
 
     const btnSpin = document.getElementById('btn-cark-spin');
     if (btnSpin) btnSpin.disabled = false;
+
+    this.syncToFirebase();
   }
 
   drawWheel() {
@@ -255,6 +470,8 @@ export class CarkifelekEngine {
 
     if (this.spinAnimId) cancelAnimationFrame(this.spinAnimId);
 
+    this.syncToFirebase({ isSpinning: true, statusMsg: '🎡 Çark dönüyor...' });
+
     const animate = (now) => {
       const elapsed = now - startTime;
       const progress = Math.min(1, elapsed / duration);
@@ -263,9 +480,9 @@ export class CarkifelekEngine {
       this.drawWheel();
 
       const currentNeedleAngle = (1.5 * Math.PI - (this.wheelRotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-      const currentSlice = Math.floor(currentNeedleAngle / sliceAngle);
-      if (currentSlice !== lastTickSlice && progress < 0.98) {
-        lastTickSlice = currentSlice;
+      const curSlice = Math.floor(currentNeedleAngle / sliceAngle);
+      if (curSlice !== lastTickSlice && progress < 0.98) {
+        lastTickSlice = curSlice;
         try { sounds.playWheelTick(); } catch (e) {}
       }
 
@@ -283,19 +500,19 @@ export class CarkifelekEngine {
   }
 
   handleSliceOutcome(slice) {
+    const activePlayer = this.getActivePlayer();
+
     if (slice.type === 'bankrupt') {
       try { sounds.playBuzzer(); } catch (e) {}
-      const activeTeam = this.teams[this.currentTeamIndex];
-      activeTeam.score = 0;
-      this.updateStatusBanner(`💥 İFLAS! ${activeTeam.name} tüm puanlarını kaybetti! Sıra rakibe geçti.`);
+      activePlayer.score = 0;
+      this.updateStatusBanner(`💥 İFLAS! ${activePlayer.name} tüm puanlarını kaybetti! Sıra rakibe geçti.`);
       this.nextTurn();
       return;
     }
 
     if (slice.type === 'pass') {
       try { sounds.playBuzzer(); } catch (e) {}
-      const activeTeam = this.teams[this.currentTeamIndex];
-      this.updateStatusBanner(`⏸️ PAS! ${activeTeam.name} sırasını kaybetti.`);
+      this.updateStatusBanner(`⏸️ PAS! ${activePlayer.name} sırasını kaybetti.`);
       this.nextTurn();
       return;
     }
@@ -305,13 +522,13 @@ export class CarkifelekEngine {
       this.updateStatusBanner(`🔄 TEKRAR ÇEVİR! Şanslısınız, çarkı tekrar çevirin.`);
       const btnSpin = document.getElementById('btn-cark-spin');
       if (btnSpin) btnSpin.disabled = false;
+      this.syncToFirebase();
       return;
     }
 
     if (slice.type === 'reward') {
       try { sounds.playFanfare(); } catch (e) {}
-      const activeTeam = this.teams[this.currentTeamIndex];
-      activeTeam.score += 1000;
+      activePlayer.score += 1000;
       this.updateStatusBanner(`🎁 SÜRPRİZ ÖDÜL! +1000 Puan kazandınız! Şimdi bir sessiz harf seçin.`);
     } else {
       try { sounds.playChime(); } catch (e) {}
@@ -320,6 +537,7 @@ export class CarkifelekEngine {
 
     this.canPickLetter = true;
     this.highlightConsonants(true);
+    this.syncToFirebase();
   }
 
   highlightConsonants(active) {
@@ -344,12 +562,12 @@ export class CarkifelekEngine {
 
     const phraseUpper = this.currentPuzzle.phrase.toUpperCase();
     const count = (phraseUpper.split(char).length - 1);
+    const activePlayer = this.getActivePlayer();
 
     if (count > 0) {
       try { sounds.playCorrect(); } catch (e) {}
       const pts = (this.currentSlice ? this.currentSlice.value : 250) * count;
-      const activeTeam = this.teams[this.currentTeamIndex];
-      activeTeam.score += pts;
+      activePlayer.score += pts;
 
       this.updateStatusBanner(`✅ DOĞRU! ${count} adet "${char}" harfi açıldı! (+${pts} P) Tekrar çevirebilirsiniz.`);
       this.renderBoard();
@@ -367,12 +585,15 @@ export class CarkifelekEngine {
       try { sounds.playBuzzer(); } catch (e) {}
       this.updateStatusBanner(`❌ MAALESEF! Cümlede "${char}" harfi yok. Sıra rakibe geçti.`);
       this.nextTurn();
+      return;
     }
+
+    this.syncToFirebase();
   }
 
   openVowelModal() {
-    const activeTeam = this.teams[this.currentTeamIndex];
-    if (activeTeam.score < 250) {
+    const activePlayer = this.getActivePlayer();
+    if (activePlayer.score < 250) {
       this.updateStatusBanner('⚠️ Sesli harf satın almak için en az 250 puanınız olmalı!');
       return;
     }
@@ -402,8 +623,8 @@ export class CarkifelekEngine {
   }
 
   buyVowel(vowel) {
-    const activeTeam = this.teams[this.currentTeamIndex];
-    activeTeam.score = Math.max(0, activeTeam.score - 250);
+    const activePlayer = this.getActivePlayer();
+    activePlayer.score = Math.max(0, activePlayer.score - 250);
     this.guessedLetters.add(vowel);
 
     const count = (this.currentPuzzle.phrase.toUpperCase().split(vowel).length - 1);
@@ -421,27 +642,30 @@ export class CarkifelekEngine {
       this.updateStatusBanner(`❌ Cümlede "${vowel}" harfi yok. (-250 P)`);
       this.updateTurnUI();
     }
+    this.syncToFirebase();
   }
 
   promptSolve() {
     const answer = prompt('CÜMLEYİ TAHMİN EDİN:\n(Büyük veya küçük harf yazabilirsiniz)');
     if (!answer) return;
+    this.checkRemoteSolve(answer, this.getActivePlayer().id);
+  }
 
+  checkRemoteSolve(answer, playerId) {
+    if (!answer) return;
     const cleanInput = answer.trim().toUpperCase().replace(/İ/g, 'İ').replace(/I/g, 'I');
     const cleanActual = this.currentPuzzle.phrase.trim().toUpperCase();
+    const activePlayer = this.teams.find(p => p.id === playerId) || this.getActivePlayer();
 
     if (cleanInput === cleanActual) {
       try { sounds.playFanfare(); } catch (e) {}
-      // Kalan kapalı harfleri de sayıp bonus ver
       let unrevealedCount = 0;
       for (const char of cleanActual) {
         if (char !== ' ' && !this.guessedLetters.has(char)) unrevealedCount++;
       }
       const bonus = (unrevealedCount * 500) + 1500;
-      const activeTeam = this.teams[this.currentTeamIndex];
-      activeTeam.score += bonus;
+      activePlayer.score += bonus;
 
-      // Tüm harfleri aç
       for (const char of cleanActual) {
         if (char !== ' ') this.guessedLetters.add(char);
       }
@@ -474,10 +698,13 @@ export class CarkifelekEngine {
     const modal = document.getElementById('modal-cark-round-won');
     if (modal) {
       modal.style.display = 'flex';
-      const winnerTeam = this.teams[0].score >= this.teams[1].score ? this.teams[0] : this.teams[1];
+      const sorted = [...this.teams].sort((a, b) => (b.score || 0) - (a.score || 0));
+      const winner = sorted[0];
       const winEl = document.getElementById('cark-round-winner-text');
-      if (winEl) winEl.textContent = `Kazanan: ${winnerTeam.name} (${winnerTeam.score} P)`;
+      if (winEl) winEl.textContent = `Kazanan: ${winner.name} (${winner.score} P)`;
     }
+
+    this.syncToFirebase({ phase: 'round_won', statusMsg: msg });
   }
 
   nextTurn() {
@@ -488,14 +715,16 @@ export class CarkifelekEngine {
 
     const btnSpin = document.getElementById('btn-cark-spin');
     if (btnSpin) btnSpin.disabled = false;
+
+    this.syncToFirebase();
   }
 
   updateTurnUI() {
-    const activeTeam = this.teams[this.currentTeamIndex];
+    const activePlayer = this.getActivePlayer();
     const turnBadge = document.getElementById('cark-turn-badge');
     if (turnBadge) {
-      turnBadge.textContent = `🎯 SIRA: ${activeTeam.name.toUpperCase()}`;
-      turnBadge.style.background = activeTeam.color;
+      turnBadge.textContent = `🎯 SIRA: ${activePlayer.name.toUpperCase()}`;
+      turnBadge.style.background = activePlayer.color || '#EF4444';
     }
 
     const t1Name = document.getElementById('cark-team-1-name');
@@ -503,13 +732,20 @@ export class CarkifelekEngine {
     const t2Name = document.getElementById('cark-team-2-name');
     const t2Score = document.getElementById('cark-team-2-score');
 
-    if (t1Name) t1Name.textContent = this.teams[0].name;
-    if (t1Score) t1Score.textContent = `${this.teams[0].score} P`;
-    if (t2Name) t2Name.textContent = this.teams[1].name;
-    if (t2Score) t2Score.textContent = `${this.teams[1].score} P`;
+    if (this.teams[0]) {
+      if (t1Name) t1Name.textContent = this.teams[0].name;
+      if (t1Score) t1Score.textContent = `${this.teams[0].score} P`;
+    }
+    if (this.teams[1]) {
+      if (t2Name) t2Name.textContent = this.teams[1].name;
+      if (t2Score) t2Score.textContent = `${this.teams[1].score} P`;
+    }
+
+    this.updateConnectedPlayersUI();
   }
 
   updateStatusBanner(msg) {
+    this.statusMessage = msg;
     const banner = document.getElementById('cark-status-banner');
     if (banner) banner.textContent = msg;
   }
@@ -555,5 +791,37 @@ export class CarkifelekEngine {
         this.pickLetter(btn.dataset.char);
       };
     });
+  }
+
+  /**
+   * Firebase Odasını Güncelle (Anti-Cheat: phrase sunucuda kalır, istemcilere gitmez)
+   */
+  async syncToFirebase(override = {}) {
+    if (this.mode !== 'wifi') return;
+    const activePlayer = this.getActivePlayer();
+
+    // Panonun harf harf durumunu maskelenmiş şekilde gönder
+    const wordsStructure = this.currentPuzzle ? this.currentPuzzle.phrase.toUpperCase().split(' ').map(w => {
+      return w.split('').map(ch => this.guessedLetters.has(ch) ? ch : '').join('');
+    }) : [];
+
+    const payload = {
+      phase: 'playing',
+      activePlayerIndex: this.currentTeamIndex,
+      activePlayerName: activePlayer.name,
+      activePlayerId: activePlayer.id,
+      category: this.currentPuzzle ? this.currentPuzzle.category : '',
+      wordsRevealed: wordsStructure,
+      revealedLetters: Array.from(this.guessedLetters),
+      isSpinning: this.isSpinning,
+      canPickLetter: this.canPickLetter,
+      currentSlice: this.currentSlice,
+      statusMsg: this.statusMessage,
+      players: this.wifiPlayers,
+      lastUpdate: Date.now(),
+      ...override
+    };
+
+    await firebaseNetwork.updateRoom('carkifelek', this.roomId, payload);
   }
 }

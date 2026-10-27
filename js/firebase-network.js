@@ -336,6 +336,22 @@ class FirebaseNetworkManager {
     const webBase = this.getWebAppUrl();
     return `${webBase}/koy.html?room=${encodeURIComponent(roomId)}&cloud=1`;
   }
+
+  /**
+   * İkinci telefonların açabileceği Passaparola Oyuncu/Seyirci URL'sini üretir
+   */
+  getPassaparolaUrl(roomId) {
+    const webBase = this.getWebAppUrl();
+    return `${webBase}/passaparola.html?room=${encodeURIComponent(roomId)}&cloud=1`;
+  }
+
+  /**
+   * İkinci telefonların açabileceği Çarkıfelek Oyuncu/Seyirci URL'sini üretir
+   */
+  getCarkifelekUrl(roomId) {
+    const webBase = this.getWebAppUrl();
+    return `${webBase}/carkifelek.html?room=${encodeURIComponent(roomId)}&cloud=1`;
+  }
 }
 
 export const firebaseNetwork = new FirebaseNetworkManager();

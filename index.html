@@ -1478,34 +1478,78 @@
     </div>
 
     <!-- 1. HAZIRLIK AŞAMASI (SETUP) -->
-    <div id="passa-setup-stage" class="card" style="text-align:center; padding:28px 18px;">
-      <div style="font-size:3.5rem; margin-bottom:6px;">🎯</div>
-      <h2 style="font-size:1.6rem; font-weight:900; color:#FFF; margin-bottom:4px;">A'dan Z'ye Passaparola</h2>
-      <p style="font-size:0.88rem; color:#CBD5E1; line-height:1.45; margin-bottom:18px;">
-        24 harflik dairesel alfabe çarkında zamana karşı yarış! Harfin sorusunu bil, takıldığında "PAS" de. 120 saniyede en yüksek doğruyu topla!
+    <div id="passa-setup-stage" class="card" style="text-align:center; padding:22px 16px; margin-bottom:14px;">
+      <div style="font-size:3rem; margin-bottom:4px;">🎯</div>
+      <h2 style="font-size:1.5rem; font-weight:900; color:#FFF; margin-bottom:4px;">A'dan Z'ye Passaparola</h2>
+      <p style="font-size:0.84rem; color:#CBD5E1; line-height:1.4; margin-bottom:14px;">
+        1 Sunucu soruları okur ve cevabı görür. Yarışmacılar sırayla harfleri bilmeye çalışır!
       </p>
 
-      <div style="display:flex; justify-content:center; gap:10px; margin-bottom:20px;">
-        <span style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); padding:6px 14px; border-radius:999px; font-size:0.82rem; font-weight:800;">🔤 24 Harf</span>
-        <span style="background:rgba(0,245,212,0.15); border:1px solid var(--primary); color:var(--primary); padding:6px 14px; border-radius:999px; font-size:0.82rem; font-weight:800;">⏱️ 120 Saniye</span>
-        <span style="background:rgba(251,191,36,0.15); border:1px solid var(--gold); color:var(--gold); padding:6px 14px; border-radius:999px; font-size:0.82rem; font-weight:800;">🟢 +10 Puan</span>
+      <!-- Mod Seçimi -->
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <button type="button" id="btn-passa-mode-local" class="btn-main active" style="flex:1; font-size:0.82rem; padding:10px 6px; border-radius:12px; background:rgba(0,245,212,0.2); border:1.5px solid var(--primary); color:#FFF;">
+          🎲 Masada Oyna (Sunucu & Yarışmacılar)
+        </button>
+        <button type="button" id="btn-passa-mode-wifi" class="btn-main" style="flex:1; font-size:0.82rem; padding:10px 6px; border-radius:12px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.15); color:var(--text-dim);">
+          ☁️ Çoklu Telefon (Bulut / QR)
+        </button>
       </div>
 
-      <button type="button" id="btn-passa-start" class="btn-main primary" style="font-size:1.15rem; font-weight:900; padding:15px; width:100%; border-radius:14px; box-shadow:0 0 25px rgba(0,245,212,0.4);">
+      <!-- Wi-Fi / Bulut Bağlantı Kutusu -->
+      <div id="passa-wifi-box" style="display:none; background:rgba(0,0,0,0.35); border-radius:16px; padding:14px; margin-bottom:14px; text-align:center;">
+        <div style="font-size:0.8rem; font-weight:800; color:var(--text-dim); margin-bottom:4px;">ARKADAŞLARIN BU QR'I OKUTARAK CANLI EKRANA BAĞLANSIN:</div>
+        <div style="font-size:0.75rem; color:#00F5D4; font-weight:800; margin-bottom:6px;">☁️ Bağlananlar çarkı ve soruyu canlı izler, cevabı asla görmez!</div>
+        <div id="passa-qr-canvas" style="display:inline-block; margin:6px 0; border:2px solid var(--primary); border-radius:12px; padding:6px; background:#0B0E14;"></div>
+        <div style="font-size:1.1rem; font-weight:900; color:var(--gold); margin-top:2px;">
+          ODA KODU: <span id="lbl-passa-room-code" style="letter-spacing:3px;">----</span>
+        </div>
+        <div id="passa-player-count-badge" style="font-size:0.8rem; font-weight:800; color:var(--primary); margin-top:4px;">1 Oyuncu Bağlı</div>
+        <div id="passa-connected-players" style="margin-top:8px;"></div>
+      </div>
+
+      <!-- Masa Modu Yarışmacı Kutusu -->
+      <div id="passa-local-box" style="background:rgba(0,0,0,0.35); border-radius:16px; padding:14px; margin-bottom:14px; text-align:center;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:0.82rem; font-weight:800; color:var(--gold);">👥 MASADAKİ YARIŞMACILAR:</span>
+          <button type="button" id="btn-passa-add-local-player" style="background:rgba(0,245,212,0.15); border:1px solid var(--primary); color:var(--primary); font-size:0.75rem; font-weight:800; border-radius:8px; padding:4px 10px; cursor:pointer;">
+            + Yarışmacı Ekle
+          </button>
+        </div>
+        <div id="passa-local-players-list" style="display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-bottom:8px;"></div>
+        <p style="font-size:0.76rem; color:#94A3B8; margin-top:6px;">Telefon sunucunun elinde durur. Sunucu cevabı görür; masadaki yarışmacılar sırayla cevaplar!</p>
+      </div>
+
+      <!-- Sunucu Bilgilendirmesi -->
+      <div style="background:rgba(121,40,202,0.15); border:1.5px solid rgba(121,40,202,0.4); border-radius:12px; padding:10px 14px; margin-bottom:14px; text-align:center;">
+        <div style="font-size:0.85rem; font-weight:900; color:#C084FC;">🎙️ SUNUCU & YÖNETİCİ MODU:</div>
+        <div style="font-size:0.78rem; color:#CBD5E1; margin-top:2px; line-height:1.35;">
+          Sen Metin Uca gibi sunucusun! Cevapları sadece sen göreceksin. Yarışmacılar cevabı sesli söyleyecek, sen Doğru / Yanlış / Pas butonlarına basacaksın!
+        </div>
+      </div>
+
+      <button type="button" id="btn-passa-start" class="btn-main primary" style="font-size:1.1rem; font-weight:900; padding:14px; width:100%; border-radius:14px; box-shadow:0 0 25px rgba(0,245,212,0.4);">
         🚀 YARIŞMAYI BAŞLAT ➔
       </button>
     </div>
 
-    <!-- 2. AKTİF YARIŞMA AŞAMASI (PLAY) -->
-    <div id="passa-play-stage" class="card" style="display:none; text-align:center; padding:18px 14px;">
+    <!-- 2. AKTİF YARIŞMA AŞAMASI (PLAY - SUNUCU KONSOLU) -->
+    <div id="passa-play-stage" class="card" style="display:none; text-align:center; padding:16px 14px;">
+      <!-- Sunucu & Yarışmacı Başlığı -->
+      <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.06); padding:8px 12px; border-radius:12px; margin-bottom:10px;">
+        <span style="font-size:0.78rem; font-weight:900; color:#00F5D4;">🎙️ SUNUCU KONTROLÜ</span>
+        <div id="passa-active-player-badge" style="font-size:0.82rem; font-weight:900; color:var(--gold); background:rgba(251,191,36,0.18); padding:3px 10px; border-radius:999px;">
+          🎯 Yarışan: <span id="lbl-passa-active-player">Yarışmacı 1</span>
+        </div>
+      </div>
+
       <!-- Süre ve İstatistik Çubuğu -->
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <div style="display:flex; gap:6px;">
-          <span id="passa-stat-correct" style="font-size:0.78rem; font-weight:800; background:rgba(16,185,129,0.2); color:#10B981; border:1px solid #10B981; padding:3px 10px; border-radius:8px;">0 Doğru</span>
-          <span id="passa-stat-wrong" style="font-size:0.78rem; font-weight:800; background:rgba(239,68,68,0.2); color:#EF4444; border:1px solid #EF4444; padding:3px 10px; border-radius:8px;">0 Yanlış</span>
+          <span id="passa-stat-correct" style="font-size:0.78rem; font-weight:800; background:rgba(16,185,129,0.2); color:#10B981; border:1px solid #10B981; padding:3px 8px; border-radius:8px;">0 Doğru</span>
+          <span id="passa-stat-wrong" style="font-size:0.78rem; font-weight:800; background:rgba(239,68,68,0.2); color:#EF4444; border:1px solid #EF4444; padding:3px 8px; border-radius:8px;">0 Yanlış</span>
         </div>
         <div id="passa-timer-display" style="font-size:1.6rem; font-weight:900; color:var(--primary); font-family:var(--font-heading);">2:00</div>
-        <span id="passa-stat-score" style="font-size:0.85rem; font-weight:900; background:rgba(251,191,36,0.2); color:var(--gold); border:1px solid var(--gold); padding:3px 12px; border-radius:8px;">0 P</span>
+        <span id="passa-stat-score" style="font-size:0.85rem; font-weight:900; background:rgba(251,191,36,0.2); color:var(--gold); border:1px solid var(--gold); padding:3px 10px; border-radius:8px;">0 P</span>
       </div>
 
       <!-- 24 Harfli Dairesel Alfabe Çarkı -->
@@ -1518,17 +1562,14 @@
       </div>
 
       <!-- Soru Kutusu -->
-      <div style="background:rgba(0,0,0,0.45); border:1.5px solid rgba(255,255,255,0.15); border-radius:16px; padding:16px; margin-bottom:14px; min-height:85px; display:flex; align-items:center; justify-content:center;">
-        <p id="passa-question-text" style="font-size:1rem; font-weight:800; color:#FFF; line-height:1.45; margin:0;">Soru yükleniyor...</p>
+      <div style="background:rgba(0,0,0,0.45); border:1.5px solid rgba(255,255,255,0.15); border-radius:16px; padding:14px; margin-bottom:10px; min-height:80px; display:flex; align-items:center; justify-content:center;">
+        <p id="passa-question-text" style="font-size:0.98rem; font-weight:800; color:#FFF; line-height:1.45; margin:0;">Soru yükleniyor...</p>
       </div>
 
-      <!-- Gizli/Açılır Doğru Cevap Kutusu -->
-      <div id="passa-answer-reveal-box" style="display:none; background:rgba(251,191,36,0.18); border:1.5px solid var(--gold); border-radius:12px; padding:10px; margin-bottom:12px; font-weight:900; color:var(--gold); font-size:1rem;"></div>
-
-      <div style="display:flex; justify-content:center; margin-bottom:12px;">
-        <button type="button" id="btn-passa-reveal-answer" style="background:none; border:none; color:var(--text-dim); font-size:0.8rem; font-weight:800; cursor:pointer;">
-          👀 Cevabı Göster
-        </button>
+      <!-- SUNUCUYA ÖZEL AÇIK DOĞRU CEVAP KUTUSU (Sunucu anında görür) -->
+      <div id="passa-host-answer-box" style="background:linear-gradient(135deg, rgba(16,185,129,0.22), rgba(6,95,70,0.3)); border:2px solid #10B981; border-radius:14px; padding:10px 14px; margin-bottom:12px; text-align:center;">
+        <span style="font-size:0.75rem; font-weight:800; color:#10B981; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:2px;">💡 SUNUCU İÇİN DOĞRU CEVAP:</span>
+        <div id="passa-answer-text" style="font-size:1.35rem; font-weight:900; color:#FFF; text-shadow:0 0 12px rgba(16,185,129,0.8);">ASTRONOMİ</div>
       </div>
 
       <!-- Kontrol Butonları: PAS, DOĞRU, YANLIŞ -->
@@ -1541,6 +1582,16 @@
         </button>
         <button type="button" id="btn-passa-wrong" class="btn-main" style="background:linear-gradient(135deg, #EF4444, #B91C1C); color:#FFF; font-size:0.95rem; font-weight:900; padding:14px 6px; border-radius:14px;">
           🔴 YANLIŞ (0)
+        </button>
+      </div>
+
+      <!-- Sıradaki Yarışmacı & Bitir Çubuğu -->
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button type="button" id="btn-passa-next-player" class="btn-secondary" style="flex:1; padding:10px; font-weight:800; font-size:0.8rem;">
+          ⏩ Sıradaki Yarışmacıya Geç
+        </button>
+        <button type="button" id="btn-passa-finish-now" class="btn-secondary" style="flex:1; padding:10px; font-weight:800; font-size:0.8rem; color:#EF4444; border-color:rgba(239,68,68,0.4);">
+          🏁 Turu Bitir
         </button>
       </div>
     </div>
@@ -1583,6 +1634,28 @@
       <span style="font-size:0.8rem; font-weight:800; background:rgba(251,191,36,0.15); color:var(--gold); border:1px solid var(--gold); padding:4px 12px; border-radius:999px;">
         🎡 KLASİK ÇARKIFELEK
       </span>
+    </div>
+
+    <!-- Mod Seçimi -->
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <button type="button" id="btn-cark-mode-local" class="btn-main active" style="flex:1; font-size:0.82rem; padding:10px 6px; border-radius:12px; background:rgba(0,245,212,0.2); border:1.5px solid var(--primary); color:#FFF;">
+        🎲 Masada Oyna (Tek Cihaz)
+      </button>
+      <button type="button" id="btn-cark-mode-wifi" class="btn-main" style="flex:1; font-size:0.82rem; padding:10px 6px; border-radius:12px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.15); color:var(--text-dim);">
+        ☁️ Çoklu Telefon (Bulut / QR)
+      </button>
+    </div>
+
+    <!-- Wi-Fi / Bulut Bağlantı Kutusu -->
+    <div id="cark-wifi-box" style="display:none; background:rgba(0,0,0,0.35); border-radius:16px; padding:14px; margin-bottom:14px; text-align:center;">
+      <div style="font-size:0.8rem; font-weight:800; color:var(--text-dim); margin-bottom:4px;">YARIŞMACILAR BU QR'I OKUTARAK ODAYA BAĞLANSIN:</div>
+      <div style="font-size:0.75rem; color:#00F5D4; font-weight:800; margin-bottom:6px;">☁️ Sırası gelen kendi telefonundan çarkı çevirir ve harf seçer!</div>
+      <div id="cark-qr-canvas" style="display:inline-block; margin:6px 0; border:2px solid var(--primary); border-radius:12px; padding:6px; background:#0B0E14;"></div>
+      <div style="font-size:1.1rem; font-weight:900; color:var(--gold); margin-top:2px;">
+        ODA KODU: <span id="lbl-cark-room-code" style="letter-spacing:3px;">----</span>
+      </div>
+      <div id="cark-player-count-badge" style="font-size:0.8rem; font-weight:800; color:var(--primary); margin-top:4px;">1 Oyuncu Bağlı</div>
+      <div id="cark-connected-players" style="margin-top:8px;"></div>
     </div>
 
     <!-- Takım Puanları Barı -->

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>A'dan Z'ye Passaparola | Canlı Yarışmacı & Seyirci Ekranı</title>
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+  <style>
+    :root {
+      --bg: #0B0E14;
+      --card-bg: rgba(22, 27, 46, 0.94);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --primary: #00F5D4;
+      --accent: #FF2E93;
+      --gold: #FBBF24;
+      --danger: #EF4444;
+      --success: #10B981;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: radial-gradient(circle at 50% 0%, #1e102f 0%, var(--bg) 85%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 16px 14px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      user-select: none;
+    }
+    .container { max-width: 460px; width: 100%; display: flex; flex-direction: column; gap: 12px; }
+
+    header { text-align: center; margin-bottom: 2px; }
+    .header-logo { font-size: 2.2rem; display: inline-block; filter: drop-shadow(0 0 15px rgba(0, 245, 212, 0.6)); }
+    h1 { font-size: 1.5rem; font-weight: 900; background: linear-gradient(135deg, #FFF, var(--primary), var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .room-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 800; padding: 4px 14px; border-radius: 999px; background: rgba(0, 245, 212, 0.15); border: 1px solid var(--primary); color: var(--primary); margin-top: 4px; }
+
+    .card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      backdrop-filter: blur(14px);
+      text-align: center;
+    }
+
+    /* 24 Harfli Çark */
+    .passa-wheel-wrapper {
+      position: relative;
+      width: 270px;
+      height: 270px;
+      margin: 10px auto 16px;
+    }
+    .passa-center-box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #1E1B4B 0%, #0B0E14 90%);
+      border: 3px solid var(--gold);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 25px rgba(251, 191, 36, 0.5);
+      z-index: 5;
+    }
+    .passa-center-letter {
+      font-size: 2.6rem;
+      font-weight: 900;
+      color: var(--gold);
+      line-height: 1;
+      text-shadow: 0 0 15px rgba(251, 191, 36, 0.8);
+    }
+    .passa-node {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      margin-left: -14px;
+      margin-top: -14px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 0.78rem;
+      color: #FFF;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      background: rgba(18, 24, 38, 0.9);
+      transition: all 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+    .passa-node.node-pending { background: rgba(30, 41, 59, 0.95); border-color: rgba(255, 255, 255, 0.3); color: #E2E8F0; }
+    .passa-node.node-active {
+      background: #00F5D4;
+      border-color: #FFF;
+      color: #0B0E14;
+      transform: scale(1.35);
+      box-shadow: 0 0 20px #00F5D4, 0 0 40px rgba(0, 245, 212, 0.6);
+      z-index: 3;
+    }
+    .passa-node.node-correct { background: #10B981; border-color: #34D399; color: #FFF; box-shadow: 0 0 15px rgba(16, 185, 129, 0.6); }
+    .passa-node.node-wrong { background: #EF4444; border-color: #F87171; color: #FFF; }
+    .passa-node.node-passed { background: #FBBF24; border-color: #FDE047; color: #0B0E14; }
+
+    /* Yarışmacı Cevap İpucu (Doğru cevap gizli!) */
+    .contestant-hint-box {
+      background: rgba(0, 245, 212, 0.12);
+      border: 1.5px dashed var(--primary);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-main {
+      background: linear-gradient(135deg, var(--gold), #D97706);
+      border: none;
+      border-radius: 999px;
+      color: #0B0E14;
+      font-size: 1rem;
+      font-weight: 900;
+      padding: 12px 24px;
+      width: 100%;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(251, 191, 36, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-logo">🎯</div>
+      <h1>A'dan Z'ye Passaparola</h1>
+      <div class="room-badge">
+        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#00F5D4;"></span>
+        ODA: <span id="lbl-room-id">----</span>
+      </div>
+    </header>
+
+    <!-- 1. Katılım / Lobi -->
+    <div id="stage-lobby" class="card">
+      <h2 style="font-size:1.3rem; font-weight:900; color:var(--gold); margin-bottom:6px;">Yarışmaya Katıl</h2>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">Sunucu soruyu okuyacak, cevabı sesli söyleyeceksin!</p>
+      
+      <div style="margin-bottom:12px; text-align:left;">
+        <label style="font-size:0.8rem; font-weight:800; color:var(--text-muted); display:block; margin-bottom:4px;">İsminiz:</label>
+        <input type="text" id="inp-player-name" placeholder="Adınızı yazın..." style="width:100%; background:rgba(0,0,0,0.5); border:1.5px solid rgba(255,255,255,0.15); border-radius:12px; padding:12px; color:#FFF; font-weight:800; font-size:1rem; outline:none;" />
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-size:0.8rem; font-weight:800; color:var(--text-muted); display:block; margin-bottom:6px; text-align:left;">Avatar Seçin:</label>
+        <div id="avatar-grid" style="display:flex; justify-content:center; gap:8px;"></div>
+      </div>
+
+      <button type="button" id="btn-join-room" class="btn-main">
+        🚀 Odaya Katıl
+      </button>
+      <div id="lobby-wait-text" style="display:none; font-size:0.85rem; color:#00F5D4; font-weight:800; margin-top:10px;">
+        ✅ Odaya bağlandınız! Sunucu yarışmayı başlattığında ekranınız açılacaktır.
+      </div>
+    </div>
+
+    <!-- 2. Canlı Yarışma Ekranı (CEVAP GİZLİ) -->
+    <div id="stage-playing" class="card" style="display:none;">
+      <!-- Aktif Yarışmacı & Süre -->
+      <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.06); padding:8px 14px; border-radius:12px; margin-bottom:10px;">
+        <div style="font-size:0.85rem; font-weight:900; color:var(--gold);" id="lbl-active-contestant">
+          🎯 Yarışan: Yarışmacı
+        </div>
+        <div style="font-size:1.4rem; font-weight:900; color:var(--primary);" id="lbl-live-timer">
+          01:40
+        </div>
+      </div>
+
+      <!-- Çark -->
+      <div class="passa-wheel-wrapper">
+        <div class="passa-center-box">
+          <span style="font-size:0.65rem; font-weight:800; color:var(--text-muted);">HARF</span>
+          <div id="lbl-center-letter" class="passa-center-letter">A</div>
+        </div>
+        <div id="passa-client-nodes"></div>
+      </div>
+
+      <!-- Soru Kutusu -->
+      <div style="background:rgba(0,0,0,0.45); border:1.5px solid rgba(255,255,255,0.15); border-radius:16px; padding:14px; margin-bottom:12px; min-height:80px; display:flex; align-items:center; justify-content:center;">
+        <p id="lbl-question-text" style="font-size:0.98rem; font-weight:800; color:#FFF; line-height:1.4; margin:0;">
+          Soru yükleniyor...
+        </p>
+      </div>
+
+      <!-- Yarışmacı İpucu / Notu (CEVAP KESİNLİKLE YOK!) -->
+      <div class="contestant-hint-box">
+        <span>🎙️</span>
+        <span>Cevabınızı sunucuya <strong>sesli olarak</strong> söyleyin!</span>
+      </div>
+
+      <!-- Anlık Yarışmacı Puanları & İlerleme -->
+      <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:10px;">
+        <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); margin-bottom:6px; text-align:left;">🏆 CANLI YARIŞMACI TABLOSU:</div>
+        <div id="live-players-list" style="display:flex; flex-direction:column; gap:4px;"></div>
+      </div>
+    </div>
+
+    <!-- 3. Sonuç Ekranı -->
+    <div id="stage-finished" class="card" style="display:none;">
+      <div style="font-size:3rem; margin-bottom:4px;">🏆</div>
+      <h2 style="font-size:1.5rem; font-weight:900; color:var(--gold); margin-bottom:8px;">Yarışma Tamamlandı!</h2>
+      <div id="final-leaderboard" style="display:flex; flex-direction:column; gap:6px; margin:14px 0;"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    const PASSAPAROLA_LETTERS = [
+      'A', 'B', 'C', 'Ç', 'D', 'E', 'F', 'G', 
+      'H', 'I', 'İ', 'K', 'L', 'M', 'N', 'O', 
+      'Ö', 'P', 'R', 'S', 'Ş', 'T', 'U', 'V', 
+      'Y', 'Z'
+    ];
+    const AVATARS = ['🦁', '🦊', '🐼', '🐯', '🦄', '🐸', '🐶', '🐱'];
+    let selectedAvatar = '🦁';
+    let myPlayerId = 'p_' + Math.random().toString(36).substr(2, 6);
+    let roomId = new URLSearchParams(window.location.search).get('room') || 'PASS';
+
+    document.getElementById('lbl-room-id').textContent = roomId;
+
+    // Avatar Seçimi
+    const avContainer = document.getElementById('avatar-grid');
+    AVATARS.forEach(av => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = av;
+      btn.style.cssText = 'background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.15); border-radius:12px; font-size:1.4rem; padding:6px 10px; cursor:pointer;';
+      if (av === selectedAvatar) btn.style.borderColor = 'var(--gold)';
+      btn.onclick = () => {
+        selectedAvatar = av;
+        avContainer.querySelectorAll('button').forEach(b => b.style.borderColor = 'rgba(255,255,255,0.15)');
+        btn.style.borderColor = 'var(--gold)';
+      };
+      avContainer.appendChild(btn);
+    });
+
+    // Çark Düğümlerini Çiz
+    function renderClientWheel(letterStates = {}) {
+      const wheelContainer = document.getElementById('passa-client-nodes');
+      if (!wheelContainer) return;
+      wheelContainer.innerHTML = '';
+
+      const radius = 118;
+      const cx = 135;
+      const cy = 135;
+      const total = PASSAPAROLA_LETTERS.length;
+      const angleStep = (2 * Math.PI) / total;
+
+      PASSAPAROLA_LETTERS.forEach((letter, i) => {
+        const angle = -Math.PI / 2 + i * angleStep;
+        const x = cx + radius * Math.cos(angle);
+        const y = cy + radius * Math.sin(angle);
+
+        const node = document.createElement('div');
+        const st = letterStates[letter] || 'pending';
+        node.className = `passa-node node-${st}`;
+        node.id = `client-node-${letter}`;
+        node.textContent = letter;
+        node.style.left = `${x}px`;
+        node.style.top = `${y}px`;
+        wheelContainer.appendChild(node);
+      });
+    }
+
+    renderClientWheel();
+
+    // Firebase REST polling/event listener
+    const dbUrl = 'https://kafanatak-party-default-rtdb.firebaseio.com';
+
+    async function registerPlayer() {
+      const name = (document.getElementById('inp-player-name').value || '').trim() || 'Yarışmacı';
+      try {
+        await fetch(`${dbUrl}/kafanatak/passaparola/${roomId}/players/${myPlayerId}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: myPlayerId,
+            name: name,
+            avatar: selectedAvatar,
+            score: 0,
+            correct: 0,
+            wrong: 0,
+            pass: 0
+          })
+        });
+        document.getElementById('btn-join-room').style.display = 'none';
+        document.getElementById('lobby-wait-text').style.display = 'block';
+      } catch (e) {
+        console.error('Join error:', e);
+      }
+    }
+
+    document.getElementById('btn-join-room').onclick = registerPlayer;
+
+    let lastAction = '';
+
+    function syncState(room) {
+      if (!room) return;
+
+      const stageLobby = document.getElementById('stage-lobby');
+      const stagePlaying = document.getElementById('stage-playing');
+      const stageFinished = document.getElementById('stage-finished');
+
+      if (room.phase === 'playing') {
+        stageLobby.style.display = 'none';
+        stagePlaying.style.display = 'block';
+        stageFinished.style.display = 'none';
+
+        // Aktif Harf & Soru
+        document.getElementById('lbl-center-letter').textContent = room.currentLetter || 'A';
+        document.getElementById('lbl-question-text').textContent = room.currentQuestion || 'Soru yükleniyor...';
+        document.getElementById('lbl-active-contestant').textContent = `🎯 Yarışan: ${room.activePlayerAvatar || '🦁'} ${room.activePlayerName || 'Yarışmacı'}`;
+
+        // Süre
+        const s = room.remainingSeconds || 0;
+        const mm = String(Math.floor(s / 60)).padStart(2, '0');
+        const ss = String(s % 60).padStart(2, '0');
+        document.getElementById('lbl-live-timer').textContent = `${mm}:${ss}`;
+
+        // Çark Durumları
+        if (room.letterStates) {
+          PASSAPAROLA_LETTERS.forEach(l => {
+            const node = document.getElementById(`client-node-${l}`);
+            if (node) {
+              node.className = `passa-node node-${room.letterStates[l] || 'pending'}`;
+            }
+          });
+        }
+
+        // Skor Tablosu
+        if (room.players) {
+          const pList = Array.isArray(room.players) ? room.players : Object.values(room.players);
+          const pContainer = document.getElementById('live-players-list');
+          pContainer.innerHTML = pList.map(p => `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.06); padding:6px 10px; border-radius:10px; font-size:0.82rem;">
+              <span style="font-weight:800; color:#FFF;">${p.avatar || '🦁'} ${p.name}</span>
+              <div style="display:flex; gap:6px;">
+                <span style="color:#10B981; font-weight:800;">${p.correct || 0} D</span>
+                <span style="color:#EF4444; font-weight:800;">${p.wrong || 0} Y</span>
+                <span style="color:var(--gold); font-weight:900;">${p.score || 0} P</span>
+              </div>
+            </div>
+          `).join('');
+        }
+      } else if (room.phase === 'result' || room.phase === 'finished') {
+        stageLobby.style.display = 'none';
+        stagePlaying.style.display = 'none';
+        stageFinished.style.display = 'block';
+
+        if (room.players) {
+          const pList = Array.isArray(room.players) ? room.players : Object.values(room.players);
+          const sorted = [...pList].sort((a,b) => (b.score || 0) - (a.score || 0));
+          document.getElementById('final-leaderboard').innerHTML = sorted.map((p, idx) => `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.08); padding:10px 14px; border-radius:12px; border:1px solid ${idx===0?'var(--gold)':'rgba(255,255,255,0.1)'};">
+              <span style="font-size:1.1rem; font-weight:900; color:#FFF;">${idx===0?'🥇':(idx===1?'🥈':'🥉')} ${p.avatar || '🦁'} ${p.name}</span>
+              <span style="font-size:1.2rem; font-weight:900; color:var(--primary);">${p.score || 0} Puan</span>
+            </div>
+          `).join('');
+        }
+      }
+    }
+
+    // EventSource (SSE) canlı veri akışı
+    let evtSource = null;
+    function startListen() {
+      try {
+        evtSource = new EventSource(`${dbUrl}/kafanatak/passaparola/${roomId}.json`);
+        evtSource.addEventListener('put', (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            if (data && data.path === '/') {
+              syncState(data.data);
+            } else {
+              fetchState();
+            }
+          } catch(err) {}
+        });
+      } catch(e) {}
+    }
+
+    async function fetchState() {
+      try {
+        const res = await fetch(`${dbUrl}/kafanatak/passaparola/${roomId}.json`);
+        const room = await res.json();
+        if (room) syncState(room);
+      } catch (e) {}
+    }
+
+    fetchState();
+    startListen();
+    setInterval(fetchState, 1500);
+  </script>
+</body>
+</html>
