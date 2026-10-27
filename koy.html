@@ -177,17 +177,24 @@
   </div>
 
   <script>
+    const FIREBASE_DB_URL = 'https://kafanatak-party-default-rtdb.firebaseio.com';
+    let networkMode = 'firebase'; // 'firebase' | 'local'
     let currentRoomId = '';
     let myPlayerId = '';
     let selectedAvatar = '🧑‍🌾';
     let pollInterval = null;
+    let fbEventSource = null;
     let cachedRole = null;
+    let localGameState = null;
 
     // URL'den room parametresi al
     const urlParams = new URLSearchParams(window.location.search);
     const roomParam = urlParams.get('room');
     if (roomParam) {
       document.getElementById('input-room-code').value = roomParam.toUpperCase();
+    }
+    if (urlParams.get('local') === '1') {
+      networkMode = 'local';
     }
 
     // Avatar Seçimi
@@ -213,6 +220,44 @@
         return;
       }
 
+      // 1. Önce Firebase Bulut Odayı Kontrol Et (Wi-Fi hotspot gerektirmez)
+      try {
+        const fbRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/vampire/${roomCode}.json`);
+        if (fbRes.ok) {
+          const roomData = await fbRes.json();
+          if (roomData && (roomData.roomId || roomData.phase)) {
+            networkMode = 'firebase';
+            currentRoomId = roomCode;
+            myPlayerId = 'p_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 4);
+
+            const playerObj = {
+              id: myPlayerId,
+              name: playerName,
+              avatar: selectedAvatar,
+              alive: true,
+              role: null,
+              joinedAt: Date.now()
+            };
+
+            await fetch(`${FIREBASE_DB_URL}/kafanatak/vampire/${roomCode}/players/${myPlayerId}.json`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(playerObj)
+            });
+
+            document.getElementById('room-badge').textContent = 'BULUT ODA: ' + currentRoomId;
+            document.getElementById('screen-join').style.display = 'none';
+            document.getElementById('screen-lobby').style.display = 'block';
+
+            startPolling();
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Firebase bulut kontrolü hatası, yerel deneniyor:', err);
+      }
+
+      // 2. Yedek: Yerel Node.js sunucu (Aynı Wi-Fi Modu)
       try {
         const res = await fetch('/api/vampire/join', {
           method: 'POST',
@@ -225,6 +270,7 @@
           return;
         }
 
+        networkMode = 'local';
         currentRoomId = data.roomId;
         myPlayerId = data.playerId;
         document.getElementById('room-badge').textContent = 'ODA: ' + currentRoomId;
@@ -234,7 +280,7 @@
 
         startPolling();
       } catch (e) {
-        alert('Sunucuya bağlanılamadı. Wi-Fi bağlantınızı kontrol edin.');
+        alert('Odaya bağlanılamadı! Oda kodunu kontrol edin veya internet bağlantınızı kontrol edin.');
       }
     });
 
@@ -251,17 +297,71 @@
 
     function startPolling() {
       if (pollInterval) clearInterval(pollInterval);
-      pollInterval = setInterval(fetchGameState, 1000);
+      if (networkMode === 'firebase') {
+        // SSE Realtime Push
+        try {
+          if (typeof EventSource !== 'undefined') {
+            fbEventSource = new EventSource(`${FIREBASE_DB_URL}/kafanatak/vampire/${currentRoomId}.json`);
+            fbEventSource.addEventListener('put', (e) => {
+              fetchGameState();
+            });
+            fbEventSource.addEventListener('patch', (e) => {
+              fetchGameState();
+            });
+          }
+        } catch (e) {}
+        pollInterval = setInterval(fetchGameState, 1200);
+      } else {
+        pollInterval = setInterval(fetchGameState, 1000);
+      }
       fetchGameState();
     }
 
     async function fetchGameState() {
       if (!currentRoomId || !myPlayerId) return;
       try {
-        const res = await fetch(`/api/vampire/state?room=${currentRoomId}&player=${myPlayerId}`);
-        if (!res.ok) return;
-        const state = await res.json();
-        renderState(state);
+        if (networkMode === 'firebase') {
+          const res = await fetch(`${FIREBASE_DB_URL}/kafanatak/vampire/${currentRoomId}.json`);
+          if (!res.ok) return;
+          const raw = await res.json();
+          if (!raw) return;
+
+          // Raw Firebase nesnesini normalize et
+          let playersArr = [];
+          if (raw.players) {
+            if (Array.isArray(raw.players)) {
+              playersArr = raw.players.filter(Boolean);
+            } else if (typeof raw.players === 'object') {
+              playersArr = Object.values(raw.players);
+            }
+          }
+
+          const me = playersArr.find(p => p.id === myPlayerId) || {};
+          const vampires = playersArr.filter(p => p.role === 'vampir' && p.id !== myPlayerId);
+
+          const state = {
+            roomId: raw.roomId || currentRoomId,
+            phase: raw.phase || 'lobby',
+            dayNumber: raw.dayNumber || 1,
+            narratorText: raw.narratorText || '',
+            winner: raw.winner || null,
+            players: playersArr,
+            myPlayerId: myPlayerId,
+            myAlive: me.alive !== false,
+            myRole: me.role || null,
+            vampirePartners: vampires,
+            nightActions: raw.nightActions || {},
+            votes: raw.votes || {}
+          };
+          localGameState = state;
+          renderState(state);
+        } else {
+          const res = await fetch(`/api/vampire/state?room=${currentRoomId}&player=${myPlayerId}`);
+          if (!res.ok) return;
+          const state = await res.json();
+          localGameState = state;
+          renderState(state);
+        }
       } catch (e) {}
     }
 
@@ -458,18 +558,58 @@
           btn.classList.add('selected');
 
           try {
-            await fetch('/api/vampire/action', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                roomId: currentRoomId,
-                playerId: myPlayerId,
-                actionType: aType,
-                targetId: targetId
-              })
-            });
+            if (networkMode === 'firebase') {
+              if (aType === 'vampire_kill') {
+                await fetch(`${FIREBASE_DB_URL}/kafanatak/vampire/${currentRoomId}/nightActions/vampireTarget.json`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(targetId)
+                });
+              } else if (aType === 'doctor_save') {
+                await fetch(`${FIREBASE_DB_URL}/kafanatak/vampire/${currentRoomId}/nightActions/doctorTarget.json`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(targetId)
+                });
+              } else if (aType === 'detective_inspect') {
+                await fetch(`${FIREBASE_DB_URL}/kafanatak/vampire/${currentRoomId}/nightActions/detectiveTarget.json`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(targetId)
+                });
+                if (localGameState && localGameState.players) {
+                  const targetP = localGameState.players.find(p => p.id === targetId);
+                  if (targetP) {
+                    const detBox = document.getElementById('detective-result-box');
+                    if (detBox) {
+                      detBox.style.display = 'block';
+                      document.getElementById('detective-result-text').textContent = `${targetP.name} bir ${targetP.role === 'vampir' ? 'VAMPİR! 🧛‍♂️' : 'MASUM KÖYLÜ 🧑‍🌾'}`;
+                    }
+                  }
+                }
+              } else if (aType === 'day_vote') {
+                await fetch(`${FIREBASE_DB_URL}/kafanatak/vampire/${currentRoomId}/votes/${myPlayerId}.json`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(targetId)
+                });
+              }
+            } else {
+              await fetch('/api/vampire/action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  roomId: currentRoomId,
+                  playerId: myPlayerId,
+                  actionType: aType,
+                  targetId: targetId
+                })
+              });
+            }
             if (navigator.vibrate) navigator.vibrate(60);
-          } catch (e) {}
+          } catch (e) {
+            console.warn('Aksiyon gönderilemedi:', e);
+          }
         });
       });
     }

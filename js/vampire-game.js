@@ -1,7 +1,10 @@
 // Kafana Tak! - Vampir - Köylü (Mafia / Werewolf) Oyun Motoru
 // Desteklenen 2 Mod:
 // 1. Tek Telefon (Elden Ele Gizli Rol & Masada Moderatör)
-// 2. Çoklu Telefon (Aynı Wi-Fi / Hotspot QR Oda Modu - Jackbox Tarzı)
+// 2. Çoklu Telefon (Firebase Bulut Oda & QR Kod - Wi-Fi Hotspot GEREKTİRMEZ)
+
+import { firebaseNetwork } from './firebase-network.js';
+import QRCode from './qrcode.esm.js';
 
 export function getApiBaseUrl() {
   const savedIp = localStorage.getItem('kafanatak_last_server_ip') || '192.168.1.159';
@@ -553,206 +556,164 @@ export class VampireGameEngine {
   }
 
   // =========================================
-  // MOD 2: ÇOKLU TELEFON (AYNI Wİ-Fİ / QR MODU)
+  // MOD 2: ÇOKLU TELEFON (FİREBASE BULUT ODA & QR MODU)
   // =========================================
   renderWifiSetupScreen() {
+    this.renderMultiLobbyScreen();
+  }
+
+  async renderMultiLobbyScreen() {
     const container = document.getElementById('vampire-multi-screen');
     if (!container) return;
 
-    const currentIp = localStorage.getItem('kafanatak_last_server_ip') || '192.168.1.159';
-
     container.innerHTML = `
-      <div class="card" style="text-align:center; max-width:480px; margin:0 auto; padding:22px; border:2px solid rgba(0,245,212,0.5); box-shadow:0 12px 35px rgba(0,245,212,0.15);">
-        <div style="font-size:2.8rem; margin-bottom:6px;">🌐</div>
-        <h2 style="font-size:1.6rem; font-weight:900; color:#FFF; margin-bottom:6px;">Aynı Ağda Çoklu Telefon</h2>
-        <p style="font-size:0.86rem; color:var(--text-dim); line-height:1.4; margin-bottom:16px;">
-          Bu cihaz <strong>Ana Oyun Panosu</strong> olur. Diğer arkadaşlarınız kendi telefonlarından kamerayla ekrandaki QR kodu okutarak odaya katılır.
-        </p>
-
-        <!-- 3 Adımlı Kurulum Rehberi -->
-        <div style="display:flex; flex-direction:column; gap:10px; text-align:left; margin-bottom:16px;">
-          <div style="display:flex; gap:10px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:12px;">
-            <span style="background:var(--primary); color:#0B0E14; width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-weight:900; font-size:0.85rem; flex-shrink:0;">1</span>
-            <div>
-              <strong style="color:#FFF; font-size:0.9rem;">Aynı Wi-Fi veya Hotspot Ağı:</strong>
-              <p style="font-size:0.8rem; color:var(--text-dim); margin-top:2px;">Tüm telefonlar ve bilgisayar aynı Wi-Fi ağına (veya telefonun internet paylaşımına) bağlı olmalıdır.</p>
-            </div>
-          </div>
-
-          <div style="display:flex; gap:10px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:12px;">
-            <span style="background:var(--primary); color:#0B0E14; width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-weight:900; font-size:0.85rem; flex-shrink:0;">2</span>
-            <div>
-              <strong style="color:#FFF; font-size:0.9rem;">Oyun Sunucusu (baslat.bat):</strong>
-              <p style="font-size:0.8rem; color:var(--text-dim); margin-top:2px;">Bilgisayarınızda <code>baslat.bat</code> dosyası açık olmalı ve port 3000 dinlenmelidir.</p>
-            </div>
-          </div>
-
-          <div style="display:flex; gap:10px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:12px;">
-            <span style="background:var(--primary); color:#0B0E14; width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-weight:900; font-size:0.85rem; flex-shrink:0;">3</span>
-            <div style="flex:1;">
-              <strong style="color:#FFF; font-size:0.9rem;">Sunucu IP & Bağlantı Testi:</strong>
-              <div style="display:flex; gap:8px; margin-top:6px;">
-                <input type="text" id="input-wifi-ip" class="form-input" value="${currentIp}" style="flex:1; padding:8px 12px; font-size:0.9rem;" placeholder="Örn: 192.168.1.159">
-                <button type="button" id="btn-test-wifi-conn" class="btn-secondary" style="padding:8px 14px; font-size:0.85rem; flex-shrink:0;">
-                  📡 Test Et
-                </button>
-              </div>
-              <div id="wifi-test-status" style="font-size:0.75rem; margin-top:4px; font-weight:800; color:var(--text-dim);">
-                Varsayılan IP: ${currentIp} (Port: 3000)
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <button type="button" id="btn-launch-wifi-room" class="btn-main primary" style="font-size:1.1rem; padding:15px; width:100%;">
-          🚀 Odayı Kur & QR Kodu Aç ➔
-        </button>
+      <div class="card" style="text-align:center; padding:35px; max-width:440px; margin:0 auto;">
+        <div class="ai-spinner" style="width:40px; height:40px; border-width:4px; margin:0 auto 14px;"></div>
+        <h3 style="color:#FFF; font-size:1.2rem; font-weight:900;">Bulut Oda Kuruluyor...</h3>
+        <p style="color:var(--text-dim); font-size:0.85rem; margin-top:6px;">Firebase üzerinden oda kodu oluşturuluyor...</p>
       </div>
     `;
 
-    const ipInput = document.getElementById('input-wifi-ip');
-    const testBtn = document.getElementById('btn-test-wifi-conn');
-    const statusEl = document.getElementById('wifi-test-status');
-    const launchBtn = document.getElementById('btn-launch-wifi-room');
-
-    testBtn.addEventListener('click', async () => {
-      const ip = (ipInput.value || '').trim();
-      if (!ip) return;
-      localStorage.setItem('kafanatak_last_server_ip', ip);
-      statusEl.innerHTML = '<span style="color:#FFE600;">⏳ Sunucu kontrol ediliyor...</span>';
-      
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 3500);
-        const res = await fetch(`http://${ip}:3000/api/system/info`, { signal: controller.signal });
-        clearTimeout(timeout);
-        if (res.ok) {
-          statusEl.innerHTML = '<span style="color:#00E676;">🟢 Sunucu Aktif ve Bağlandı! (Port 3000)</span>';
-        } else {
-          statusEl.innerHTML = '<span style="color:#FF416C;">🔴 Sunucu yanıt vermedi! HTTP: ' + res.status + '</span>';
-        }
-      } catch (err) {
-        statusEl.innerHTML = '<span style="color:#FF416C;">🔴 Bağlanılamadı! Bilgisayarda "baslat.bat" açık mı?</span>';
-      }
-    });
-
-    launchBtn.addEventListener('click', async () => {
-      const ip = (ipInput.value || '').trim();
-      if (ip) localStorage.setItem('kafanatak_last_server_ip', ip);
-      
+    const result = await this.createMultiplayerRoom(this.app?.profile?.name || 'Köy Muhtarı');
+    if (!result.success) {
       container.innerHTML = `
-        <div class="card" style="text-align:center; padding:35px; max-width:440px; margin:0 auto;">
-          <div class="ai-spinner" style="width:40px; height:40px; border-width:4px; margin:0 auto 14px;"></div>
-          <h3 style="color:#FFF; font-size:1.2rem; font-weight:900;">Oda Kuruluyor...</h3>
-          <p style="color:var(--text-dim); font-size:0.85rem; margin-top:6px;">Sunucuya bağlanılıyor (http://${ip || '192.168.1.159'}:3000)</p>
+        <div class="card" style="text-align:center; max-width:460px; margin:0 auto; padding:22px; border:2px solid #EF4444;">
+          <div style="font-size:3rem; margin-bottom:6px;">⚠️</div>
+          <h2 style="font-size:1.4rem; font-weight:900; color:#EF4444; margin-bottom:8px;">Oda Kurulamadı!</h2>
+          <p style="font-size:0.86rem; color:#FCA5A5; line-height:1.4; margin-bottom:14px;">
+            ${result.error || 'İnternet bağlantınızı kontrol edin.'}
+          </p>
+          <button type="button" id="btn-retry-cloud-room" class="btn-main primary" style="font-size:1rem; padding:12px;">
+            🔄 Yeniden Dene
+          </button>
         </div>
       `;
-
-      const result = await this.createMultiplayerRoom(this.app?.profile?.name || 'Köy Muhtarı');
-      if (!result.success) {
-        container.innerHTML = `
-          <div class="card" style="text-align:center; max-width:460px; margin:0 auto; padding:22px; border:2px solid #EF4444;">
-            <div style="font-size:3rem; margin-bottom:6px;">⚠️</div>
-            <h2 style="font-size:1.4rem; font-weight:900; color:#EF4444; margin-bottom:8px;">Oda Kurulamadı!</h2>
-            <p style="font-size:0.86rem; color:#FCA5A5; line-height:1.4; margin-bottom:14px;">
-              Hata Detayı: ${result.error || 'Sunucuya ulaşılamadı'}.
-            </p>
-            <div style="background:rgba(0,0,0,0.5); border-radius:12px; padding:12px; font-size:0.82rem; text-align:left; color:#CBD5E1; margin-bottom:16px;">
-              <strong>Olası Nedenler & Çözüm:</strong>
-              <ul style="padding-left:18px; margin-top:4px;">
-                <li>Bilgisayarınızda <code>baslat.bat</code> penceresi açık ve çalışıyor mu?</li>
-                <li>Telefonunuz bilgisayar ile kesinlikle AYNI Wi-Fi ağına bağlı mı?</li>
-                <li>IP adresi doğru mu? (CMD ekranında <code>ipconfig</code> yazarak teyit edin).</li>
-              </ul>
-            </div>
-            <button type="button" id="btn-retry-wifi" class="btn-main primary" style="font-size:1rem; padding:12px;">
-              🔄 Yeniden Dene / Ayarlara Dön
-            </button>
-          </div>
-        `;
-        document.getElementById('btn-retry-wifi').addEventListener('click', () => {
-          this.renderWifiSetupScreen();
-        });
-      }
-    });
+      document.getElementById('btn-retry-cloud-room').addEventListener('click', () => {
+        this.renderMultiLobbyScreen();
+      });
+    }
   }
 
   async createMultiplayerRoom(hostName) {
     this.mode = 'multi';
-    const baseUrl = getApiBaseUrl();
+    this.roomId = firebaseNetwork.generateRoomCode();
+    this.hostId = 'host';
+    this.phase = 'lobby';
+    this.dayNumber = 1;
+    this.winner = null;
+    this.players = [];
+    this.nightActions = { vampireTarget: null, doctorTarget: null, detectiveTarget: null };
+    this.votes = {};
 
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 4000);
+    const initialRoom = {
+      roomId: this.roomId,
+      hostId: this.hostId,
+      hostName: hostName || 'Köy Muhtarı',
+      phase: 'lobby',
+      dayNumber: 1,
+      settings: this.settings,
+      players: {},
+      nightActions: this.nightActions,
+      votes: {},
+      narratorText: 'Köy meydanında halk toplanıyor... Host oyunu başlattığında roller dağıtılacaktır.',
+      createdAt: Date.now(),
+      lastActive: Date.now()
+    };
 
-      const res = await fetch(`${baseUrl}/api/vampire/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hostName: hostName || 'Köy Muhtarı', settings: this.settings }),
-        signal: controller.signal
-      });
-      clearTimeout(timeout);
-
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error);
-
-      this.roomId = data.roomId;
-      this.hostId = data.hostId;
-      this.phase = 'lobby';
-
-      this.startHostPolling();
-      return { success: true, roomId: this.roomId };
-    } catch (e) {
-      return { success: false, error: e.message };
+    const res = await firebaseNetwork.createRoom('vampire', initialRoom);
+    if (!res.success && !res.fallback) {
+      return { success: false, error: res.error };
     }
+
+    this.startHostFirebaseSync();
+    return { success: true, roomId: this.roomId };
   }
 
-  startHostPolling() {
-    if (this.pollTimer) clearInterval(this.pollTimer);
-    const baseUrl = getApiBaseUrl();
+  startHostFirebaseSync() {
+    if (this.fbUnsub) {
+      this.fbUnsub();
+      this.fbUnsub = null;
+    }
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
 
+    // 1. Firebase ListenRoom (Realtime EventSource + hafif polling)
+    this.fbUnsub = firebaseNetwork.listenRoom('vampire', this.roomId, (remoteRoom) => {
+      if (!remoteRoom) return;
+      this.handleRemoteRoomUpdate(remoteRoom);
+    });
+
+    // 2. Yedek Interval
     this.pollTimer = setInterval(async () => {
-      try {
-        const res = await fetch(`${baseUrl}/api/vampire/state?room=${this.roomId}&player=${this.hostId}`);
-        if (!res.ok) return;
-        const state = await res.json();
-        this.renderMultiHostScreen(state);
-      } catch (e) {}
-    }, 1000);
+      const room = await firebaseNetwork.getRoom('vampire', this.roomId);
+      if (room) this.handleRemoteRoomUpdate(room);
+    }, 1500);
+  }
+
+  handleRemoteRoomUpdate(room) {
+    if (!room) return;
+    
+    // Normalleştir
+    let pList = [];
+    if (room.players) {
+      if (Array.isArray(room.players)) {
+        pList = room.players.filter(Boolean);
+      } else if (typeof room.players === 'object') {
+        pList = Object.values(room.players);
+      }
+    }
+    this.players = pList;
+
+    if (room.nightActions) {
+      this.nightActions = { ...this.nightActions, ...room.nightActions };
+    }
+    if (room.votes) {
+      this.votes = { ...this.votes, ...room.votes };
+    }
+
+    // Ekranı çiz
+    this.renderMultiHostScreen({
+      roomId: this.roomId,
+      phase: room.phase || this.phase,
+      dayNumber: room.dayNumber || this.dayNumber,
+      players: pList,
+      narratorText: room.narratorText || this.reportText || '',
+      winner: room.winner || this.winner
+    });
   }
 
   renderMultiHostScreen(state) {
     const container = document.getElementById('vampire-multi-screen');
     if (!container) return;
-    const baseUrl = getApiBaseUrl();
+    const clientUrl = firebaseNetwork.getKoyUrl(state.roomId);
 
     if (state.phase === 'lobby') {
-      const clientUrl = `${baseUrl}/koy.html?room=${encodeURIComponent(state.roomId)}`;
-
       container.innerHTML = `
         <div class="card" style="text-align:center; max-width:480px; margin:0 auto; padding:22px; border:2px solid var(--primary); box-shadow:0 12px 35px rgba(0,245,212,0.2);">
-          <div style="font-size:0.78rem; font-weight:800; color:var(--primary); text-transform:uppercase; letter-spacing:1px;">🌐 ÇOKLU TELEFON ODASI AÇIK</div>
-          <h2 style="font-size:2.2rem; font-weight:900; letter-spacing:6px; color:#FFF; margin:6px 0;">ODA: <span style="color:var(--primary);">${state.roomId}</span></h2>
+          <div style="font-size:0.78rem; font-weight:800; color:var(--primary); text-transform:uppercase; letter-spacing:1px;">🌐 ÇEVRİMİÇİ BULUT ODASI AÇIK</div>
+          <h2 style="font-size:2.4rem; font-weight:900; letter-spacing:6px; color:#FFF; margin:6px 0;">ODA: <span style="color:var(--primary);">${state.roomId}</span></h2>
           <p style="font-size:0.86rem; color:var(--text-dim); margin-bottom:14px;">
-            Arkadaşlarınız kendi telefonlarından aşağıdaki QR kodu okutarak odaya katılabilir:
+            Arkadaşlarınız kendi telefonlarından aşağıdaki QR kodu okutarak veya kodu girerek odaya katılabilir:
           </p>
 
           <div id="vampire-qr-box" style="background:#FFF; padding:12px; border-radius:18px; display:inline-block; margin-bottom:14px; box-shadow:0 8px 30px rgba(0,245,212,0.4);">
-            <canvas id="vampire-qr-canvas" width="220" height="220"></canvas>
+            <canvas id="vampire-qr-canvas" width="220" height="220" style="display:block;"></canvas>
           </div>
 
-          <div style="font-size:0.8rem; color:var(--text-dim); margin-bottom:10px;">
-            Veya tarayıcıya yazın: <strong style="color:#FFF;">${clientUrl}</strong>
+          <div style="font-size:0.82rem; color:var(--text-dim); margin-bottom:10px; word-break:break-all;">
+            Veya adresi açın: <strong style="color:var(--primary); font-size:0.85rem;">${clientUrl}</strong>
           </div>
 
           <div style="background:rgba(0,0,0,0.4); border-radius:14px; padding:12px; margin-bottom:16px;">
             <div style="font-size:0.82rem; font-weight:800; color:var(--primary); margin-bottom:8px;">
-              Katılan Köylüler (${state.players.length}):
+              Toplanan Köylüler (${state.players.length}):
             </div>
             <div class="player-pills" style="justify-content:center; min-height:40px;">
-              ${state.players.map(p => `
+              ${state.players.length === 0 ? '<span style="font-size:0.82rem; color:var(--text-dim);">Henüz kimse katılmadı. QR kodu okutun!</span>' : state.players.map(p => `
                 <div class="player-pill" style="background:rgba(0,245,212,0.15); border:1px solid var(--primary);">
-                  <span>${p.avatar}</span> <span>${p.name}</span>
+                  <span>${p.avatar || '🧑‍🌾'}</span> <span>${p.name}</span>
                 </div>
               `).join('')}
             </div>
@@ -764,7 +725,7 @@ export class VampireGameEngine {
         </div>
       `;
 
-      // QR Kod çiz (Doğru LAN IP adresiyle!)
+      // QR Kod çiz (Kütüphanesiz veya QRCode Canvas ile)
       this.drawQRCode('vampire-qr-canvas', clientUrl);
 
       document.getElementById('btn-multi-start-game').addEventListener('click', async () => {
@@ -772,11 +733,7 @@ export class VampireGameEngine {
           alert('Oyunu başlatmak için en az 3 oyuncu katılmalıdır!');
           return;
         }
-        await fetch(`${baseUrl}/api/vampire/start`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomId: this.roomId, playerId: this.hostId })
-        });
+        await this.startMultiGame();
       });
       return;
     }
@@ -793,16 +750,25 @@ export class VampireGameEngine {
           ${state.phase === 'night' ? '🌙 Gece Çöktü...' : state.phase === 'day_reveal' ? '☀️ Güneş Doğdu!' : state.phase === 'day_discuss' ? '🗣️ Köy Tartışması' : state.phase === 'voting' ? '⚖️ Linç Oylaması' : '🏆 Oyun Bitti'}
         </h2>
 
-        <div class="status-box" style="font-size:1.1rem; font-weight:800; color:#FFF; margin:14px 0; background:rgba(0,0,0,0.5); padding:16px; border-radius:16px; border:1px solid rgba(255,255,255,0.15); line-height:1.4;">
+        <div class="status-box" style="font-size:1.05rem; font-weight:800; color:#FFF; margin:14px 0; background:rgba(0,0,0,0.5); padding:16px; border-radius:16px; border:1px solid rgba(255,255,255,0.15); line-height:1.4;">
           ${state.narratorText || ''}
         </div>
 
-        <!-- Oylama Aşamasında Canlı Oy Durumu -->
+        <!-- Canlı Eylem ve Sandık Göstergesi -->
+        ${state.phase === 'night' ? `
+          <div style="background:rgba(255,46,147,0.12); border:1.5px solid rgba(255,46,147,0.3); border-radius:14px; padding:12px; margin-bottom:14px; text-align:left; font-size:0.84rem;">
+            <div style="font-weight:800; color:#FF8E53; margin-bottom:4px;">🌙 Gece Eylemleri:</div>
+            <div>🧛 Vampir: <strong>${this.nightActions.vampireTarget ? 'Hedef Seçildi ✓' : 'Bekleniyor...'}</strong></div>
+            ${this.settings.hasDoctor ? `<div>🩺 Doktor: <strong>${this.nightActions.doctorTarget ? 'Seçildi ✓' : 'Bekleniyor...'}</strong></div>` : ''}
+            ${this.settings.hasDetective ? `<div>🕵️ Komiser: <strong>${this.nightActions.detectiveTarget ? 'Seçildi ✓' : 'Bekleniyor...'}</strong></div>` : ''}
+          </div>
+        ` : ''}
+
         ${state.phase === 'voting' ? `
           <div style="background:rgba(239,68,68,0.15); border:1.5px solid #EF4444; border-radius:16px; padding:14px; margin-bottom:16px; text-align:left;">
             <div style="font-size:0.82rem; font-weight:800; color:#FCA5A5; text-transform:uppercase; margin-bottom:8px;">🗳️ CANLI SANDIK DURUMU:</div>
             <p style="font-size:0.8rem; color:#CBD5E1; margin:0;">
-              Oyuncular kendi telefon ekranlarından oylarını kullanıyor. Herkes oyunu verdiğinde aşağıdaki butonla oylamayı tamamlayabilirsiniz.
+              Oy Verenler: <strong>${Object.keys(this.votes).length} / ${state.players.filter(p => p.alive).length}</strong>
             </p>
           </div>
         ` : ''}
@@ -811,8 +777,8 @@ export class VampireGameEngine {
           <div style="font-size:0.78rem; font-weight:800; color:var(--text-dim); text-transform:uppercase; margin-bottom:8px;">Köy Halkı Durumu:</div>
           <div class="player-pills" style="justify-content:flex-start;">
             ${state.players.map(p => `
-              <div class="player-pill ${p.alive ? '' : 'dead'}" style="${!p.alive ? 'opacity:0.4; text-decoration:line-through;' : ''}">
-                <span>${p.avatar}</span> <span>${p.name}</span> ${!p.alive ? '☠️' : ''}
+              <div class="player-pill ${p.alive ? '' : 'dead'}" style="${!p.alive ? 'opacity:0.4; text-decoration:line-through; background:rgba(239,68,68,0.1);' : ''}">
+                <span>${p.avatar || '🧑‍🌾'}</span> <span>${p.name}</span> ${!p.alive ? '☠️' : ''}
               </div>
             `).join('')}
           </div>
@@ -833,34 +799,254 @@ export class VampireGameEngine {
     const advBtn = document.getElementById('btn-multi-advance-phase');
     if (advBtn) {
       advBtn.addEventListener('click', async () => {
-        await fetch(`${baseUrl}/api/vampire/advance-phase`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomId: this.roomId, playerId: this.hostId })
-        });
+        await this.advanceMultiPhase();
       });
     }
 
     const resetBtn = document.getElementById('btn-multi-reset');
     if (resetBtn) {
       resetBtn.addEventListener('click', async () => {
-        await fetch(`${baseUrl}/api/vampire/reset`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomId: this.roomId, playerId: this.hostId })
-        });
+        await this.resetMultiGame();
       });
     }
   }
 
-  // QR Kod Çizici (Kütüphanesiz Basit QR veya Canvas)
+  async startMultiGame() {
+    this.assignMultiRoles();
+    this.phase = 'night';
+    this.dayNumber = 1;
+    this.nightActions = { vampireTarget: null, doctorTarget: null, detectiveTarget: null };
+    this.votes = {};
+
+    const narratorText = '1. Gece Çöktü... Köy halkı derin bir uykuya daldı. Roller telefonlarınıza gönderildi!';
+    this.speak('Gece çöktü. Köy halkı derin bir uykuya daldı.');
+
+    // Oyuncu objelerini güncelle
+    const playersObj = {};
+    this.players.forEach(p => {
+      playersObj[p.id] = p;
+    });
+
+    await firebaseNetwork.updateRoom('vampire', this.roomId, {
+      phase: 'night',
+      dayNumber: 1,
+      players: playersObj,
+      nightActions: this.nightActions,
+      votes: {},
+      narratorText
+    });
+  }
+
+  assignMultiRoles() {
+    const total = this.players.length;
+    let vCount = Math.min(Math.max(1, this.settings.vampireCount || (total >= 7 ? 2 : 1)), Math.floor(total / 2));
+    let pool = [];
+    for (let i = 0; i < vCount; i++) pool.push('vampir');
+    if (this.settings.hasDoctor && total >= 4) pool.push('doktor');
+    if (this.settings.hasDetective && total >= 5) pool.push('komiser');
+    while (pool.length < total) pool.push('koylu');
+
+    // Shuffle
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+
+    this.players.forEach((p, idx) => {
+      p.role = pool[idx];
+      p.alive = true;
+    });
+  }
+
+  async advanceMultiPhase() {
+    // 1. Gece -> Sabah
+    if (this.phase === 'night') {
+      const vTarget = this.nightActions.vampireTarget;
+      const dTarget = this.nightActions.doctorTarget;
+      let victimName = '';
+      let isSaved = false;
+
+      if (vTarget) {
+        if (dTarget && vTarget === dTarget) {
+          isSaved = true;
+        } else {
+          const victim = this.players.find(p => p.id === vTarget);
+          if (victim) {
+            victim.alive = false;
+            victimName = victim.name;
+          }
+        }
+      }
+
+      let report = '';
+      if (victimName) {
+        report = `Güneş doğdu! Bu gece ${victimName} vampirler tarafından kurban edildi! ☠️`;
+      } else if (isSaved) {
+        report = `Güneş doğdu! Doktor doğru kişiyi korudu, bu gece kimse ölmedi! 🩺✨`;
+      } else {
+        report = `Güneş doğdu! Gece sessiz geçti, kimse öldürülmedi. ☀️`;
+      }
+
+      this.phase = 'day_reveal';
+      this.reportText = report;
+      this.speak(report);
+
+      const winner = this.checkMultiWinner();
+      if (winner) {
+        this.phase = 'game_over';
+        this.winner = winner;
+      }
+
+      const playersObj = {};
+      this.players.forEach(p => { playersObj[p.id] = p; });
+
+      await firebaseNetwork.updateRoom('vampire', this.roomId, {
+        phase: this.phase,
+        players: playersObj,
+        narratorText: report,
+        winner: this.winner
+      });
+      return;
+    }
+
+    // 2. Sabah -> Tartışma
+    if (this.phase === 'day_reveal') {
+      this.phase = 'day_discuss';
+      const text = 'Köy halkı şüphelileri tartışıyor! Aranızdaki vampirleri bulmaya çalışın.';
+      this.speak('Köy halkı uyanın! Şüphelileri tartışma vakti.');
+
+      await firebaseNetwork.updateRoom('vampire', this.roomId, {
+        phase: 'day_discuss',
+        narratorText: text
+      });
+      return;
+    }
+
+    // 3. Tartışma -> Oylama
+    if (this.phase === 'day_discuss') {
+      this.phase = 'voting';
+      this.votes = {};
+      const text = 'Linç oylaması başladı! Telefonlarınızdan asılmasını istediğiniz kişiye oy verin.';
+      this.speak('Oylama başladı! Kimi asmak istediğinizi telefonunuzdan oylayın.');
+
+      await firebaseNetwork.updateRoom('vampire', this.roomId, {
+        phase: 'voting',
+        votes: {},
+        narratorText: text
+      });
+      return;
+    }
+
+    // 4. Oylama -> Geceye geçiş veya Sonuç
+    if (this.phase === 'voting') {
+      // Oyları say
+      const tally = {};
+      Object.values(this.votes).forEach(tid => {
+        if (tid && tid !== 'none') {
+          tally[tid] = (tally[tid] || 0) + 1;
+        }
+      });
+
+      let highestVotes = 0;
+      let lynchedId = null;
+      let tie = false;
+
+      Object.entries(tally).forEach(([tid, cnt]) => {
+        if (cnt > highestVotes) {
+          highestVotes = cnt;
+          lynchedId = tid;
+          tie = false;
+        } else if (cnt === highestVotes) {
+          tie = true;
+        }
+      });
+
+      let resultText = '';
+      if (lynchedId && !tie) {
+        const victim = this.players.find(p => p.id === lynchedId);
+        if (victim) {
+          victim.alive = false;
+          resultText = `Oylama sonucunda ${victim.name} köy halkı tarafından linç edildi! (${victim.role === 'vampir' ? 'VAMPİRDİ! 🧛‍♂️' : 'MASUM KÖYLÜYDÜ 🧑‍🌾'})`;
+        }
+      } else {
+        resultText = 'Oylamada eşitlik çıktı veya pas seçildi. Bugün kimse asılmadı! 🤝';
+      }
+
+      this.speak(resultText);
+      const winner = this.checkMultiWinner();
+      if (winner) {
+        this.phase = 'game_over';
+        this.winner = winner;
+      } else {
+        this.dayNumber++;
+        this.phase = 'night';
+        this.nightActions = { vampireTarget: null, doctorTarget: null, detectiveTarget: null };
+        this.votes = {};
+      }
+
+      const playersObj = {};
+      this.players.forEach(p => { playersObj[p.id] = p; });
+
+      await firebaseNetwork.updateRoom('vampire', this.roomId, {
+        phase: this.phase,
+        dayNumber: this.dayNumber,
+        players: playersObj,
+        nightActions: this.nightActions,
+        votes: {},
+        narratorText: resultText,
+        winner: this.winner
+      });
+      return;
+    }
+  }
+
+  checkMultiWinner() {
+    const alive = this.players.filter(p => p.alive);
+    const vCount = alive.filter(p => p.role === 'vampir').length;
+    const kCount = alive.filter(p => p.role !== 'vampir').length;
+
+    if (vCount === 0) return 'koylu';
+    if (vCount >= kCount) return 'vampir';
+    return null;
+  }
+
+  async resetMultiGame() {
+    this.phase = 'lobby';
+    this.dayNumber = 1;
+    this.winner = null;
+    this.nightActions = { vampireTarget: null, doctorTarget: null, detectiveTarget: null };
+    this.votes = {};
+
+    this.players.forEach(p => {
+      p.role = null;
+      p.alive = true;
+    });
+
+    const playersObj = {};
+    this.players.forEach(p => { playersObj[p.id] = p; });
+
+    await firebaseNetwork.updateRoom('vampire', this.roomId, {
+      phase: 'lobby',
+      dayNumber: 1,
+      players: playersObj,
+      nightActions: this.nightActions,
+      votes: {},
+      narratorText: 'Köy meydanında halk toplanıyor... Host oyunu başlattığında roller dağıtılacaktır.',
+      winner: null
+    });
+  }
+
+  // QR Kod Çizici (QRCode Kütüphanesi ile Canvas)
   drawQRCode(canvasId, url) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
-    if (window.QRCode) {
-      QRCode.toCanvas(canvas, url, { width: 220, margin: 1 });
-      return;
-    }
+    try {
+      if (QRCode && QRCode.toCanvas) {
+        QRCode.toCanvas(canvas, url, { width: 220, margin: 1 });
+        return;
+      }
+    } catch (e) {}
+
     const ctx = canvas.getContext('2d');
     const img = new Image();
     img.crossOrigin = 'anonymous';

@@ -113,13 +113,18 @@ export class CarkifelekEngine {
     const btnBack = document.getElementById('btn-back-from-carkifelek');
     if (btnBack) {
       btnBack.onclick = () => {
-        if (this.spinAnimId) {
-          cancelAnimationFrame(this.spinAnimId);
-          this.spinAnimId = null;
+        if (this.game && this.game.showGameLeaveConfirmModal) {
+          this.game.showGameLeaveConfirmModal('partyGames', () => {
+            if (this.spinAnimId) {
+              cancelAnimationFrame(this.spinAnimId);
+              this.spinAnimId = null;
+            }
+            this.isSpinning = false;
+            try { sounds.stopAll(); } catch (e) {}
+          });
+        } else {
+          this.game.showScreen('partyGames');
         }
-        this.isSpinning = false;
-        try { sounds.stopAll(); } catch (e) {}
-        this.game.showScreen('partyGames');
       };
     }
   }
@@ -236,7 +241,7 @@ export class CarkifelekEngine {
     const chosenSlice = CARKIFELEK_SLICES[targetIndex];
     this.currentSlice = chosenSlice;
 
-    const fullSpins = 4 + Math.floor(Math.random() * 3);
+    const fullSpins = 3 + Math.floor(Math.random() * 2);
     const targetAngle = 1.5 * Math.PI - (targetIndex + 0.5) * sliceAngle;
     const currentRot = this.wheelRotation % (2 * Math.PI);
     let delta = (targetAngle - currentRot) % (2 * Math.PI);
@@ -245,7 +250,7 @@ export class CarkifelekEngine {
 
     const startRot = this.wheelRotation;
     const startTime = performance.now();
-    const duration = 3200;
+    const duration = 2000;
     let lastTickSlice = -1;
 
     if (this.spinAnimId) cancelAnimationFrame(this.spinAnimId);

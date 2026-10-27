@@ -108,10 +108,15 @@ export class PassaparolaEngine {
     const btnBack = document.getElementById('btn-back-from-passaparola');
     if (btnBack) {
       btnBack.onclick = () => {
-        clearInterval(this.timerInterval);
-        this.isPlaying = false;
-        try { sounds.stopAll(); } catch (e) {}
-        this.game.showScreen('partyGames');
+        if (this.game && this.game.showGameLeaveConfirmModal) {
+          this.game.showGameLeaveConfirmModal('partyGames', () => {
+            clearInterval(this.timerInterval);
+            this.isPlaying = false;
+            try { sounds.stopAll(); } catch (e) {}
+          });
+        } else {
+          this.game.showScreen('partyGames');
+        }
       };
     }
   }

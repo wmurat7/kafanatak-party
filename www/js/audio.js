@@ -317,8 +317,18 @@ class SoundEngine {
   }
 
   // =========================================================================
-  // 5.1. ÇARK BİTİŞİ KUTLAMASI (Kısa, Enerjik, 1.2s Tatlı Alkış)
+  // 5.1. ÇARK SESLERİ (Dönme Tıkırtısı ve Bitiş Kutlaması)
   // =========================================================================
+  playWheelTick() {
+    if (this.muted) return;
+    this.playBuffer('tick', 0.4, 1.45);
+  }
+
+  playSpin() {
+    if (this.muted) return;
+    this.playBuffer('slide', 0.55) || this.playWheelTick();
+  }
+
   playWheelWin() {
     if (this.muted) return;
     this.unlockAudio();
@@ -723,9 +733,10 @@ class SoundEngine {
   playChime() {
     if (this.muted) return;
     this.unlockAudio();
-    this.vibrate(30);
-    if (!this.playBuffer('bell', 0.85)) {
-      this.playBuffer('triangle', 0.85);
+    this.vibrate(20);
+    // Kısa, tatlı ve uzamayan 0.45s çan sesi (uzun tınlama yok)
+    if (!this.playBuffer('bell', 0.65, 1.35, 0.45)) {
+      this.playBuffer('triangle', 0.65, 1.2, 0.4);
     }
   }
 

@@ -233,15 +233,20 @@ export class IsimSehirGameEngine {
     const btnBack = document.getElementById('btn-back-from-isim-sehir');
     if (btnBack) {
       btnBack.onclick = () => {
-        if (this.spinAnimId) {
-          cancelAnimationFrame(this.spinAnimId);
-          this.spinAnimId = null;
+        if (this.game && this.game.showGameLeaveConfirmModal) {
+          this.game.showGameLeaveConfirmModal('partyGames', () => {
+            if (this.spinAnimId) {
+              cancelAnimationFrame(this.spinAnimId);
+              this.spinAnimId = null;
+            }
+            this.isSpinning = false;
+            clearInterval(this.pollInterval);
+            clearInterval(this.timerInterval);
+            try { sounds.stopAll(); } catch (e) {}
+          });
+        } else {
+          this.game.showScreen('partyGames');
         }
-        this.isSpinning = false;
-        clearInterval(this.pollInterval);
-        clearInterval(this.timerInterval);
-        try { sounds.stopAll(); } catch (e) {}
-        this.game.showScreen('partyGames');
       };
     }
   }
@@ -592,7 +597,7 @@ export class IsimSehirGameEngine {
 
     // İbre tepede (1.5 * Math.PI). Dilim başlangıcı 0 radyan.
     // Hedef dilim merkezinin tepedeki ibreyle örtüşmesi için:
-    const fullSpins = 4 + Math.floor(Math.random() * 3);
+    const fullSpins = 3 + Math.floor(Math.random() * 2);
     const targetAngle = 1.5 * Math.PI - (targetIndex + 0.5) * sliceAngle;
     const currentRot = this.wheelRotation % (2 * Math.PI);
     let delta = (targetAngle - currentRot) % (2 * Math.PI);
@@ -601,7 +606,7 @@ export class IsimSehirGameEngine {
 
     const startRot = this.wheelRotation;
     const startTime = performance.now();
-    const duration = 3200;
+    const duration = 2000;
     let lastTickSlice = -1;
 
     if (this.spinAnimId) cancelAnimationFrame(this.spinAnimId);
@@ -668,7 +673,7 @@ export class IsimSehirGameEngine {
 
     setTimeout(() => {
       this.startPlayingPhase(letter);
-    }, 1100);
+    }, 650);
   }
 
   startPlayingPhase(letter) {

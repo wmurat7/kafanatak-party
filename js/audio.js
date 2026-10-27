@@ -733,9 +733,10 @@ class SoundEngine {
   playChime() {
     if (this.muted) return;
     this.unlockAudio();
-    this.vibrate(30);
-    if (!this.playBuffer('bell', 0.85)) {
-      this.playBuffer('triangle', 0.85);
+    this.vibrate(20);
+    // Kısa, tatlı ve uzamayan 0.45s çan sesi (uzun tınlama yok)
+    if (!this.playBuffer('bell', 0.65, 1.35, 0.45)) {
+      this.playBuffer('triangle', 0.65, 1.2, 0.4);
     }
   }
 

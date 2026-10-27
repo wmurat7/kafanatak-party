@@ -61,14 +61,28 @@ export class CarkifelekEngine {
     this.wheelRotation = 0;
     this.canvas = null;
     this.ctx = null;
+    this.isSpinning = false;
+    this.spinAnimId = null;
 
     window.__carkifelek = this;
   }
 
   init() {
+    if (this.spinAnimId) {
+      cancelAnimationFrame(this.spinAnimId);
+      this.spinAnimId = null;
+    }
+    this.isSpinning = false;
+
     this.canvas = document.getElementById('carkifelek-wheel-canvas');
     if (this.canvas) {
       this.ctx = this.canvas.getContext('2d');
+      this.canvas.style.cursor = 'pointer';
+      this.canvas.onclick = () => {
+        if (!this.isSpinning && !this.canPickLetter) {
+          this.spinWheel();
+        }
+      };
       this.drawWheel();
     }
     this.bindEvents();
@@ -99,8 +113,18 @@ export class CarkifelekEngine {
     const btnBack = document.getElementById('btn-back-from-carkifelek');
     if (btnBack) {
       btnBack.onclick = () => {
-        try { sounds.stopAll(); } catch (e) {}
-        this.game.showScreen('partyGames');
+        if (this.game && this.game.showGameLeaveConfirmModal) {
+          this.game.showGameLeaveConfirmModal('partyGames', () => {
+            if (this.spinAnimId) {
+              cancelAnimationFrame(this.spinAnimId);
+              this.spinAnimId = null;
+            }
+            this.isSpinning = false;
+            try { sounds.stopAll(); } catch (e) {}
+          });
+        } else {
+          this.game.showScreen('partyGames');
+        }
       };
     }
   }
@@ -197,42 +221,65 @@ export class CarkifelekEngine {
   spinWheel() {
     if (this.isSpinning || this.canPickLetter) return;
     this.isSpinning = true;
-    try { sounds.playSpin(); } catch (e) {}
+
+    if (!this.canvas) {
+      this.canvas = document.getElementById('carkifelek-wheel-canvas');
+      if (this.canvas) this.ctx = this.canvas.getContext('2d');
+    }
 
     const btnSpin = document.getElementById('btn-cark-spin');
-    if (btnSpin) btnSpin.disabled = true;
+    if (btnSpin) {
+      btnSpin.disabled = true;
+      btnSpin.innerHTML = '🎡 DÖNÜYOR...';
+    }
 
-    const targetIndex = Math.floor(Math.random() * CARKIFELEK_SLICES.length);
-    const chosenSlice = CARKIFELEK_SLICES[targetIndex];
-    this.currentSlice = chosenSlice;
+    try { sounds.playSpin(); } catch (e) {}
 
     const numSlices = CARKIFELEK_SLICES.length;
     const sliceAngle = (2 * Math.PI) / numSlices;
+    const targetIndex = Math.floor(Math.random() * numSlices);
+    const chosenSlice = CARKIFELEK_SLICES[targetIndex];
+    this.currentSlice = chosenSlice;
 
-    const fullSpins = 5 + Math.floor(Math.random() * 3);
-    const targetRotation = (fullSpins * 2 * Math.PI) + (numSlices - targetIndex - 0.5) * sliceAngle;
+    const fullSpins = 3 + Math.floor(Math.random() * 2);
+    const targetAngle = 1.5 * Math.PI - (targetIndex + 0.5) * sliceAngle;
+    const currentRot = this.wheelRotation % (2 * Math.PI);
+    let delta = (targetAngle - currentRot) % (2 * Math.PI);
+    if (delta < 0) delta += 2 * Math.PI;
+    const totalDelta = delta + (fullSpins * 2 * Math.PI);
 
-    const startRot = this.wheelRotation % (2 * Math.PI);
-    const totalDelta = targetRotation;
+    const startRot = this.wheelRotation;
     const startTime = performance.now();
-    const duration = 3800;
+    const duration = 2000;
+    let lastTickSlice = -1;
+
+    if (this.spinAnimId) cancelAnimationFrame(this.spinAnimId);
 
     const animate = (now) => {
       const elapsed = now - startTime;
       const progress = Math.min(1, elapsed / duration);
-      const ease = 1 - Math.pow(1 - progress, 3);
+      const ease = 1 - Math.pow(1 - progress, 4);
       this.wheelRotation = startRot + totalDelta * ease;
       this.drawWheel();
 
+      const currentNeedleAngle = (1.5 * Math.PI - (this.wheelRotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+      const currentSlice = Math.floor(currentNeedleAngle / sliceAngle);
+      if (currentSlice !== lastTickSlice && progress < 0.98) {
+        lastTickSlice = currentSlice;
+        try { sounds.playWheelTick(); } catch (e) {}
+      }
+
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        this.spinAnimId = requestAnimationFrame(animate);
       } else {
+        this.spinAnimId = null;
         this.isSpinning = false;
+        if (btnSpin) btnSpin.innerHTML = '🎡 ÇARKI ÇEVİR';
         this.handleSliceOutcome(chosenSlice);
       }
     };
 
-    requestAnimationFrame(animate);
+    this.spinAnimId = requestAnimationFrame(animate);
   }
 
   handleSliceOutcome(slice) {
