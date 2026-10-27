@@ -290,10 +290,13 @@ export class PassaparolaEngine {
     if (lblCode) lblCode.textContent = this.roomId;
 
     const joinUrl = firebaseNetwork.getPassaparolaUrl(this.roomId);
-    const cvs = document.getElementById('passa-qr-canvas');
-    if (cvs && QRCode) {
-      QRCode.toCanvas(cvs, joinUrl, {
-        width: 130,
+    const cvsContainer = document.getElementById('passa-qr-canvas');
+    if (cvsContainer && window.QRCode) {
+      cvsContainer.innerHTML = '';
+      const cvs = document.createElement('canvas');
+      cvsContainer.appendChild(cvs);
+      window.QRCode.toCanvas(cvs, joinUrl, {
+        width: 140,
         margin: 1,
         color: { dark: '#00F5D4', light: '#0B0E14' }
       }, (err) => {

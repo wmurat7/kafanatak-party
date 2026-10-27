@@ -226,9 +226,11 @@ export class CarkifelekEngine {
     if (lblCode) lblCode.textContent = this.roomId;
 
     const joinUrl = firebaseNetwork.getCarkifelekUrl(this.roomId);
-    const cvs = document.getElementById('cark-qr-canvas');
-    if (cvs && window.QRCode) {
-      cvs.innerHTML = '';
+    const cvsContainer = document.getElementById('cark-qr-canvas');
+    if (cvsContainer && window.QRCode) {
+      cvsContainer.innerHTML = '';
+      const cvs = document.createElement('canvas');
+      cvsContainer.appendChild(cvs);
       window.QRCode.toCanvas(cvs, joinUrl, {
         width: 140,
         margin: 1,
