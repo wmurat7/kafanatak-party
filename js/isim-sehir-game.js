@@ -94,6 +94,7 @@ export class IsimSehirGameEngine {
     this.ctx = null;
     this.wheelRotation = 0;
     this.isSpinning = false;
+    this.spinAnimId = null;
 
     window.__isimSehirEngine = this;
     window.overrideScore = (pId, pts) => {
@@ -119,11 +120,32 @@ export class IsimSehirGameEngine {
   }
 
   init() {
+    if (this.spinAnimId) {
+      cancelAnimationFrame(this.spinAnimId);
+      this.spinAnimId = null;
+    }
+    this.isSpinning = false;
+
     this.canvas = document.getElementById('isim-sehir-wheel-canvas');
     if (this.canvas) {
       this.ctx = this.canvas.getContext('2d');
+      this.canvas.style.cursor = 'pointer';
+      this.canvas.onclick = () => {
+        if (!this.isSpinning && this.phase === 'setup') {
+          this.spinWheel();
+        }
+      };
       this.drawWheel();
     }
+
+    const btnSpin = document.getElementById('btn-spin-isim-wheel');
+    if (btnSpin) {
+      btnSpin.disabled = false;
+      btnSpin.innerHTML = '🎡 ÇARKI ÇEVİR VE BAŞLAT!';
+    }
+    const winBadge = document.getElementById('isim-winning-letter-badge');
+    if (winBadge) winBadge.style.display = 'none';
+
     this.bindEvents();
     this.initCategoryModalEvents();
     this.renderCategoriesPreview();
@@ -211,6 +233,11 @@ export class IsimSehirGameEngine {
     const btnBack = document.getElementById('btn-back-from-isim-sehir');
     if (btnBack) {
       btnBack.onclick = () => {
+        if (this.spinAnimId) {
+          cancelAnimationFrame(this.spinAnimId);
+          this.spinAnimId = null;
+        }
+        this.isSpinning = false;
         clearInterval(this.pollInterval);
         clearInterval(this.timerInterval);
         try { sounds.stopAll(); } catch (e) {}
@@ -221,10 +248,26 @@ export class IsimSehirGameEngine {
 
   showSetup() {
     this.phase = 'setup';
+    if (this.spinAnimId) {
+      cancelAnimationFrame(this.spinAnimId);
+      this.spinAnimId = null;
+    }
+    this.isSpinning = false;
+
+    const btnSpin = document.getElementById('btn-spin-isim-wheel');
+    if (btnSpin) {
+      btnSpin.disabled = false;
+      btnSpin.innerHTML = '🎡 ÇARKI ÇEVİR VE BAŞLAT!';
+    }
+    const winBadge = document.getElementById('isim-winning-letter-badge');
+    if (winBadge) winBadge.style.display = 'none';
+
     document.getElementById('isim-stage-setup').style.display = 'block';
     document.getElementById('isim-stage-wheel').style.display = 'none';
     document.getElementById('isim-stage-review').style.display = 'none';
     document.getElementById('isim-stage-scoreboard').style.display = 'none';
+
+    this.drawWheel();
 
     if (this.mode === 'wifi') {
       this.createWifiRoom();
@@ -454,6 +497,10 @@ export class IsimSehirGameEngine {
   }
 
   drawWheel() {
+    if (!this.canvas) {
+      this.canvas = document.getElementById('isim-sehir-wheel-canvas');
+      if (this.canvas) this.ctx = this.canvas.getContext('2d');
+    }
     if (!this.canvas || !this.ctx) return;
     const ctx = this.ctx;
     const w = this.canvas.width;
@@ -507,7 +554,7 @@ export class IsimSehirGameEngine {
 
     ctx.restore();
 
-    // Üstte neon ibre
+    // Üstte neon ibre (12 yönü)
     ctx.beginPath();
     ctx.moveTo(cx - 10, 2);
     ctx.lineTo(cx + 10, 2);
@@ -523,60 +570,91 @@ export class IsimSehirGameEngine {
   spinWheel() {
     if (this.isSpinning) return;
     this.isSpinning = true;
-    try { sounds.playSpin(); } catch (e) {}
+
+    if (!this.canvas) {
+      this.canvas = document.getElementById('isim-sehir-wheel-canvas');
+      if (this.canvas) this.ctx = this.canvas.getContext('2d');
+    }
 
     const btnSpin = document.getElementById('btn-spin-isim-wheel');
-    if (btnSpin) btnSpin.disabled = true;
+    if (btnSpin) {
+      btnSpin.disabled = true;
+      btnSpin.innerHTML = '🎡 DÖNÜYOR...';
+    }
 
-    const targetIndex = Math.floor(Math.random() * LETTERS_WHEEL.length);
-    const chosenLetter = LETTERS_WHEEL[targetIndex];
-    this.currentLetter = chosenLetter;
+    try { sounds.playSpin(); } catch (e) {}
 
     const numSlices = LETTERS_WHEEL.length;
     const sliceAngle = (2 * Math.PI) / numSlices;
+    const targetIndex = Math.floor(Math.random() * numSlices);
+    const chosenLetter = LETTERS_WHEEL[targetIndex];
+    this.currentLetter = chosenLetter;
 
-    const fullSpins = 5 + Math.floor(Math.random() * 3);
-    const targetRotation = (fullSpins * 2 * Math.PI) + (numSlices - targetIndex - 0.5) * sliceAngle;
+    // İbre tepede (1.5 * Math.PI). Dilim başlangıcı 0 radyan.
+    // Hedef dilim merkezinin tepedeki ibreyle örtüşmesi için:
+    const fullSpins = 4 + Math.floor(Math.random() * 3);
+    const targetAngle = 1.5 * Math.PI - (targetIndex + 0.5) * sliceAngle;
+    const currentRot = this.wheelRotation % (2 * Math.PI);
+    let delta = (targetAngle - currentRot) % (2 * Math.PI);
+    if (delta < 0) delta += 2 * Math.PI;
+    const totalDelta = delta + (fullSpins * 2 * Math.PI);
 
-    const startRot = this.wheelRotation % (2 * Math.PI);
-    const totalDelta = targetRotation;
+    const startRot = this.wheelRotation;
     const startTime = performance.now();
-    const duration = 3800;
+    const duration = 3200;
+    let lastTickSlice = -1;
+
+    if (this.spinAnimId) cancelAnimationFrame(this.spinAnimId);
 
     const animate = (now) => {
       const elapsed = now - startTime;
       const progress = Math.min(1, elapsed / duration);
-      const ease = 1 - Math.pow(1 - progress, 3);
+      // Pürüzsüz yavaşlama eğrisi (Quintic ease-out)
+      const ease = 1 - Math.pow(1 - progress, 4);
       this.wheelRotation = startRot + totalDelta * ease;
       this.drawWheel();
 
+      // Dilim geçtikçe hafif mekanik tıkırtı sesi
+      const currentNeedleAngle = (1.5 * Math.PI - (this.wheelRotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+      const currentSlice = Math.floor(currentNeedleAngle / sliceAngle);
+      if (currentSlice !== lastTickSlice && progress < 0.98) {
+        lastTickSlice = currentSlice;
+        try { sounds.playWheelTick(); } catch (e) {}
+      }
+
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        this.spinAnimId = requestAnimationFrame(animate);
       } else {
+        this.spinAnimId = null;
         this.isSpinning = false;
         try { sounds.playChime(); } catch (e) {}
         this.onLetterChosen(chosenLetter);
       }
     };
 
-    requestAnimationFrame(animate);
+    this.spinAnimId = requestAnimationFrame(animate);
   }
 
-  async onLetterChosen(letter) {
+  onLetterChosen(letter) {
     const winBadge = document.getElementById('isim-winning-letter-badge');
     const winLetter = document.getElementById('isim-winning-letter');
     if (winLetter) winLetter.textContent = letter;
     if (winBadge) winBadge.style.display = 'block';
 
+    const btnSpin = document.getElementById('btn-spin-isim-wheel');
+    if (btnSpin) btnSpin.innerHTML = `✨ SEÇİLEN HARF: ${letter}`;
+
+    // Ağ çağrıları arka planda bağımsız çalışır, asla ekranı dondurmaz!
     if (this.mode === 'wifi' && this.roomId) {
       firebaseNetwork.updateRoom('isim-sehir', this.roomId, {
         phase: 'playing',
         currentLetter: letter,
         startedAt: Date.now()
-      });
+      }).catch(() => {});
+
       try {
         const baseUrl = getApiBaseUrl();
-        await fetch(`${baseUrl}/api/isim-sehir/start-spin`, {
+        fetch(`${baseUrl}/api/isim-sehir/start-spin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -584,13 +662,13 @@ export class IsimSehirGameEngine {
             hostId: this.hostId,
             letter
           })
-        });
+        }).catch(() => {});
       } catch (e) {}
     }
 
     setTimeout(() => {
       this.startPlayingPhase(letter);
-    }, 1200);
+    }, 1100);
   }
 
   startPlayingPhase(letter) {
@@ -829,7 +907,7 @@ export class IsimSehirGameEngine {
     }, 1000);
   }
 
-  async triggerStop() {
+  triggerStop() {
     try { sounds.playChime(); } catch (e) {}
     clearInterval(this.timerInterval);
 
@@ -850,14 +928,15 @@ export class IsimSehirGameEngine {
         endsAt: Date.now() + 60000,
         firstFinisherId: this.firstFinisherId,
         firstFinisherName: this.firstFinisherName
-      });
-      const baseUrl = getApiBaseUrl();
+      }).catch(() => {});
+
       try {
-        await fetch(`${baseUrl}/api/isim-sehir/stop`, {
+        const baseUrl = getApiBaseUrl();
+        fetch(`${baseUrl}/api/isim-sehir/stop`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ roomId: this.roomId, playerId: this.firstFinisherId })
-        });
+        }).catch(() => {});
       } catch (e) {}
     }
 
@@ -876,19 +955,20 @@ export class IsimSehirGameEngine {
     this.renderReviewHeader();
   }
 
-  async togglePenalty() {
+  togglePenalty() {
     this.firstFinisherPenalty = !this.firstFinisherPenalty;
     if (this.mode === 'wifi' && this.roomId) {
       firebaseNetwork.updateRoom('isim-sehir', this.roomId, {
         firstFinisherPenalty: this.firstFinisherPenalty
-      });
-      const baseUrl = getApiBaseUrl();
+      }).catch(() => {});
+
       try {
-        await fetch(`${baseUrl}/api/isim-sehir/toggle-penalty`, {
+        const baseUrl = getApiBaseUrl();
+        fetch(`${baseUrl}/api/isim-sehir/toggle-penalty`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ roomId: this.roomId, penalty: this.firstFinisherPenalty })
-        });
+        }).catch(() => {});
       } catch (e) {}
     }
     this.renderReviewHeader();
@@ -1109,17 +1189,18 @@ export class IsimSehirGameEngine {
         phase: 'round_over',
         players: this.players,
         playerScores: this.playerScores
-      });
-      const baseUrl = getApiBaseUrl();
+      }).catch(() => {});
+
       try {
-        await fetch(`${baseUrl}/api/isim-sehir/evaluate`, {
+        const baseUrl = getApiBaseUrl();
+        fetch(`${baseUrl}/api/isim-sehir/evaluate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             roomId: this.roomId,
             playerScores: this.playerScores
           })
-        });
+        }).catch(() => {});
       } catch (e) {}
     }
 
@@ -1150,12 +1231,20 @@ export class IsimSehirGameEngine {
     }).join('');
   }
 
-  async nextRound() {
+  nextRound() {
     this.round++;
     sounds.playClick();
+    if (this.spinAnimId) {
+      cancelAnimationFrame(this.spinAnimId);
+      this.spinAnimId = null;
+    }
+    this.isSpinning = false;
     document.getElementById('isim-winning-letter-badge').style.display = 'none';
     const btnSpin = document.getElementById('btn-spin-isim-wheel');
-    if (btnSpin) btnSpin.disabled = false;
+    if (btnSpin) {
+      btnSpin.disabled = false;
+      btnSpin.innerHTML = '🎡 ÇARKI ÇEVİR VE BAŞLAT!';
+    }
 
     // Oyuncu tur cevaplarını sıfırla
     this.players.forEach(p => { p.answers = {}; });
@@ -1165,14 +1254,15 @@ export class IsimSehirGameEngine {
         phase: 'setup',
         currentLetter: '',
         players: this.players.map(p => ({ ...p, answers: {}, submitted: false }))
-      });
-      const baseUrl = getApiBaseUrl();
+      }).catch(() => {});
+
       try {
-        await fetch(`${baseUrl}/api/isim-sehir/next-round`, {
+        const baseUrl = getApiBaseUrl();
+        fetch(`${baseUrl}/api/isim-sehir/next-round`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ roomId: this.roomId })
-        });
+        }).catch(() => {});
       } catch (e) {}
     }
 
