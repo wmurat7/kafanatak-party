@@ -3,8 +3,8 @@
 // Wi-Fi hotspot veya yerel sunucuya ihtiyaç duymadan, internet üzerinden 4 haneli oda kodlarıyla çalışır.
 
 export const DEFAULT_FIREBASE_CONFIG = {
-  // Varsayılan Firebase Realtime Database Endpoint'i
-  dbUrl: 'https://kafanatak-party-default-rtdb.firebaseio.com',
+  // Varsayılan Firebase Realtime Database Endpoint'i (Kafana Tak Party Resmi RTDB)
+  dbUrl: 'https://kafanatak-party-default-rtdb.europe-west1.firebasedatabase.app',
   // İkinci telefonların internet üzerinden açacağı web sayfası adresi
   webAppUrl: 'https://wmurat7.github.io/kafanatak-party'
 };
@@ -15,11 +15,15 @@ class FirebaseNetworkManager {
     this.storageKeyWeb = 'kafanatak_firebase_web_url';
     this.storageKeyMode = 'kafanatak_network_mode'; // 'firebase' | 'local_wifi'
     
-    // Eski veya yanlış kayıtları temizle
+    // Eski veya geçersiz kayıtları temizle
     if (typeof localStorage !== 'undefined') {
       const savedWeb = localStorage.getItem(this.storageKeyWeb);
       if (savedWeb && savedWeb.includes('pluswalnut')) {
         localStorage.removeItem(this.storageKeyWeb);
+      }
+      const savedDb = localStorage.getItem(this.storageKeyDb);
+      if (savedDb && savedDb.includes('.firebaseio.com')) {
+        localStorage.removeItem(this.storageKeyDb);
       }
     }
 

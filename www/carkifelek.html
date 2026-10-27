@@ -299,7 +299,7 @@
     const roomId = (urlParams.get('room') || 'CARK').trim().toUpperCase();
     document.getElementById('lbl-room-code').textContent = roomId;
 
-    const dbUrl = 'https://kafanatak-party-default-rtdb.firebaseio.com';
+    const dbUrl = 'https://kafanatak-party-default-rtdb.europe-west1.firebasedatabase.app';
 
     let myPlayerId = localStorage.getItem('cark_player_id') || `p_${Date.now()}_${Math.random().toString(36).substring(2,6)}`;
     localStorage.setItem('cark_player_id', myPlayerId);
