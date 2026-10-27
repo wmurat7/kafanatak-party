@@ -4666,18 +4666,40 @@ class GameApp {
   }
 
   async renderSpectatorQR() {
-    if (!this.qrSpectatorCanvas) return;
+    const wrapper = document.querySelector('.spectator-qr-card .qr-canvas-wrapper');
     const url = this.getSpectatorUrl();
     if (this.specQrRoomCode) this.specQrRoomCode.textContent = this.spectatorRoomId;
     if (this.specQrLinkText) this.specQrLinkText.textContent = url;
+
+    const setImg = (src) => {
+      if (wrapper) {
+        wrapper.innerHTML = `<img src="${src}" width="220" height="220" style="display:block; border-radius:12px; margin:0 auto;" />`;
+      }
+    };
+
+    const qrServerFallback = () => {
+      setImg(`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`);
+    };
+
     try {
-      await QRCode.toCanvas(this.qrSpectatorCanvas, url, {
-        width: 220,
-        margin: 1,
-        color: { dark: '#0B0E14', light: '#FFFFFF' }
-      });
+      const qrEngine = (typeof QRCode !== 'undefined' && QRCode) || (typeof window !== 'undefined' && window.QRCode);
+      if (qrEngine && qrEngine.toDataURL) {
+        qrEngine.toDataURL(url, {
+          width: 220,
+          margin: 1,
+          color: { dark: '#0B0E14', light: '#FFFFFF' }
+        }, (err, dataUrl) => {
+          if (!err && dataUrl) {
+            setImg(dataUrl);
+          } else {
+            qrServerFallback();
+          }
+        });
+      } else {
+        qrServerFallback();
+      }
     } catch (err) {
-      console.warn('QR kod üretilemedi:', err);
+      qrServerFallback();
     }
   }
 

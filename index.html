@@ -3147,23 +3147,23 @@
       <div class="spectator-network-hint" style="display:flex; align-items:center; gap:10px; background:rgba(0,245,212,0.08); border:1.5px solid rgba(0,245,212,0.35); border-radius:14px; padding:10px 14px; margin-bottom:12px; text-align:left;">
         <span style="font-size:1.5rem;">☁️</span>
         <div style="font-size:0.78rem; color:#E2E8F0; line-height:1.4;">
-          <strong style="color:#00F5D4;">Firebase Bulut Odası Aktif:</strong> Arkadaşlarınız kendi mobil verisiyle veya ev Wi-Fi'ıyla anında bağlanabilir. Hotspot veya aynı ağda olma zorunluluğu yoktur!
+          <strong style="color:#00F5D4;">Firebase Bulut Odası Aktif:</strong> Arkadaşlarınız mobil verisiyle veya ev Wi-Fi'ıyla anında bağlanabilir. Hotspot zorunluluğu yoktur!
         </div>
       </div>
 
-      <div class="spectator-ip-setting" style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px;">
+      <div class="room-code-tag" style="background:rgba(121,40,202,0.25); border:1px solid rgba(121,40,202,0.5); border-radius:14px; padding:8px 16px; margin-bottom:10px;">
+        <div style="font-size:0.72rem; color:#A78BFA; font-weight:800; letter-spacing:1px; margin-bottom:2px;">ODA KODU</div>
+        <div id="spec-qr-room-code" style="font-size:1.6rem; font-weight:900; letter-spacing:3px; color:#00F5D4;">PARTI</div>
+      </div>
+
+      <div class="spectator-link-box" style="font-size:0.75rem; color:var(--text-dim); margin-bottom:14px; word-break:break-all; padding:7px 10px; background:rgba(0,0,0,0.3); border-radius:8px; border:1px solid rgba(255,255,255,0.06);">
+        <span id="spec-qr-link-text">http://.../spectator.html?room=PARTI</span>
+      </div>
+
+      <div class="spectator-ip-setting" style="display:none; align-items:center; justify-content:center; gap:8px; margin-bottom:10px;">
         <span style="font-size:0.75rem; color:#A78BFA; font-weight:700;">Host IP:</span>
         <input type="text" id="input-spectator-ip" style="background:rgba(0,0,0,0.5); border:1px solid rgba(0,245,212,0.4); border-radius:6px; color:#00F5D4; font-family:monospace; font-size:0.8rem; padding:4px 8px; width:140px; text-align:center;" value="192.168.1.159">
         <button type="button" id="btn-update-spectator-ip" style="background:#00F5D4; color:#0B0E14; border:none; border-radius:6px; font-weight:800; font-size:0.75rem; padding:5px 10px; cursor:pointer;">Yenile</button>
-      </div>
-
-      <div class="room-code-tag" style="background:rgba(121,40,202,0.25); border:1px solid rgba(121,40,202,0.5); border-radius:12px; padding:6px 14px; margin-bottom:10px;">
-        <div style="font-size:0.75rem; color:#A78BFA; font-weight:800; letter-spacing:1px; margin-bottom:2px;">ODA KODU</div>
-        <div id="spec-qr-room-code" style="font-size:1.5rem; font-weight:900; letter-spacing:3px; color:#00F5D4;">PARTI</div>
-      </div>
-
-      <div class="spectator-link-box" style="font-size:0.75rem; color:var(--text-dim); margin-bottom:14px; word-break:break-all; padding:6px 10px; background:rgba(0,0,0,0.3); border-radius:8px;">
-        <span id="spec-qr-link-text">http://.../spectator.html?room=PARTI</span>
       </div>
 
       <div class="modal-actions" style="gap:10px; justify-content:center;">
