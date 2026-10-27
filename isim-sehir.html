@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>İsim Şehir Partisi | Çoklu Telefon Oyuncu Ekranı</title>
+  <style>
+    :root {
+      --bg: #0B0E14;
+      --card-bg: rgba(22, 27, 46, 0.94);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --primary: #00F5D4;
+      --accent: #FF2E93;
+      --gold: #FBBF24;
+      --danger: #EF4444;
+      --success: #10B981;
+      --purple: #7928CA;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: radial-gradient(circle at 50% 0%, #1e102f 0%, var(--bg) 85%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 16px 14px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      user-select: none;
+    }
+    .container { max-width: 480px; width: 100%; display: flex; flex-direction: column; gap: 14px; }
+
+    /* Header */
+    header { text-align: center; margin-bottom: 4px; }
+    .header-logo { font-size: 2.2rem; display: inline-block; filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.6)); animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+    h1 { font-size: 1.6rem; font-weight: 900; background: linear-gradient(135deg, #FFF, var(--gold), var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .room-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 800; padding: 4px 14px; border-radius: 999px; background: rgba(0, 245, 212, 0.15); border: 1px solid var(--primary); color: var(--primary); margin-top: 4px; }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      backdrop-filter: blur(14px);
+      text-align: center;
+    }
+
+    /* Forms */
+    .form-group { display: flex; flex-direction: column; gap: 6px; text-align: left; margin-bottom: 12px; }
+    .form-group label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); }
+    .input-field {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: #FFF;
+      font-size: 1rem;
+      font-weight: 700;
+      width: 100%;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .input-field:focus { border-color: var(--primary); box-shadow: 0 0 12px rgba(0, 245, 212, 0.3); }
+
+    /* Avatar Grid */
+    .avatar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 14px; }
+    .avatar-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      font-size: 1.4rem;
+      padding: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .avatar-btn.selected {
+      border-color: var(--gold);
+      background: rgba(251, 191, 36, 0.2);
+      transform: scale(1.1);
+      box-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
+    }
+
+    /* Buttons */
+    .btn-main {
+      background: linear-gradient(135deg, var(--gold), #D97706);
+      border: none;
+      border-radius: 999px;
+      color: #0B0E14;
+      font-size: 1.05rem;
+      font-weight: 900;
+      padding: 14px 28px;
+      width: 100%;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(251, 191, 36, 0.4);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn-main:active { transform: scale(0.97); }
+    .btn-main.primary { background: linear-gradient(135deg, var(--primary), #00ba9f); box-shadow: 0 4px 20px rgba(0, 245, 212, 0.4); }
+
+    .btn-bitti {
+      background: linear-gradient(135deg, #EF4444, #B91C1C);
+      color: #FFF;
+      font-size: 1.15rem;
+      font-weight: 900;
+      padding: 16px;
+      border-radius: 16px;
+      border: 2px solid #FF8E8E;
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.6);
+      cursor: pointer;
+      animation: pulseBitti 1.4s infinite;
+      transition: transform 0.15s;
+    }
+    .btn-bitti:active { transform: scale(0.97); }
+    @keyframes pulseBitti { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+
+    .btn-submit-answers {
+      background: linear-gradient(135deg, #10B981, #059669);
+      color: #FFF;
+      font-size: 1.15rem;
+      font-weight: 900;
+      padding: 16px;
+      border-radius: 16px;
+      border: 2px solid #6EE7B7;
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.6);
+      cursor: pointer;
+      width: 100%;
+      transition: transform 0.15s;
+    }
+    .btn-submit-answers:active { transform: scale(0.97); }
+
+    /* Player Pills */
+    .player-pills { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
+    .player-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+    .player-pill.done { border-color: var(--primary); background: rgba(0, 245, 212, 0.15); }
+
+    /* Letter Badge Card */
+    .letter-stage {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(255, 46, 147, 0.2));
+      border: 2px solid var(--gold);
+      border-radius: 20px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      margin-bottom: 10px;
+    }
+    .letter-big {
+      font-size: 3.8rem;
+      font-weight: 900;
+      color: var(--gold);
+      line-height: 1;
+      filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.8));
+    }
+    .timer-badge {
+      font-size: 1.7rem;
+      font-weight: 900;
+      color: #FFF;
+      background: rgba(0,0,0,0.5);
+      padding: 8px 16px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(255,255,255,0.15);
+      letter-spacing: 1px;
+    }
+    .timer-badge.danger {
+      color: #EF4444;
+      border-color: #EF4444;
+      background: rgba(239, 68, 68, 0.2);
+      animation: blinkDanger 0.8s infinite;
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+    }
+    @keyframes blinkDanger { 50% { opacity: 0.5; } }
+
+    /* Rules banner */
+    .rules-banner {
+      background: rgba(251, 191, 36, 0.12);
+      border: 1px solid rgba(251, 191, 36, 0.35);
+      border-radius: 12px;
+      padding: 8px 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--gold);
+      text-align: center;
+      line-height: 1.35;
+      margin-bottom: 10px;
+    }
+
+    /* 60s Countdown siren alert */
+    .countdown-alert-box {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(185, 28, 28, 0.35));
+      border: 2px solid #EF4444;
+      border-radius: 14px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      animation: alertPulse 1.2s infinite;
+      text-align: center;
+    }
+    @keyframes alertPulse {
+      0%, 100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.85); }
+    }
+
+    /* Category Inputs */
+    .category-inputs-list { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+    .cat-input-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 8px 12px;
+      transition: all 0.2s;
+    }
+    .cat-input-row.correct {
+      border-color: rgba(0, 245, 212, 0.6);
+      background: rgba(0, 245, 212, 0.07);
+    }
+    .cat-input-row.invalid {
+      border-color: rgba(245, 158, 11, 0.6);
+      background: rgba(245, 158, 11, 0.07);
+    }
+    .cat-label {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--gold);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .cat-hint { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); }
+    .cat-hint.valid { color: #00F5D4; }
+    .cat-hint.warn { color: #F59E0B; }
+    .cat-field {
+      background: transparent;
+      border: none;
+      border-bottom: 1.5px solid rgba(255, 255, 255, 0.2);
+      color: #FFF;
+      font-size: 1.05rem;
+      font-weight: 700;
+      padding: 6px 0;
+      outline: none;
+      flex: 1;
+      width: 100%;
+    }
+    .cat-field:focus { border-bottom-color: var(--primary); }
+    .cat-field:disabled { color: #94A3B8; cursor: not-allowed; }
+
+    /* Category Step Pills */
+    .cat-tab-pill {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-muted);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      white-space: nowrap;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+    .cat-tab-pill.active {
+      border-color: var(--primary);
+      background: rgba(0, 245, 212, 0.15);
+      color: var(--primary);
+      box-shadow: 0 0 10px rgba(0, 245, 212, 0.3);
+    }
+    .cat-tab-pill.filled {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: rgba(251, 191, 36, 0.12);
+    }
+
+    /* Next / Step Advance Button */
+    .btn-next-step {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 10px;
+      color: var(--gold);
+      font-size: 1rem;
+      font-weight: 900;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .btn-next-step:active {
+      transform: scale(0.92);
+      background: var(--gold);
+      color: #000;
+    }
+
+    /* Review Grid */
+    .review-category-block {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 10px;
+      text-align: left;
+    }
+    .review-cat-title { font-size: 0.88rem; font-weight: 800; color: var(--gold); margin-bottom: 8px; }
+    .review-answer-pill {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0,0,0,0.35);
+      padding: 7px 10px;
+      border-radius: 8px;
+      margin-bottom: 5px;
+      font-size: 0.85rem;
+    }
+    .review-answer-pill.first-finisher {
+      border: 1px solid rgba(251, 191, 36, 0.5);
+      background: rgba(251, 191, 36, 0.1);
+    }
+    .first-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.75rem;
+      font-weight: 900;
+      color: #0B0E14;
+      background: var(--gold);
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .penalty-banner {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1.5px solid #EF4444;
+      color: #FCA5A5;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 0.82rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-logo">🎡</div>
+      <h1>İSİM ŞEHİR PARTİSİ</h1>
+      <div id="room-code-badge" class="room-badge" style="display:none;">
+        <span>ODA:</span> <strong id="lbl-room-id">----</strong>
+      </div>
+    </header>
+
+    <!-- 1. KATILIM EKRANI -->
+    <div id="view-join" class="card">
+      <h2 style="font-size:1.25rem; margin-bottom:12px;">Oyuna Katıl</h2>
+      <div class="form-group">
+        <label>Adın / Lakabın</label>
+        <input type="text" id="inp-player-name" class="input-field" placeholder="Örn: Efe" maxlength="16" autofocus>
+      </div>
+
+      <div class="form-group">
+        <label>Oda Kodu</label>
+        <input type="text" id="inp-room-id" class="input-field" placeholder="Örn: ABCD" maxlength="6" style="text-transform:uppercase; letter-spacing:2px; font-weight:900;">
+      </div>
+
+      <div class="form-group">
+        <label>Avatarını Seç</label>
+        <div class="avatar-grid" id="avatar-grid">
+          <button type="button" class="avatar-btn selected" data-av="🦁">🦁</button>
+          <button type="button" class="avatar-btn" data-av="🦊">🦊</button>
+          <button type="button" class="avatar-btn" data-av="🐼">🐼</button>
+          <button type="button" class="avatar-btn" data-av="🐯">🐯</button>
+          <button type="button" class="avatar-btn" data-av="🚀">🚀</button>
+          <button type="button" class="avatar-btn" data-av="👑">👑</button>
+          <button type="button" class="avatar-btn" data-av="🦄">🦄</button>
+          <button type="button" class="avatar-btn" data-av="⚡">⚡</button>
+          <button type="button" class="avatar-btn" data-av="🍕">🍕</button>
+          <button type="button" class="avatar-btn" data-av="🎭">🎭</button>
+        </div>
+      </div>
+
+      <button type="button" id="btn-join" class="btn-main">🚀 OYUNA KATIL</button>
+      <div id="join-error" style="color:#EF4444; font-size:0.8rem; margin-top:8px; display:none;"></div>
+    </div>
+
+    <!-- 2. LOBİ / BEKLEME EKRANI -->
+    <div id="view-lobby" class="card" style="display:none;">
+      <div style="font-size:2.8rem; margin-bottom:6px;">⏳</div>
+      <h2 style="font-size:1.3rem; margin-bottom:4px;">Lobiye Katıldın!</h2>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">
+        Ana cihaz çarkı çevirip tur harfini belirleyecek. Hazırlan!
+      </p>
+
+      <div style="background:rgba(0,0,0,0.3); border-radius:14px; padding:12px;">
+        <span style="font-size:0.78rem; font-weight:800; color:var(--gold);">ODADAKİ OYUNCULAR</span>
+        <div class="player-pills" id="lobby-player-pills"></div>
+      </div>
+    </div>
+
+    <!-- 3. YARIŞMA / YAZMA EKRANI -->
+    <div id="view-playing" class="card" style="display:none; padding:14px;">
+      <div class="letter-stage">
+        <div>
+          <span style="font-size:0.75rem; font-weight:800; color:var(--text-muted); display:block;">TUR HARFİ</span>
+          <div class="letter-big" id="play-current-letter">?</div>
+        </div>
+        <div>
+          <span id="play-timer-title" style="font-size:0.75rem; font-weight:800; color:var(--text-muted); display:block;">GEÇEN SÜRE</span>
+          <div class="timer-badge" id="play-timer-badge">00:00</div>
+        </div>
+      </div>
+
+      <!-- Kural Bilgilendirmesi -->
+      <div id="rules-banner" class="rules-banner">
+        ⏱️ <strong>Başta süre yok!</strong> 6 kategoriyi tamamlayan ilk oyuncu "BİTİRDİM" tuşuna basar. Ardından herkes için son 1 dakika başlar!
+      </div>
+
+      <!-- 60 Saniye Geri Sayım Alarm Kutusu (İlk bitiren basınca görünür) -->
+      <div id="countdown-alert-box" class="countdown-alert-box" style="display:none;">
+        <div style="font-size:1rem; font-weight:900; color:#FFF; display:flex; align-items:center; justify-content:center; gap:6px;">
+          <span>🚨</span> <span id="lbl-countdown-alert-text">BİRİ BİTİRDİ!</span>
+        </div>
+        <div style="font-size:0.8rem; color:#FCA5A5; margin-top:2px;">
+          Herkes için 1 dakikalık son şans sayacı çalışıyor!
+        </div>
+        <div id="first-finisher-warning" style="display:none; margin-top:6px; font-size:0.75rem; font-weight:800; color:#FDE047; background:rgba(0,0,0,0.4); padding:4px 8px; border-radius:8px;">
+          ⚠️ Dikkat: Eksik/hatalı cevap tespit edildi (-20 ceza riski)!
+        </div>
+      </div>
+
+      <!-- Kategori Adım / Sekme Çubuğu -->
+      <div id="cat-tabs-bar" style="display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:8px; scrollbar-width:none;"></div>
+
+      <!-- Dinamik Kategori Giriş Alanları (JS Tarafından Üretilir) -->
+      <div class="category-inputs-list" id="category-inputs-list">
+        <!-- JS tarafından doldurulacak -->
+      </div>
+
+      <!-- Aksiyon Butonları -->
+      <div style="margin-top:14px;">
+        <!-- İlk Bitiren Butonu (Başta süre yokken aktif) -->
+        <button type="button" id="btn-trigger-bitti" class="btn-bitti" style="width:100%;">
+          🛑 BİTİRDİM! (HERKES İÇİN 1 DK BAŞLAT)
+        </button>
+
+        <!-- 60 Saniye Geri Sayım Sırasında Diğer Oyuncuların Onay Butonu -->
+        <button type="button" id="btn-submit-answers" class="btn-submit-answers" style="display:none; width:100%;">
+          ✅ CEVAPLARIMI ONAYLA VE GÖNDER
+        </button>
+
+        <!-- Kilitlendi / Gönderildi Bilgilendirmesi -->
+        <div id="submitted-status-banner" style="display:none; font-size:0.85rem; font-weight:800; color:#00F5D4; background:rgba(0,245,212,0.15); border:1px solid #00F5D4; border-radius:12px; padding:10px; margin-top:6px; text-align:center;">
+          ✓ Cevapların kaydedildi! Sürenin bitmesi veya herkesin onaylaması bekleniyor...
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. İNCELEME & PUANLAMA EKRANI -->
+    <div id="view-review" class="card" style="display:none;">
+      <div style="font-size:2.4rem; margin-bottom:4px;">📝</div>
+      <h2 style="font-size:1.3rem; margin-bottom:4px;">Tur Tamamlandı!</h2>
+      <p id="review-stopped-desc" style="font-size:0.85rem; color:var(--gold); margin-bottom:10px;">Cevaplar puanlanıyor...</p>
+
+      <div id="review-penalty-box"></div>
+      <div id="review-summary-container"></div>
+    </div>
+
+    <!-- 5. TUR SONU & SKOR TABLOSU -->
+    <div id="view-round-over" class="card" style="display:none;">
+      <div style="font-size:2.8rem; margin-bottom:4px;">🏆</div>
+      <h2 style="font-size:1.4rem; margin-bottom:6px;">Liderlik Tablosu</h2>
+      <div id="scoreboard-list" style="display:flex; flex-direction:column; gap:8px; margin-top:10px;"></div>
+      <p style="font-size:0.8rem; color:var(--text-muted); margin-top:14px;">Ana cihaz yeni tur için çarkı çevirince otomatik başlayacak...</p>
+    </div>
+  </div>
+
+  <!-- Anti-Cheat Ekran Terk Modal -->
+  <div id="cheat-warning-modal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); backdrop-filter:blur(8px); z-index:99999; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:linear-gradient(135deg, rgba(239,68,68,0.25), rgba(153,27,27,0.45)); border:2px solid #EF4444; border-radius:20px; padding:24px; text-align:center; max-width:380px; box-shadow:0 0 35px rgba(239,68,68,0.6);">
+      <div style="font-size:3.5rem; filter:drop-shadow(0 0 15px #EF4444); margin-bottom:8px;">⚠️</div>
+      <h2 style="font-size:1.45rem; font-weight:900; color:#FFF; margin-bottom:6px;">DİKKAT: EKRANDAN AYRILDINIZ!</h2>
+      <p style="font-size:0.88rem; color:#FCA5A5; line-height:1.4; margin-bottom:14px;">
+        Oyun esnasında başka bir sekmeye veya uygulamaya geçtiniz. Google / Kopya aramaları koruma sistemi devrede!
+      </p>
+      <div style="background:rgba(0,0,0,0.5); border-radius:12px; padding:8px 12px; font-size:0.8rem; font-weight:800; color:#FDE047; margin-bottom:16px;">
+        Bu durum masa ekranına bildirilmiştir (İhlal Sayısı: <span id="cheat-count-lbl">1</span>)
+      </div>
+      <button type="button" id="btn-dismiss-cheat-modal" style="background:linear-gradient(135deg, #EF4444, #B91C1C); color:#FFF; border:none; border-radius:12px; padding:12px 24px; font-weight:900; font-size:1rem; cursor:pointer; width:100%;">
+        Anladım, Oyuna Dön
+      </button>
+    </div>
+  </div>
+
+  <!-- Süre Doldu Ekran Kilitleme Overlay -->
+  <div id="timeup-lock-overlay" style="display:none; position:fixed; inset:0; background:rgba(11,14,20,0.92); backdrop-filter:blur(10px); z-index:99990; align-items:center; justify-content:center; padding:24px; text-align:center;">
+    <div style="background:rgba(255,255,255,0.05); border:2px solid #EF4444; border-radius:24px; padding:28px 20px; max-width:380px; box-shadow:0 0 40px rgba(239,68,68,0.5);">
+      <div style="font-size:4rem; margin-bottom:8px; filter:drop-shadow(0 0 20px #EF4444);">🔒</div>
+      <h2 style="font-size:1.6rem; font-weight:900; color:#FFF; margin-bottom:8px;">1 DAKİKA DOLDU!</h2>
+      <p style="font-size:0.92rem; color:#CBD5E1; line-height:1.4; margin-bottom:16px;">
+        Ekranınız kilitlendi. Yazdığınız tüm cevaplar otomatik olarak hakem masasına iletildi.
+      </p>
+      <div style="background:rgba(0,245,212,0.1); border:1px solid rgba(0,245,212,0.3); border-radius:12px; padding:10px; font-size:0.85rem; font-weight:800; color:#00F5D4;">
+        ⏳ Hakem incelemesi bekleniyor...
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // URL Parametrelerinden Oda Kodunu Al
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomParam = urlParams.get('room') || '';
+    if (roomParam) {
+      document.getElementById('inp-room-id').value = roomParam.toUpperCase().trim();
+    }
+
+    const DEFAULT_CATEGORIES = [
+      { id: 'isim', name: '👤 İsim' },
+      { id: 'sehir', name: '🏙️ Şehir / Ülke' },
+      { id: 'hayvan', name: '🦁 Hayvan' },
+      { id: 'bitki', name: '🌿 Bitki / Meyve' },
+      { id: 'esya', name: '📦 Eşya' },
+      { id: 'unlu', name: '⭐ Ünlü' }
+    ];
+
+    let state = {
+      roomId: '',
+      playerId: '',
+      playerName: '',
+      playerAvatar: '🦁',
+      lastPhase: '',
+      currentLetter: '',
+      currentRound: 1,
+      hasSubmitted: false,
+      isFirstFinisher: false,
+      startedAt: null,
+      endsAt: null,
+      cheatWarnings: 0,
+      categories: [...DEFAULT_CATEGORIES],
+      renderedCatIdsKey: '',
+      activeCatIndex: 0
+    };
+
+    // ==========================================
+    // SES & TİTREŞİM SİSTEMİ (Web Audio API)
+    // ==========================================
+    let audioCtx = null;
+    function getAudioCtx() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playBeep(freq = 440, type = 'sine', duration = 0.15, vol = 0.25) {
+      try {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(vol, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playWarningSound() {
+      try {
+        playBeep(220, 'sawtooth', 0.2, 0.4);
+        setTimeout(() => playBeep(180, 'sawtooth', 0.25, 0.45), 180);
+      } catch (e) {}
+    }
+
+    function playCountdownSiren() {
+      try {
+        playBeep(520, 'triangle', 0.18, 0.35);
+        setTimeout(() => playBeep(780, 'triangle', 0.22, 0.4), 160);
+        setTimeout(() => playBeep(520, 'triangle', 0.18, 0.35), 340);
+        setTimeout(() => playBeep(780, 'triangle', 0.25, 0.4), 500);
+      } catch (e) {}
+    }
+
+    function playLockBuzzer() {
+      try {
+        playBeep(150, 'sawtooth', 0.5, 0.5);
+      } catch (e) {}
+    }
+
+    function turkishStartsWith(word, targetLetter) {
+      if (!word || !targetLetter) return false;
+      const clean = word.trim().toLocaleLowerCase('tr-TR');
+      const target = targetLetter.trim().toLocaleLowerCase('tr-TR');
+      return clean.startsWith(target);
+    }
+
+    // Avatar seçimi
+    document.querySelectorAll('.avatar-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        state.playerAvatar = btn.getAttribute('data-av');
+        playBeep(440, 'sine', 0.08, 0.15);
+      });
+    });
+
+    // ==========================================
+    // DİNAMİK KATEGORİ OLUŞTURMA & STEP YÖNETİMİ
+    // ==========================================
+    function renderDynamicCategories(categories) {
+      if (!Array.isArray(categories) || categories.length === 0) {
+        categories = DEFAULT_CATEGORIES;
+      }
+      state.categories = categories;
+
+      const key = categories.map(c => c.id).join('|');
+      if (state.renderedCatIdsKey === key) {
+        // Zaten aynı kategoriler render edilmiş, sadece placeholder'ları tazele
+        updateCategoryPlaceholders();
+        return;
+      }
+      state.renderedCatIdsKey = key;
+
+      const tabsBar = document.getElementById('cat-tabs-bar');
+      const inputsList = document.getElementById('category-inputs-list');
+      tabsBar.innerHTML = '';
+      inputsList.innerHTML = '';
+
+      categories.forEach((cat, idx) => {
+        const isFirst = idx === 0;
+        const isLast = idx === categories.length - 1;
+
+        // 1. Tab Pill
+        const pill = document.createElement('button');
+        pill.type = 'button';
+        pill.className = `cat-tab-pill ${isFirst ? 'active' : ''}`;
+        pill.id = `tab-pill-${cat.id}`;
+        pill.innerHTML = `<span>${cat.name}</span> <span id="tab-dot-${cat.id}">•</span>`;
+        pill.addEventListener('click', () => {
+          focusCategory(idx);
+        });
+        tabsBar.appendChild(pill);
+
+        // 2. Input Row
+        const row = document.createElement('div');
+        row.className = 'cat-input-row';
+        row.id = `row-${cat.id}`;
+        row.innerHTML = `
+          <div class="cat-label">
+            <span><strong>${idx + 1}.</strong> ${cat.name}</span>
+            <span class="cat-hint" id="hint-${cat.id}">(Boş)</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="text"
+                   id="ans-${cat.id}"
+                   class="cat-field"
+                   placeholder="${state.currentLetter ? state.currentLetter + ' ile başlayan ' + cat.name : cat.name + ' yazın...'}"
+                   autocapitalize="words"
+                   autocomplete="off"
+                   enterkeyhint="${isLast ? 'done' : 'next'}"
+                   data-cat-index="${idx}">
+            <button type="button"
+                    class="btn-next-step"
+                    id="btn-step-${cat.id}"
+                    data-cat-index="${idx}"
+                    title="${isLast ? 'Tamamla' : 'Sonraki Kategori'}">
+              ${isLast ? '🎯' : '➔'}
+            </button>
+          </div>
+        `;
+        inputsList.appendChild(row);
+
+        // Dinleyiciler
+        const inp = row.querySelector(`#ans-${cat.id}`);
+        const nextBtn = row.querySelector(`#btn-step-${cat.id}`);
+
+        inp.addEventListener('focus', () => {
+          setActiveTabPill(idx);
+        });
+
+        inp.addEventListener('input', () => {
+          validateCategoryField(cat.id);
+          updateTabPillStatus(cat.id);
+          saveDraftAnswers();
+        });
+
+        // "Enter" veya sonraki tuşu ile akıcı geçiş
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            handleNextStep(idx);
+          }
+        });
+
+        nextBtn.addEventListener('click', () => {
+          handleNextStep(idx);
+        });
+      });
+
+      restoreDraftAnswers();
+    }
+
+    function updateCategoryPlaceholders() {
+      state.categories.forEach(cat => {
+        const inp = document.getElementById(`ans-${cat.id}`);
+        if (inp) {
+          inp.placeholder = state.currentLetter
+            ? `${state.currentLetter} ile başlayan ${cat.name}...`
+            : `${cat.name} yazın...`;
+        }
+      });
+    }
+
+    function focusCategory(index) {
+      if (index < 0 || index >= state.categories.length) return;
+      const cat = state.categories[index];
+      const inp = document.getElementById(`ans-${cat.id}`);
+      if (inp) {
+        inp.focus();
+        inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      setActiveTabPill(index);
+    }
+
+    function setActiveTabPill(index) {
+      state.activeCatIndex = index;
+      state.categories.forEach((cat, idx) => {
+        const pill = document.getElementById(`tab-pill-${cat.id}`);
+        if (pill) {
+          if (idx === index) {
+            pill.classList.add('active');
+            pill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          } else {
+            pill.classList.remove('active');
+          }
+        }
+      });
+    }
+
+    function updateTabPillStatus(catId) {
+      const inp = document.getElementById(`ans-${catId}`);
+      const pill = document.getElementById(`tab-pill-${catId}`);
+      const dot = document.getElementById(`tab-dot-${catId}`);
+      if (!inp || !pill || !dot) return;
+
+      const val = inp.value.trim();
+      if (!val) {
+        pill.classList.remove('filled');
+        dot.textContent = '•';
+      } else {
+        pill.classList.add('filled');
+        if (state.currentLetter && turkishStartsWith(val, state.currentLetter)) {
+          dot.textContent = '✓';
+        } else {
+          dot.textContent = '!';
+        }
+      }
+    }
+
+    function handleNextStep(currentIndex) {
+      playBeep(520, 'sine', 0.06, 0.2);
+      if (currentIndex < state.categories.length - 1) {
+        focusCategory(currentIndex + 1);
+      } else {
+        // Son kategorideyse "BİTİRDİM" veya "ONAYLA" butonuna odaklan
+        const bittiBtn = document.getElementById('btn-trigger-bitti');
+        const submitBtn = document.getElementById('btn-submit-answers');
+        if (submitBtn && submitBtn.style.display !== 'none') {
+          submitBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          submitBtn.focus();
+        } else if (bittiBtn && bittiBtn.style.display !== 'none') {
+          bittiBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          bittiBtn.focus();
+        }
+      }
+    }
+
+    function validateCategoryField(catId) {
+      const field = document.getElementById(`ans-${catId}`);
+      const row = document.getElementById(`row-${catId}`);
+      const hint = document.getElementById(`hint-${catId}`);
+      if (!field || !row || !hint) return;
+      const val = field.value.trim();
+
+      row.classList.remove('correct', 'invalid');
+      hint.classList.remove('valid', 'warn');
+
+      if (!val) {
+        hint.textContent = '(Boş)';
+        return;
+      }
+
+      if (state.currentLetter) {
+        if (turkishStartsWith(val, state.currentLetter)) {
+          row.classList.add('correct');
+          hint.classList.add('valid');
+          hint.textContent = '✓ Harf Doğru';
+        } else {
+          row.classList.add('invalid');
+          hint.classList.add('warn');
+          hint.textContent = `⚠️ "${state.currentLetter}" ile başlamalı!`;
+        }
+      } else {
+        hint.textContent = 'Dolu';
+      }
+    }
+
+    // ==========================================
+    // YEREL TASLAK SAKLAMA & 0 VERİ KAYBI
+    // ==========================================
+    function getDraftStorageKey() {
+      const roundSuffix = state.currentLetter || 'round';
+      return `kafanatak_isim_draft_${state.roomId}_${roundSuffix}`;
+    }
+
+    let draftSaveDebounce = null;
+    function saveDraftAnswers() {
+      const answers = getAnswers();
+      // 1. Yerel hafızaya anında yaz (Telefon kapansa / reload olsa bile veri kaybı 0)
+      try {
+        if (state.roomId) {
+          localStorage.setItem(getDraftStorageKey(), JSON.stringify(answers));
+        }
+      } catch (e) {}
+
+      // 2. Sunucuya debounced gönder
+      clearTimeout(draftSaveDebounce);
+      draftSaveDebounce = setTimeout(() => {
+        if (!state.roomId || !state.playerId || (state.lastPhase !== 'playing' && state.lastPhase !== 'countdown_1min')) return;
+        if (state.hasSubmitted) return;
+        fetch('/api/isim-sehir/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomId: state.roomId, playerId: state.playerId, answers, markSubmitted: false })
+        }).catch(() => {});
+      }, 350);
+    }
+
+    function restoreDraftAnswers() {
+      try {
+        if (!state.roomId) return;
+        const savedRaw = localStorage.getItem(getDraftStorageKey());
+        if (!savedRaw) return;
+        const saved = JSON.parse(savedRaw);
+        if (saved && typeof saved === 'object') {
+          state.categories.forEach(cat => {
+            const field = document.getElementById(`ans-${cat.id}`);
+            if (field && saved[cat.id]) {
+              field.value = saved[cat.id];
+              validateCategoryField(cat.id);
+              updateTabPillStatus(cat.id);
+            }
+          });
+        }
+      } catch (e) {}
+    }
+
+    function clearDraftAnswers() {
+      try {
+        if (state.roomId) {
+          localStorage.removeItem(getDraftStorageKey());
+        }
+      } catch (e) {}
+    }
+
+    function getAnswers() {
+      const answers = {};
+      state.categories.forEach(cat => {
+        const inp = document.getElementById(`ans-${cat.id}`);
+        answers[cat.id] = inp ? inp.value.trim() : '';
+      });
+      return answers;
+    }
+
+    function lockInputs(locked) {
+      state.categories.forEach(c => {
+        const inp = document.getElementById(`ans-${c.id}`);
+        if (inp) inp.disabled = !!locked;
+        const btn = document.getElementById(`btn-step-${c.id}`);
+        if (btn) btn.disabled = !!locked;
+      });
+    }
+
+    // ==========================================
+    // ANTİ-CHEAT (EKRAN TERK / KOPYA ARAMA ENGELİ)
+    // ==========================================
+    function triggerCheatWarning() {
+      // Yalnızca aktif oyun ve geri sayım esnasında uyar
+      if (state.lastPhase !== 'playing' && state.lastPhase !== 'countdown_1min') return;
+      if (state.hasSubmitted) return;
+
+      state.cheatWarnings = (state.cheatWarnings || 0) + 1;
+      document.getElementById('cheat-count-lbl').textContent = state.cheatWarnings;
+
+      const modal = document.getElementById('cheat-warning-modal');
+      modal.style.display = 'flex';
+
+      playWarningSound();
+      if (navigator.vibrate) {
+        navigator.vibrate([200, 100, 200]);
+      }
+
+      // Hakem masasına bildir
+      fetch('/api/isim-sehir/cheat-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomId: state.roomId,
+          playerId: state.playerId,
+          eventType: 'blur'
+        })
+      }).catch(() => {});
+    }
+
+    // Başka sekme veya uygulamaya geçiş algılama
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        triggerCheatWarning();
+      }
+    });
+
+    window.addEventListener('blur', () => {
+      triggerCheatWarning();
+    });
+
+    window.addEventListener('pagehide', () => {
+      triggerCheatWarning();
+    });
+
+    document.getElementById('btn-dismiss-cheat-modal').addEventListener('click', () => {
+      document.getElementById('cheat-warning-modal').style.display = 'none';
+      playBeep(440, 'sine', 0.1, 0.2);
+      focusCategory(state.activeCatIndex);
+    });
+
+    const FIREBASE_DB_URL = 'https://kafanatak-party-default-rtdb.firebaseio.com';
+    let fbEventSource = null;
+
+    // ==========================================
+    // OYUNA KATIL BUTONU (BULUT & YEREL DESTEKLİ)
+    // ==========================================
+    document.getElementById('btn-join').addEventListener('click', async () => {
+      getAudioCtx();
+      const name = document.getElementById('inp-player-name').value.trim();
+      const room = document.getElementById('inp-room-id').value.trim().toUpperCase();
+      const errBox = document.getElementById('join-error');
+      errBox.style.display = 'none';
+
+      if (!name) {
+        errBox.textContent = 'Lütfen adını yaz!';
+        errBox.style.display = 'block';
+        return;
+      }
+      if (!room || room.length < 3) {
+        errBox.textContent = 'Geçerli bir 4 haneli oda kodu gir!';
+        errBox.style.display = 'block';
+        return;
+      }
+
+      state.playerName = name;
+      state.roomId = room;
+
+      // 1. Firebase Bulut Odayı Kontrol Et (Hotspot gerekmez)
+      try {
+        const fbRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${room}.json`);
+        if (fbRes.ok) {
+          const roomData = await fbRes.json();
+          if (roomData) {
+            state.playerId = 'p_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            const myPlayer = {
+              id: state.playerId,
+              name: name,
+              avatar: state.playerAvatar,
+              answers: {},
+              submitted: false,
+              totalScore: 0,
+              roundScore: 0,
+              cheatWarnings: 0
+            };
+            // Oyuncuyu Firebase'e kaydet
+            await fetch(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${room}/players/${state.playerId}.json`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(myPlayer)
+            });
+
+            document.getElementById('room-code-badge').style.display = 'inline-flex';
+            document.getElementById('lbl-room-id').textContent = room;
+
+            if (roomData.categories) {
+              renderDynamicCategories(roomData.categories);
+            } else {
+              renderDynamicCategories(DEFAULT_CATEGORIES);
+            }
+
+            showView('view-lobby');
+            startPolling();
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Firebase kontrolü hatası, yerel deneniyor:', err);
+      }
+
+      // 2. Yerel Sunucu Yoklaması (Yedek)
+      try {
+        const res = await fetch('/api/isim-sehir/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roomId: room,
+            playerName: name,
+            playerAvatar: state.playerAvatar
+          })
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          errBox.textContent = data.error || 'Odaya bağlanılamadı!';
+          errBox.style.display = 'block';
+          return;
+        }
+
+        state.playerId = data.playerId;
+        document.getElementById('room-code-badge').style.display = 'inline-flex';
+        document.getElementById('lbl-room-id').textContent = room;
+
+        if (data.room && data.room.categories) {
+          renderDynamicCategories(data.room.categories);
+        } else {
+          renderDynamicCategories(DEFAULT_CATEGORIES);
+        }
+
+        showView('view-lobby');
+        startPolling();
+      } catch (e) {
+        errBox.textContent = 'Odaya bağlanılamadı. Oda kodunu kontrol edin veya internet bağlantınızı doğrulayın!';
+        errBox.style.display = 'block';
+      }
+    });
+
+    // ==========================================
+    // 1. İLK BİTİREN BUTONU ("BİTİRDİM!")
+    // ==========================================
+    document.getElementById('btn-trigger-bitti').addEventListener('click', async () => {
+      const answers = getAnswers();
+      const emptyCount = Object.values(answers).filter(v => !v).length;
+      let confirmMsg = 'Tüm kategorileri tamamladın mı? "BİTİRDİM" diyerek diğer herkes için son 1 dakikalık sayacı başlatacaksın!';
+      if (emptyCount > 0) {
+        confirmMsg = `DİKKAT: ${emptyCount} kategorin boş! Hatalı/eksik ilk bitirme yaparsan -20 ceza puanı alabilirsin. Yine de basmak istiyor musun?`;
+      }
+
+      if (confirm(confirmMsg)) {
+        state.hasSubmitted = true;
+        lockInputs(true);
+
+        // 1. Firebase Bulut Aksiyonu
+        try {
+          await fetch(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${state.roomId}/actions.json`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'first_finisher',
+              playerId: state.playerId,
+              playerName: state.playerName,
+              answers: answers,
+              timestamp: Date.now()
+            })
+          });
+          await fetch(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${state.roomId}/players/${state.playerId}/answers.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(answers)
+          });
+          await fetch(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${state.roomId}/players/${state.playerId}/submitted.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(true)
+          });
+          state.isFirstFinisher = true;
+        } catch (e) {}
+
+        // 2. Yerel Sunucu Bildirimi (Varsa)
+        try {
+          const res = await fetch('/api/isim-sehir/stop', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomId: state.roomId, playerId: state.playerId, answers })
+          });
+          const data = await res.json();
+          if (data && data.firstFinisherName) {
+            state.isFirstFinisher = true;
+          }
+        } catch (e) {}
+
+        pollState();
+      }
+    });
+
+    // ==========================================
+    // 2. 60 SANİYE SIRASINDA CEVAPLARI GÖNDER BUTONU
+    // ==========================================
+    async function submitPlayerAnswers() {
+      const answers = getAnswers();
+      state.hasSubmitted = true;
+      lockInputs(true);
+
+      // 1. Firebase Bulut
+      try {
+        await fetch(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${state.roomId}/players/${state.playerId}/answers.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(answers)
+        });
+        await fetch(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${state.roomId}/players/${state.playerId}/submitted.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(true)
+        });
+      } catch (e) {}
+
+      // 2. Yerel Sunucu
+      try {
+        await fetch('/api/isim-sehir/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomId: state.roomId, playerId: state.playerId, answers, markSubmitted: true })
+        });
+      } catch (e) {}
+
+      document.getElementById('btn-submit-answers').style.display = 'none';
+      document.getElementById('submitted-status-banner').style.display = 'block';
+      pollState();
+    }
+
+    document.getElementById('btn-submit-answers').addEventListener('click', submitPlayerAnswers);
+
+    function showView(viewId) {
+      ['view-join', 'view-lobby', 'view-playing', 'view-review', 'view-round-over'].forEach(id => {
+        document.getElementById(id).style.display = (id === viewId) ? 'block' : 'none';
+      });
+    }
+
+    let pollInterval = null;
+    let timerTickInterval = null;
+
+    function startPolling() {
+      clearInterval(pollInterval);
+      if (fbEventSource) {
+        try { fbEventSource.close(); } catch (e) {}
+      }
+
+      // 1. Firebase SSE Realtime Push
+      try {
+        if (typeof EventSource !== 'undefined') {
+          fbEventSource = new EventSource(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${state.roomId}.json`);
+          fbEventSource.addEventListener('put', (e) => {
+            try {
+              const d = JSON.parse(e.data);
+              if (d && d.data) renderRoomState(d.data);
+            } catch (err) {}
+          });
+          fbEventSource.addEventListener('patch', (e) => {
+            try {
+              pollState();
+            } catch (err) {}
+          });
+        }
+      } catch (e) {}
+
+      // 2. Periyodik Polling (1.2s)
+      pollState();
+      pollInterval = setInterval(pollState, 1200);
+
+      // Yerel saat sayacı
+      clearInterval(timerTickInterval);
+      timerTickInterval = setInterval(updateLocalTimer, 500);
+    }
+
+    async function pollState() {
+      if (!state.roomId || !state.playerId) return;
+
+      // Önce Firebase Bulut yoklaması
+      try {
+        const fbRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${state.roomId}.json`);
+        if (fbRes.ok) {
+          const room = await fbRes.json();
+          if (room) {
+            renderRoomState(room);
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // Yerel sunucu yoklaması
+      try {
+        const res = await fetch(`/api/isim-sehir/state?roomId=${state.roomId}&playerId=${state.playerId}`);
+        if (!res.ok) return;
+        const room = await res.json();
+        renderRoomState(room);
+      } catch (e) {}
+    }
+
+    // ==========================================
+    // SAYAÇ VE 1 DAKİKA GERİ SAYIM / KİLİT
+    // ==========================================
+    let lockOverlayTriggered = false;
+    function updateLocalTimer() {
+      if (state.lastPhase !== 'playing' && state.lastPhase !== 'countdown_1min') return;
+      const badge = document.getElementById('play-timer-badge');
+      const title = document.getElementById('play-timer-title');
+
+      if (state.lastPhase === 'playing') {
+        // Başta süre yok: geçen süreyi yukarı say
+        title.textContent = 'GEÇEN SÜRE';
+        badge.classList.remove('danger');
+        if (state.startedAt) {
+          const elapsedSec = Math.floor((Date.now() - state.startedAt) / 1000);
+          const m = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+          const s = String(elapsedSec % 60).padStart(2, '0');
+          badge.textContent = `${m}:${s}`;
+        } else {
+          badge.textContent = '00:00';
+        }
+      } else if (state.lastPhase === 'countdown_1min') {
+        // Geri sayım: 60 saniyeden geriye say
+        title.textContent = 'SON ŞANS';
+        if (state.endsAt) {
+          const remSec = Math.max(0, Math.ceil((state.endsAt - Date.now()) / 1000));
+          badge.textContent = `${remSec}s`;
+          badge.classList.add('danger');
+
+          // Süre dolduğunda ekranı kilitli overlay ile kapat
+          if (remSec <= 0 && !lockOverlayTriggered) {
+            lockOverlayTriggered = true;
+            playLockBuzzer();
+            lockInputs(true);
+            document.getElementById('timeup-lock-overlay').style.display = 'flex';
+            if (!state.hasSubmitted) {
+              submitPlayerAnswers();
+            }
+          }
+        }
+      }
+    }
+
+    function renderRoomState(room) {
+      if (room.categories && Array.isArray(room.categories)) {
+        renderDynamicCategories(room.categories);
+      }
+
+      if (room.phase !== state.lastPhase || room.currentLetter !== state.currentLetter) {
+        handlePhaseChange(room);
+      }
+
+      state.startedAt = room.startedAt || null;
+      state.endsAt = room.endsAt || null;
+
+      // Benim durumum
+      const me = (room.players || []).find(p => p.id === state.playerId);
+      if (me) {
+        state.isFirstFinisher = !!me.isFirstFinisher;
+        if (me.submitted && !state.hasSubmitted) {
+          state.hasSubmitted = true;
+          lockInputs(true);
+        }
+      }
+
+      // 1. LOBİ
+      if (room.phase === 'lobby') {
+        document.getElementById('timeup-lock-overlay').style.display = 'none';
+        const pList = document.getElementById('lobby-player-pills');
+        pList.innerHTML = room.players.map(p => `
+          <div class="player-pill">
+            <span>${p.avatar}</span>
+            <span>${p.name}</span>
+            ${p.isHost ? '<span style="color:var(--gold);">👑</span>' : ''}
+          </div>
+        `).join('');
+      }
+
+      // 2. OYUN & GERİ SAYIM DİNAMİĞİ
+      if (room.phase === 'playing') {
+        document.getElementById('timeup-lock-overlay').style.display = 'none';
+        lockOverlayTriggered = false;
+        document.getElementById('rules-banner').style.display = 'block';
+        document.getElementById('countdown-alert-box').style.display = 'none';
+        document.getElementById('btn-trigger-bitti').style.display = 'block';
+        document.getElementById('btn-submit-answers').style.display = 'none';
+        document.getElementById('submitted-status-banner').style.display = 'none';
+      } else if (room.phase === 'countdown_1min') {
+        document.getElementById('rules-banner').style.display = 'none';
+        const alertBox = document.getElementById('countdown-alert-box');
+        alertBox.style.display = 'block';
+        
+        const finisherName = room.firstFinisherName || 'Bir oyuncu';
+        document.getElementById('lbl-countdown-alert-text').textContent = `${finisherName.toUpperCase()} BİTİRDİ!`;
+
+        const warnEl = document.getElementById('first-finisher-warning');
+        if (room.firstFinisherPenalty) {
+          warnEl.style.display = 'block';
+          warnEl.textContent = `⚠️ Hatalı bitirme: ${room.firstFinisherPenaltyReason || 'Eksik veya harfe uymayan kelime'} (-20 Ceza riski!)`;
+        } else {
+          warnEl.style.display = 'none';
+        }
+
+        // Buton görünümü
+        document.getElementById('btn-trigger-bitti').style.display = 'none';
+        if (state.isFirstFinisher || state.hasSubmitted) {
+          document.getElementById('btn-submit-answers').style.display = 'none';
+          document.getElementById('submitted-status-banner').style.display = 'block';
+          document.getElementById('submitted-status-banner').innerHTML = state.isFirstFinisher
+            ? '🎉 <strong>Tebrikler, ilk bitiren sensin!</strong> Cevapların kilitlendi, diğer oyuncuların 1 dakikası dolunca incelenecek.'
+            : '✓ <strong>Cevapların kaydedildi!</strong> Sürenin dolması bekleniyor...';
+        } else {
+          document.getElementById('btn-submit-answers').style.display = 'block';
+          document.getElementById('submitted-status-banner').style.display = 'none';
+        }
+      }
+
+      // 3. İNCELEME & PUANLAMA
+      if (room.phase === 'review') {
+        document.getElementById('timeup-lock-overlay').style.display = 'none';
+        const penaltyBox = document.getElementById('review-penalty-box');
+        if (room.firstFinisherName) {
+          penaltyBox.innerHTML = `
+            <div style="background:rgba(251,191,36,0.12); border:1.5px solid var(--gold); border-radius:14px; padding:10px 14px; margin-bottom:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.85rem; font-weight:900; color:var(--gold);">🥇 İLK BİTİREN:</span>
+                <span class="first-badge">👑 ${room.firstFinisherName}</span>
+              </div>
+              ${room.firstFinisherPenalty ? `
+                <div style="margin-top:6px; font-size:0.8rem; font-weight:800; color:#EF4444; background:rgba(239,68,68,0.2); padding:6px 10px; border-radius:8px;">
+                  ⚠️ Hatalı İlk Bitirme Cezası: -20 Puan (${room.firstFinisherPenaltyReason || 'Kural İhlali'})
+                </div>
+              ` : `
+                <div style="margin-top:6px; font-size:0.8rem; font-weight:800; color:#10B981;">
+                  ✨ Eksiksiz bitirme, ekstra ceza yok!
+                </div>
+              `}
+            </div>
+          `;
+        } else {
+          penaltyBox.innerHTML = '';
+        }
+
+        const summary = document.getElementById('review-summary-container');
+        if (room.players) {
+          const cats = (room.categories && room.categories.length > 0) ? room.categories : state.categories;
+          summary.innerHTML = cats.map(cat => {
+            const pAnswers = room.players.map(p => {
+              const val = (p.answers && p.answers[cat.id]) || '(Boş)';
+              const isFirst = p.id === room.firstFinisherId;
+              const hasCheat = p.cheatWarnings && p.cheatWarnings > 0;
+              return `
+                <div class="review-answer-pill ${isFirst ? 'first-finisher' : ''}">
+                  <span>${p.avatar} ${p.name} ${isFirst ? '<span style="color:var(--gold); font-size:0.75rem;">(İlk)</span>' : ''} ${hasCheat ? `<span style="color:#EF4444; font-size:0.7rem; font-weight:800;">[⚠️ ${p.cheatWarnings} Terk]</span>` : ''}:</span>
+                  <strong style="color:#00F5D4; font-size:0.95rem;">${val}</strong>
+                </div>
+              `;
+            }).join('');
+            return `
+              <div class="review-category-block">
+                <div class="review-cat-title">${cat.name}</div>
+                ${pAnswers}
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
+      // 4. SKOR TABLOSU
+      if (room.phase === 'round_over') {
+        document.getElementById('timeup-lock-overlay').style.display = 'none';
+        const sorted = [...(room.players || [])].sort((a,b) => (b.totalScore || 0) - (a.totalScore || 0));
+        const sList = document.getElementById('scoreboard-list');
+        sList.innerHTML = sorted.map((p, idx) => {
+          const hasPenalty = p.id === room.firstFinisherId && !!room.firstFinisherPenalty;
+          const hasCheat = p.cheatWarnings && p.cheatWarnings > 0;
+          return `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.06); padding:10px 14px; border-radius:12px; border:1px solid ${idx===0 ? 'var(--gold)' : 'rgba(255,255,255,0.1)'};">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-weight:900; color:var(--gold); width:20px;">#${idx+1}</span>
+                <span style="font-size:1.3rem;">${p.avatar}</span>
+                <div>
+                  <div style="font-weight:800; font-size:0.9rem;">${p.name}</div>
+                  ${hasPenalty ? '<div style="font-size:0.72rem; font-weight:800; color:#EF4444;">⚠️ -20 Hatalı Bitirme Cezası</div>' : ''}
+                  ${hasCheat ? `<div style="font-size:0.7rem; font-weight:700; color:#F59E0B;">⚠️ ${p.cheatWarnings} Ekran Terki</div>` : ''}
+                </div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:1.15rem; font-weight:900; color:var(--primary);">${p.totalScore || 0} P</div>
+                <div style="font-size:0.75rem; color:#10B981;">+${p.roundScore || 0} Tur</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function handlePhaseChange(room) {
+      const oldPhase = state.lastPhase;
+      state.lastPhase = room.phase;
+      state.currentLetter = room.currentLetter;
+
+      if (room.phase === 'lobby') {
+        showView('view-lobby');
+      } else if (room.phase === 'playing') {
+        showView('view-playing');
+        document.getElementById('play-current-letter').textContent = room.currentLetter || '?';
+        updateCategoryPlaceholders();
+        
+        // Yeni tur başlangıcıysa inputları sıfırla
+        if (oldPhase !== 'playing') {
+          state.hasSubmitted = false;
+          state.isFirstFinisher = false;
+          lockOverlayTriggered = false;
+          document.getElementById('timeup-lock-overlay').style.display = 'none';
+          lockInputs(false);
+          state.categories.forEach(c => {
+            const field = document.getElementById(`ans-${c.id}`);
+            if (field) {
+              field.value = '';
+              validateCategoryField(c.id);
+              updateTabPillStatus(c.id);
+            }
+          });
+          clearDraftAnswers();
+          focusCategory(0);
+          playBeep(660, 'triangle', 0.2, 0.3);
+        }
+      } else if (room.phase === 'countdown_1min') {
+        showView('view-playing');
+        if (oldPhase === 'playing') {
+          playCountdownSiren();
+          if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
+        }
+      } else if (room.phase === 'review') {
+        showView('view-review');
+        document.getElementById('timeup-lock-overlay').style.display = 'none';
+        const desc = document.getElementById('review-stopped-desc');
+        desc.textContent = room.firstFinisherName
+          ? `🛑 ${room.firstFinisherName} "BİTİRDİM!" dedi ve 1 dakikalık süre doldu!`
+          : '⏰ Süre doldu! Cevaplar inceleniyor.';
+      } else if (room.phase === 'round_over') {
+        showView('view-round-over');
+        document.getElementById('timeup-lock-overlay').style.display = 'none';
+        clearDraftAnswers();
+      }
+    }
+  </script>
+</body>
+</html>

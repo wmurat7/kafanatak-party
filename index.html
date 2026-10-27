@@ -1,0 +1,3034 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Kafana Tak! - Kameralı Parti Oyunu (Guess Up & Tabu)</title>
+  <meta name="description" content="Telefonu alnına koy, ön kamera arkadaşlarının komik çırpınışlarını ve kelime alt yazısını kaydetsin! Guess Up parti oyunu.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0B0E14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+
+  <!-- =========================================
+       1. ANA SAYFA & KATEGORİ SEÇİMİ
+       ========================================= -->
+  <main id="screen-home" class="screen active">
+    <!-- 1. BÜYÜK MERKEZİ OYUN LOGOSU & BAŞLIK (En Başta & Büyütülmüş) -->
+    <header class="main-brand-header">
+      <div class="brand-crown-glow">👑</div>
+      <h1 class="brand-hero-title">KAFANA TAK!</h1>
+      <span class="brand-hero-badge">⚡ KAMERALI & EĞLENCELİ PARTİ OYUNU</span>
+    </header>
+
+    <!-- 2. PARTİ DURUM & HIZLI KONTROL BARI (Kusursuz Orantı, Sıfır Taşma) -->
+    <section class="party-status-card-bar" aria-label="Parti Durumu ve Hızlı Kontroller">
+      <!-- Sol: Oyuncu / Takım Rozeti -->
+      <div class="party-player-chip" id="btn-header-profile" role="button" tabindex="0" title="Oyuncu Profili & İsim Değiştir">
+        <div class="party-avatar-circle">
+          <span id="header-avatar-badge">🦁</span>
+        </div>
+        <div class="party-player-info">
+          <span class="party-player-name" id="header-player-name">Parti Canavarı</span>
+          <span class="party-mode-sub" id="header-mode-sub">🎮 TEKLİ MOD</span>
+        </div>
+      </div>
+
+      <!-- Sağ: Tur Süresi ve Kader Çarkı Butonları -->
+      <div class="party-top-controls-dock">
+        <button type="button" id="btn-quick-duration" class="btn-top-dock-action btn-dock-dur" title="Tur Süresi (Tıkla ve Değiştir: 60s / 90s / 120s / 45s)">
+          <span class="dock-action-icon">⏱️</span>
+          <span class="dock-action-label" id="header-dur-text">60s</span>
+        </button>
+
+        <button type="button" id="btn-quick-wheel-start" class="btn-top-dock-action btn-dock-wheel" title="Kader Çarkıyla Başla (Sürpriz Kategori & Süre)">
+          <span class="dock-action-icon">🎡</span>
+          <span class="dock-action-label">Kader Çarkı</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- HIZLI BAŞLA - Büyük Neon Hero Kartı -->
+    <section class="hero-quick-play-wrapper">
+      <div id="hero-quick-play" class="hero-quick-play-card" role="button" tabindex="0" title="Rastgele Bir Kategoriyle Anında Oyna">
+        <div class="hero-play-info">
+          <span class="hero-badge">⚡ ANINDA PARTİ</span>
+          <h2 class="hero-title">HIZLI BAŞLA</h2>
+          <p class="hero-subtitle">Rastgele Deste Paketi</p>
+        </div>
+        <div class="hero-play-btn-circle">
+          <span class="hero-play-triangle">▶</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Oyun Modu (Tekli / Takım) -->
+    <section class="game-mode-section" aria-label="Oyun Modu">
+      <div class="mode-tabs">
+        <button id="mode-solo-btn" class="mode-tab-btn active" title="Tek Başına Alna Koyma">
+          <span>🌟 Tekli Mod</span>
+        </button>
+        <button id="mode-team-btn" class="mode-tab-btn" title="Kırmızı vs Mavi Takım Savaşı">
+          <span>⚔️ Takım Savaşı</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Canlı Seyirci & İkinci Ekran QR Hızlı Çağrı Barı -->
+    <section class="spectator-quick-invite-wrapper">
+      <button type="button" id="btn-open-spectator-qr" class="btn-spectator-hero" title="Odadakiler için İkinci Ekran & Seyirci QR Kodu">
+        <div class="spectator-btn-left">
+          <span class="spec-hero-icon">👥</span>
+          <div>
+            <div class="spec-hero-title">Seyirci Ekranı & İkinci Telefon</div>
+            <div class="spec-hero-subtitle">Arkadaşların telefonlarından maçı canlı izlesin</div>
+          </div>
+        </div>
+        <div class="spectator-btn-right">
+          <span class="pulse-live-badge">📱 QR GÖSTER</span>
+        </div>
+      </button>
+    </section>
+
+    <!-- Parti Kural Modları (Klasik, Bomba, Sessiz Sinema, Yasak Harf) -->
+    <section class="rules-mode-bar" aria-label="Parti Kural Modları">
+      <div class="rules-chips-container">
+        <button type="button" class="rule-chip active" data-rule="classic">
+          <span class="rule-chip-icon">🌟</span>
+          <span class="rule-chip-title">Klasik</span>
+        </button>
+        <button type="button" class="rule-chip" data-rule="bomb">
+          <span class="rule-chip-icon">💣</span>
+          <span class="rule-chip-title">Bomba</span>
+          <span class="rule-chip-badge">HOT</span>
+        </button>
+        <button type="button" class="rule-chip" data-rule="mime">
+          <span class="rule-chip-icon">🤐</span>
+          <span class="rule-chip-title">Sinema</span>
+        </button>
+        <button type="button" class="rule-chip" data-rule="letter">
+          <span class="rule-chip-icon">🔤</span>
+          <span class="rule-chip-title">Yasak Harf</span>
+        </button>
+        <button type="button" class="rule-chip" data-rule="taboo">
+          <span class="rule-chip-icon">🚫</span>
+          <span class="rule-chip-title">Tabu</span>
+        </button>
+      </div>
+      <div id="rule-mode-desc-text" class="rule-mode-desc">
+        🌟 <strong>Klasik:</strong> Telefonu alnına koy, arkadaşlarının anlattıklarını doğru tahmin et!
+      </div>
+    </section>
+
+    <!-- Takım Ayarları Kutusu (Takım modu seçilince açılır) -->
+    <div id="team-settings-box" class="team-settings-container" style="display: none;">
+      <div class="team-input-group">
+        <label for="select-team-count">Takım Sayısı</label>
+        <select id="select-team-count" class="custom-select">
+          <option value="2" selected>2 Takım (🔴 vs 🔵)</option>
+          <option value="3">3 Takım (+ 🟡 Sarı)</option>
+          <option value="4">4 Takım (+ 🟢 Yeşil Turnuva)</option>
+        </select>
+      </div>
+      <div class="team-input-group">
+        <label for="team-a-name-input">🔴 Takım 1 (Kırmızı)</label>
+        <input type="text" id="team-a-name-input" value="🔴 Kırmızı Ejderhalar" class="team-input">
+      </div>
+      <div class="team-input-group">
+        <label for="team-b-name-input">🔵 Takım 2 (Mavi)</label>
+        <input type="text" id="team-b-name-input" value="🔵 Mavi Şimşekler" class="team-input">
+      </div>
+      <div class="team-input-group" id="team-c-group" style="display: none;">
+        <label for="team-c-name-input">🟡 Takım 3 (Sarı)</label>
+        <input type="text" id="team-c-name-input" value="🟡 Sarı Fırtınalar" class="team-input">
+      </div>
+      <div class="team-input-group" id="team-d-group" style="display: none;">
+        <label for="team-d-name-input">🟢 Takım 4 (Yeşil)</label>
+        <input type="text" id="team-d-name-input" value="🟢 Yeşil Devler" class="team-input">
+      </div>
+      <div class="team-input-group">
+        <label for="select-total-rounds">Tur Sayısı</label>
+        <select id="select-total-rounds" class="custom-select">
+          <option value="2">2 Tur (Hızlı)</option>
+          <option value="4" selected>4 Tur (Standart)</option>
+          <option value="6">6 Tur (Turnuva)</option>
+          <option value="8">8 Tur (Büyük Savaş)</option>
+        </select>
+      </div>
+
+      <!-- Takımlar Arası Şans Çarkı Savaşı Başlatma Butonu -->
+      <div class="team-fortune-action-wrapper" style="margin-top: 10px;">
+        <button type="button" id="btn-open-team-fortune-wheel" class="btn-team-fortune-hero">
+          <span class="fortune-hero-icon">🎡</span>
+          <div class="fortune-hero-text">
+            <div class="fortune-hero-title">Kader Çarkı Savaşı (Kategori & Süre)</div>
+            <div class="fortune-hero-desc">Çarkı çevir, rastgele kategori ve sürpriz süreni kap!</div>
+          </div>
+          <span class="fortune-hero-badge">OYNA</span>
+        </button>
+      </div>
+
+      <!-- Parti Ceza Çarkı (Meydan Oku) Butonu -->
+      <div class="team-dare-action-wrapper" style="margin-top: 8px;">
+        <button type="button" id="btn-open-dare-wheel-team" class="btn-team-fortune-hero" style="border-color: rgba(255, 46, 147, 0.4); background: linear-gradient(135deg, rgba(255,46,147,0.15), rgba(121,40,202,0.15));">
+          <span class="fortune-hero-icon">🎭</span>
+          <div class="fortune-hero-text">
+            <div class="fortune-hero-title" style="color: #FF2E93;">Parti Ceza Çarkı (Meydan Oku)</div>
+            <div class="fortune-hero-desc">Kaybeden takıma veya oyuncuya eğlenceli parti görevi!</div>
+          </div>
+          <span class="fortune-hero-badge" style="background: linear-gradient(135deg, #FF2E93, #FF416C);">ÇEVİR</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Hızlı Kategori Filtre Çipleri -->
+    <section class="category-filters-wrapper">
+      <div class="filter-chips">
+        <button type="button" class="filter-chip active" data-filter="all">🔥 Tümü (13)</button>
+        <button type="button" class="filter-chip" data-filter="party">🎉 Parti & Oyun</button>
+        <button type="button" class="filter-chip" data-filter="music">🎵 Şarkılar & Müzik</button>
+        <button type="button" class="filter-chip" data-filter="cinema">🎬 Dizi & Sinema</button>
+        <button type="button" class="filter-chip" data-filter="adult">🔞 Yetişkinler (+18)</button>
+        <button type="button" class="filter-chip" data-filter="kids">👶 Çocuk & Doğa</button>
+      </div>
+    </section>
+
+    <!-- Kategori Listesi (2 Sütunlu Arcade Izgara) -->
+    <section class="category-grid-section">
+      <div id="category-grid" class="category-grid-arcade">
+        <!-- JS ile dinamik doldurulur -->
+      </div>
+    </section>
+
+    <!-- Konsept A: Yüzen Cam Alt Navigasyon Dock -->
+    <nav class="floating-dock-nav" aria-label="Ana Gezinme">
+      <button type="button" class="dock-nav-item active" id="dock-btn-home">
+        <span class="dock-icon">🏠</span>
+        <span class="dock-label">Ana Sayfa</span>
+      </button>
+      <button type="button" class="dock-nav-item" id="dock-btn-party-games">
+        <span class="dock-icon">🎭</span>
+        <span class="dock-label">Parti Oyunları</span>
+      </button>
+      <button type="button" class="dock-nav-item" id="dock-btn-decks">
+        <span class="dock-icon">🎁</span>
+        <span class="dock-label">Paketler</span>
+      </button>
+      <button type="button" class="dock-nav-item" id="dock-btn-scoreboard" title="Takımlar Arası Skor Panosu">
+        <span class="dock-icon">🏆</span>
+        <span class="dock-label">Skor</span>
+      </button>
+      <button type="button" class="dock-nav-item" id="dock-btn-settings">
+        <span class="dock-icon">⚙️</span>
+        <span class="dock-label">Ayarlar</span>
+      </button>
+    </nav>
+  </main>
+
+  <!-- =========================================
+       1.5. PARTİ OYUNLARI EKRANI (SEKME)
+       ========================================= -->
+  <section id="screen-party-games" class="screen" style="padding: calc(env(safe-area-inset-top, 24px) + 20px) 16px 120px; max-width: 540px; margin: 0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <button type="button" id="btn-back-from-party-games" class="btn-round-abort" style="margin:0; position:static;">
+        <span>← Ana Menü</span>
+      </button>
+      <span style="font-size:0.75rem; font-weight:800; background:rgba(255,46,147,0.2); color:#FF2E93; border:1px solid rgba(255,46,147,0.4); padding:4px 12px; border-radius:999px;">
+        🎉 8 EĞLENCELİ PARTİ OYUNU
+      </span>
+    </div>
+
+    <div class="party-games-header-banner" style="display:flex; align-items:center; gap:12px; background:linear-gradient(135deg, rgba(255,46,147,0.15), rgba(121,40,202,0.2)); border:1.5px solid rgba(255,46,147,0.3); border-radius:18px; padding:16px; margin-bottom:16px;">
+      <div style="font-size: 2.4rem; filter: drop-shadow(0 0 15px rgba(255, 46, 147, 0.6));">🎭</div>
+      <div>
+        <h2 style="font-size: 1.45rem; font-weight: 900; color: #FFF; margin: 0;">Parti Oyunları Arenası</h2>
+        <p style="font-size: 0.82rem; color: var(--text-dim); margin-top: 3px;">Arkadaş grubunuzla masada oynayabileceğiniz 8 süper parti oyunu! Her oyunun kurallarını inceleyin veya hemen başlatın.</p>
+      </div>
+    </div>
+
+    <div class="party-games-grid" style="display:flex; flex-direction:column; gap:14px;">
+      <!-- 1. İsim Şehir Partisi (Çarklı & Çoklu Telefon) -->
+      <div class="party-game-card" style="background:linear-gradient(135deg, rgba(20,35,60,0.92), rgba(15,23,42,0.98)); border:2px solid #FBBF24; border-radius:20px; padding:18px; box-shadow:0 10px 30px rgba(251,191,36,0.18);">
+        <div class="party-card-header">
+          <div class="party-card-tags">
+            <span class="party-tag party-tag-gold">🎡 3D Çark</span>
+            <span class="party-tag party-tag-cyan">📱 Çoklu Telefon</span>
+            <span class="party-tag party-tag-purple">👥 2-20 Kişi</span>
+          </div>
+          <div class="party-card-icon-wrap" style="background:rgba(251,191,36,0.16); border:1.5px solid rgba(251,191,36,0.4); box-shadow:0 0 15px rgba(251,191,36,0.25);">
+            <span class="party-card-icon">🎡</span>
+          </div>
+        </div>
+        <h3 style="font-size:1.35rem; font-weight:900; color:#FFF; margin-bottom:4px;">İsim Şehir Partisi</h3>
+        <p style="font-size:0.84rem; color:#CBD5E1; line-height:1.4; margin-bottom:14px;">Herkes QR ile telefonundan bağlanır! 3D çark dönüp harfi belirler, 6 kategoride kelimeler yazılır. İlk bitiren "BİTTİ!" diyerek herkesi durdurur!</p>
+        <div style="display:grid; grid-template-columns:1fr 1.3fr; gap:8px;">
+          <button type="button" class="btn-party-guide" data-game-guide="isim-sehir" style="background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.2); border-radius:12px; color:#FFF; font-size:0.85rem; font-weight:800; padding:11px; cursor:pointer;">
+            📖 Nasıl Oynanır?
+          </button>
+          <button type="button" id="btn-open-isim-game" class="btn-main btn-action-gold" style="background:linear-gradient(135deg, #FBBF24, #D97706) !important; color:#0B0E14 !important; font-size:0.92rem; font-weight:900; padding:11px 14px; border-radius:12px; border:none; display:flex; justify-content:center; align-items:center; gap:6px;">
+            <span>🎡 Çarkı Başlat</span> <span>➔</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. Vampir - Köylü (Mafia) -->
+      <div class="party-game-card" style="background:linear-gradient(135deg, rgba(30,27,75,0.85), rgba(15,23,42,0.95)); border:2px solid rgba(0,245,212,0.4); border-radius:20px; padding:18px; box-shadow:0 10px 30px rgba(0,245,212,0.12);">
+        <div class="party-card-header">
+          <div class="party-card-tags">
+            <span class="party-tag party-tag-cyan">👥 4-15 Kişi</span>
+            <span class="party-tag party-tag-purple">📱 Sesli Spikerli</span>
+            <span class="party-tag party-tag-red">🎭 Rol Dağıtımı</span>
+          </div>
+          <div class="party-card-icon-wrap" style="background:rgba(0,245,212,0.14); border:1.5px solid rgba(0,245,212,0.35); box-shadow:0 0 15px rgba(0,245,212,0.2);">
+            <span class="party-card-icon">🧛‍♂️</span>
+          </div>
+        </div>
+        <h3 style="font-size:1.35rem; font-weight:900; color:#FFF; margin-bottom:4px;">Vampir - Köylü (Mafia)</h3>
+        <p style="font-size:0.84rem; color:#CBD5E1; line-height:1.4; margin-bottom:14px;">Gece vampirler avlanır, gündüz köy halkı toplanıp aralarındaki vampirleri asmaya çalışır. Sesli spikerli, doktor & komiserli efsane rol oyunu!</p>
+        <div style="display:grid; grid-template-columns:1fr 1.3fr; gap:8px;">
+          <button type="button" class="btn-party-guide" data-game-guide="vampir-koylu" style="background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.2); border-radius:12px; color:#FFF; font-size:0.85rem; font-weight:800; padding:11px; cursor:pointer;">
+            📖 Nasıl Oynanır?
+          </button>
+          <button type="button" id="btn-open-vampire-game" class="btn-main primary" style="font-size:0.92rem; font-weight:900; padding:11px 14px; border-radius:12px; display:flex; justify-content:center; align-items:center; gap:6px;">
+            <span>🧛‍♂️ Köyü Başlat</span> <span>➔</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. Casus Kim? (Spyfall) -->
+      <div class="party-game-card" style="background:linear-gradient(135deg, rgba(69,26,3,0.85), rgba(15,23,42,0.95)); border:2px solid rgba(251,191,36,0.4); border-radius:20px; padding:18px; box-shadow:0 10px 30px rgba(251,191,36,0.12);">
+        <div class="party-card-header">
+          <div class="party-card-tags">
+            <span class="party-tag party-tag-gold">🎯 Gizli Mekan</span>
+            <span class="party-tag party-tag-purple">👥 3-10 Kişi</span>
+            <span class="party-tag party-tag-pink">🕵️ Casus Avı</span>
+          </div>
+          <div class="party-card-icon-wrap" style="background:rgba(245,158,11,0.16); border:1.5px solid rgba(245,158,11,0.4); box-shadow:0 0 15px rgba(245,158,11,0.25);">
+            <span class="party-card-icon">🕵️</span>
+          </div>
+        </div>
+        <h3 style="font-size:1.35rem; font-weight:900; color:#FFF; margin-bottom:4px;">Casus Kim? (Spyfall)</h3>
+        <p style="font-size:0.84rem; color:#CBD5E1; line-height:1.4; margin-bottom:14px;">Aramızda bir casus var! Casus nerede olduğumuzu bilmiyor, diğer herkes biliyor. Birbirinize kurnazca sorular sorup casusu ifşa edin!</p>
+        <div style="display:grid; grid-template-columns:1fr 1.3fr; gap:8px;">
+          <button type="button" class="btn-party-guide" data-game-guide="casus-kim" style="background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.2); border-radius:12px; color:#FFF; font-size:0.85rem; font-weight:800; padding:11px; cursor:pointer;">
+            📖 Nasıl Oynanır?
+          </button>
+          <button type="button" id="btn-open-spy-game" class="btn-main" style="background:linear-gradient(135deg, #F59E0B, #D97706); color:#FFF; font-size:0.92rem; font-weight:900; padding:11px 14px; border-radius:12px; display:flex; justify-content:center; align-items:center; gap:6px;">
+            <span>🕵️ Casusu Bul</span> <span>➔</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 4. Şarkıyı Devam Ettir (Melodi Düellosu) -->
+      <div class="party-game-card" style="background:linear-gradient(135deg, rgba(76,29,149,0.85), rgba(15,23,42,0.95)); border:2px solid rgba(168,85,247,0.4); border-radius:20px; padding:18px; box-shadow:0 10px 30px rgba(168,85,247,0.15);">
+        <div class="party-card-header">
+          <div class="party-card-tags">
+            <span class="party-tag party-tag-purple">🎤 Şarkı & Hafıza</span>
+            <span class="party-tag party-tag-pink">👥 2-12 Kişi</span>
+            <span class="party-tag party-tag-cyan">🔥 Takım Savaşı</span>
+          </div>
+          <div class="party-card-icon-wrap" style="background:rgba(168,85,247,0.18); border:1.5px solid rgba(168,85,247,0.45); box-shadow:0 0 15px rgba(168,85,247,0.3);">
+            <span class="party-card-icon">🎤</span>
+          </div>
+        </div>
+        <h3 style="font-size:1.35rem; font-weight:900; color:#FFF; margin-bottom:4px;">Şarkıyı Devam Ettir (Melodi Düellosu)</h3>
+        <p style="font-size:0.84rem; color:#CBD5E1; line-height:1.4; margin-bottom:14px;">Şarkı durur, eksik sözü kim tamamlar? Barış Manço, Tarkan, Sezen Aksu, Duman ve 90'lar hitleriyle takım savaşı!</p>
+        <div style="display:grid; grid-template-columns:1fr 1.3fr; gap:8px;">
+          <button type="button" class="btn-party-guide" data-game-guide="sarki-duello" style="background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.2); border-radius:12px; color:#FFF; font-size:0.85rem; font-weight:800; padding:11px; cursor:pointer;">
+            📖 Nasıl Oynanır?
+          </button>
+          <button type="button" id="btn-open-sarki-game" class="btn-main" style="background:linear-gradient(135deg, #A855F7, #7E22CE); color:#FFF; font-size:0.92rem; font-weight:900; padding:11px 14px; border-radius:12px; display:flex; justify-content:center; align-items:center; gap:6px;">
+            <span>🎤 Şarkıyı Başlat</span> <span>➔</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 5. Son Sözü Kim Söyler? (Kelime Bombası) -->
+      <div class="party-game-card" style="background:linear-gradient(135deg, rgba(88,28,135,0.85), rgba(15,23,42,0.95)); border:2px solid rgba(236,72,153,0.4); border-radius:20px; padding:18px; box-shadow:0 10px 30px rgba(236,72,153,0.15);">
+        <div class="party-card-header">
+          <div class="party-card-tags">
+            <span class="party-tag party-tag-pink">💣 15 Saniye Süre</span>
+            <span class="party-tag party-tag-red">💥 Hızlı Eleme</span>
+            <span class="party-tag party-tag-purple">👥 2-15 Kişi</span>
+          </div>
+          <div class="party-card-icon-wrap" style="background:rgba(236,72,153,0.18); border:1.5px solid rgba(236,72,153,0.45); box-shadow:0 0 15px rgba(236,72,153,0.3);">
+            <span class="party-card-icon">💣</span>
+          </div>
+        </div>
+        <h3 style="font-size:1.35rem; font-weight:900; color:#FFF; margin-bottom:4px;">Son Sözü Kim Söyler? (Kelime Bombası)</h3>
+        <p style="font-size:0.84rem; color:#CBD5E1; line-height:1.4; margin-bottom:14px;">Kategori ve harf gelir, 15 saniyede kelimeyi söyleyip pasla! Bomba elinde patlayan elenir!</p>
+        <div style="display:grid; grid-template-columns:1fr 1.3fr; gap:8px;">
+          <button type="button" class="btn-party-guide" data-game-guide="kelime-bombasi" style="background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.2); border-radius:12px; color:#FFF; font-size:0.85rem; font-weight:800; padding:11px; cursor:pointer;">
+            📖 Nasıl Oynanır?
+          </button>
+          <button type="button" id="btn-open-kelime-game" class="btn-main" style="background:linear-gradient(135deg, #EC4899, #BE185D); color:#FFF; font-size:0.92rem; font-weight:900; padding:11px 14px; border-radius:12px; display:flex; justify-content:center; align-items:center; gap:6px;">
+            <span>💣 Bombayı Pasla</span> <span>➔</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 6. Gülmeme Meydan Okuması (Kamera & Yüz Düellosu) -->
+      <div class="party-game-card" style="background:linear-gradient(135deg, rgba(14,116,144,0.85), rgba(15,23,42,0.95)); border:2px solid rgba(6,182,212,0.4); border-radius:20px; padding:18px; box-shadow:0 10px 30px rgba(6,182,212,0.15);">
+        <div class="party-card-header">
+          <div class="party-card-tags">
+            <span class="party-tag party-tag-cyan">😆 Ön Kamera Düellosu</span>
+            <span class="party-tag party-tag-green">🤐 Gülmek Yasak</span>
+            <span class="party-tag party-tag-gold">👥 2 Kişi</span>
+          </div>
+          <div class="party-card-icon-wrap" style="background:rgba(6,182,212,0.18); border:1.5px solid rgba(6,182,212,0.45); box-shadow:0 0 15px rgba(6,182,212,0.25);">
+            <span class="party-card-icon">😆</span>
+          </div>
+        </div>
+        <h3 style="font-size:1.35rem; font-weight:900; color:#FFF; margin-bottom:4px;">Gülmeme Meydan Okuması</h3>
+        <p style="font-size:0.84rem; color:#CBD5E1; line-height:1.4; margin-bottom:14px;">İki oyuncu ön kamerada göz göze gelir! Absürt şakalar ve saçma görevler akarken sırıtan veya dişini gösteren kaybeder!</p>
+        <div style="display:grid; grid-template-columns:1fr 1.3fr; gap:8px;">
+          <button type="button" class="btn-party-guide" data-game-guide="gulmeme-meydani" style="background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.2); border-radius:12px; color:#FFF; font-size:0.85rem; font-weight:800; padding:11px; cursor:pointer;">
+            📖 Nasıl Oynanır?
+          </button>
+          <button type="button" id="btn-open-gulmeme-game" class="btn-main" style="background:linear-gradient(135deg, #06B6D4, #0E7490); color:#FFF; font-size:0.92rem; font-weight:900; padding:11px 14px; border-radius:12px; display:flex; justify-content:center; align-items:center; gap:6px;">
+            <span>😆 Düelloyu Aç</span> <span>➔</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 7. Saatli Bomba (Tick Tack Boom) -->
+      <div class="party-game-card" style="background:linear-gradient(135deg, rgba(69,10,10,0.85), rgba(15,23,42,0.95)); border:2px solid rgba(239,68,68,0.4); border-radius:20px; padding:18px; box-shadow:0 10px 30px rgba(239,68,68,0.15);">
+        <div class="party-card-header">
+          <div class="party-card-tags">
+            <span class="party-tag party-tag-red">⚡ Hız & Refleks</span>
+            <span class="party-tag party-tag-gold">💥 Gizli Süre</span>
+            <span class="party-tag party-tag-purple">👥 2-12 Kişi</span>
+          </div>
+          <div class="party-card-icon-wrap" style="background:rgba(239,68,68,0.18); border:1.5px solid rgba(239,68,68,0.45); box-shadow:0 0 15px rgba(239,68,68,0.3);">
+            <span class="party-card-icon">🧨</span>
+          </div>
+        </div>
+        <h3 style="font-size:1.35rem; font-weight:900; color:#FFF; margin-bottom:4px;">Saatli Bomba (Tick Tack Boom)</h3>
+        <p style="font-size:0.84rem; color:#CBD5E1; line-height:1.4; margin-bottom:14px;">Bomba elinde patlamadan kategoriden kelimeyi söyle ve telefonu sıradakine fırlat! Süre gizli, patlayana bomba ceza görevi!</p>
+        <div style="display:grid; grid-template-columns:1fr 1.3fr; gap:8px;">
+          <button type="button" class="btn-party-guide" data-game-guide="saatli-bomba" style="background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.2); border-radius:12px; color:#FFF; font-size:0.85rem; font-weight:800; padding:11px; cursor:pointer;">
+            📖 Nasıl Oynanır?
+          </button>
+          <button type="button" id="btn-open-bomb-game" class="btn-main" style="background:linear-gradient(135deg, #EF4444, #B91C1C); color:#FFF; font-size:0.92rem; font-weight:900; padding:11px 14px; border-radius:12px; display:flex; justify-content:center; align-items:center; gap:6px;">
+            <span>🧨 Bombayı Başlat</span> <span>➔</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 8. Şişe Çevirmece: Doğruluk mu Cesaret mi? -->
+      <div class="party-game-card" style="background:linear-gradient(135deg, rgba(74,4,78,0.85), rgba(15,23,42,0.95)); border:2px solid rgba(255,46,147,0.4); border-radius:20px; padding:18px; box-shadow:0 10px 30px rgba(255,46,147,0.15);">
+        <div class="party-card-header">
+          <div class="party-card-tags">
+            <span class="party-tag party-tag-pink">🍾 3D Dönen Şişe</span>
+            <span class="party-tag party-tag-purple">🔥 Parti & +18</span>
+            <span class="party-tag party-tag-cyan">👥 2-20 Kişi</span>
+          </div>
+          <div class="party-card-icon-wrap" style="background:rgba(255,46,147,0.18); border:1.5px solid rgba(255,46,147,0.45); box-shadow:0 0 15px rgba(255,46,147,0.3);">
+            <span class="party-card-icon">🍾</span>
+          </div>
+        </div>
+        <h3 style="font-size:1.35rem; font-weight:900; color:#FFF; margin-bottom:4px;">Şişe Çevirmece (D & C)</h3>
+        <p style="font-size:0.84rem; color:#CBD5E1; line-height:1.4; margin-bottom:14px;">Şişeyi masanın ortasında çevir! Kime denk gelirse Doğruluk veya Cesaret seçer. 200+ bomba soru ve cesaret görevi!</p>
+        <div style="display:grid; grid-template-columns:1fr 1.3fr; gap:8px;">
+          <button type="button" class="btn-party-guide" data-game-guide="sise-cevirmece" style="background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.2); border-radius:12px; color:#FFF; font-size:0.85rem; font-weight:800; padding:11px; cursor:pointer;">
+            📖 Nasıl Oynanır?
+          </button>
+          <button type="button" id="btn-open-bottle-game" class="btn-main" style="background:linear-gradient(135deg, #FF2E93, #7928CA); color:#FFF; font-size:0.92rem; font-weight:900; padding:11px 14px; border-radius:12px; display:flex; justify-content:center; align-items:center; gap:6px;">
+            <span>🍾 Şişeyi Çevir</span> <span>➔</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 9. A'dan Z'ye Passaparola -->
+      <div class="party-game-card" style="background:linear-gradient(135deg, rgba(30,27,75,0.85), rgba(15,23,42,0.95)); border:2px solid rgba(0,245,212,0.4); border-radius:20px; padding:18px; box-shadow:0 10px 30px rgba(0,245,212,0.15);">
+        <div class="party-card-header">
+          <div class="party-card-tags">
+            <span class="party-tag party-tag-cyan">🎯 24 Harf Çarkı</span>
+            <span class="party-tag party-tag-gold">⏱️ 120 Saniye</span>
+            <span class="party-tag party-tag-purple">🧠 Genel Kültür</span>
+          </div>
+          <div class="party-card-icon-wrap" style="background:rgba(0,245,212,0.18); border:1.5px solid rgba(0,245,212,0.45); box-shadow:0 0 15px rgba(0,245,212,0.3);">
+            <span class="party-card-icon">🎯</span>
+          </div>
+        </div>
+        <h3 style="font-size:1.35rem; font-weight:900; color:#FFF; margin-bottom:4px;">A'dan Z'ye Passaparola</h3>
+        <p style="font-size:0.84rem; color:#CBD5E1; line-height:1.4; margin-bottom:14px;">Efsane televizyon yarışması! 24 harften oluşan çarkta her soru bir harfle başlar. Pas geç, bil veya sona bırak; süren bitmeden rekor kır!</p>
+        <div style="display:grid; grid-template-columns:1fr 1.3fr; gap:8px;">
+          <button type="button" class="btn-party-guide" data-game-guide="passaparola" style="background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.2); border-radius:12px; color:#FFF; font-size:0.85rem; font-weight:800; padding:11px; cursor:pointer;">
+            📖 Nasıl Oynanır?
+          </button>
+          <button type="button" id="btn-open-passaparola-game" class="btn-main primary" style="font-size:0.92rem; font-weight:900; padding:11px 14px; border-radius:12px; display:flex; justify-content:center; align-items:center; gap:6px;">
+            <span>🎯 Çarkı Başlat</span> <span>➔</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 10. Klasik Çarkıfelek -->
+      <div class="party-game-card" style="background:linear-gradient(135deg, rgba(69,26,3,0.85), rgba(15,23,42,0.95)); border:2px solid rgba(251,191,36,0.45); border-radius:20px; padding:18px; box-shadow:0 10px 30px rgba(251,191,36,0.18);">
+        <div class="party-card-header">
+          <div class="party-card-tags">
+            <span class="party-tag party-tag-gold">🎡 Puan Çarkı</span>
+            <span class="party-tag party-tag-pink">🧩 Gizli Pano</span>
+            <span class="party-tag party-tag-purple">🔥 Takım Savaşı</span>
+          </div>
+          <div class="party-card-icon-wrap" style="background:rgba(251,191,36,0.18); border:1.5px solid rgba(251,191,36,0.45); box-shadow:0 0 15px rgba(251,191,36,0.3);">
+            <span class="party-card-icon">🎡</span>
+          </div>
+        </div>
+        <h3 style="font-size:1.35rem; font-weight:900; color:#FFF; margin-bottom:4px;">Klasik Çarkıfelek</h3>
+        <p style="font-size:0.84rem; color:#CBD5E1; line-height:1.4; margin-bottom:14px;">Çarkı çevir, sessiz harfi patlat, puanları topla! İflas ve Pas tuzaklarına düşmeden gizli atasözü ve film repliklerini ilk çözen takım ol!</p>
+        <div style="display:grid; grid-template-columns:1fr 1.3fr; gap:8px;">
+          <button type="button" class="btn-party-guide" data-game-guide="carkifelek" style="background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.2); border-radius:12px; color:#FFF; font-size:0.85rem; font-weight:800; padding:11px; cursor:pointer;">
+            📖 Nasıl Oynanır?
+          </button>
+          <button type="button" id="btn-open-carkifelek-game" class="btn-main btn-action-gold" style="background:linear-gradient(135deg, #FBBF24, #D97706) !important; color:#0B0E14 !important; font-size:0.92rem; font-weight:900; padding:11px 14px; border-radius:12px; border:none; display:flex; justify-content:center; align-items:center; gap:6px;">
+            <span>🎡 Çarkıfelek Başlat</span> <span>➔</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Parti Oyunları Ekranında Alt Dock Çubuğu -->
+    <nav class="floating-dock-nav" aria-label="Parti Gezinme">
+      <button type="button" class="dock-nav-item" id="dock-btn-party-home">
+        <span class="dock-icon">🏠</span>
+        <span class="dock-label">Ana Sayfa</span>
+      </button>
+      <button type="button" class="dock-nav-item active" id="dock-btn-party-games-page">
+        <span class="dock-icon">🎭</span>
+        <span class="dock-label">Parti Oyunları</span>
+      </button>
+      <button type="button" class="dock-nav-item" id="dock-btn-party-decks">
+        <span class="dock-icon">🎁</span>
+        <span class="dock-label">Paketler</span>
+      </button>
+      <button type="button" class="dock-nav-item" id="dock-btn-party-scoreboard">
+        <span class="dock-icon">🏆</span>
+        <span class="dock-label">Skor</span>
+      </button>
+      <button type="button" class="dock-nav-item" id="dock-btn-party-settings">
+        <span class="dock-icon">⚙️</span>
+        <span class="dock-label">Ayarlar</span>
+      </button>
+    </nav>
+  </section>
+
+  <!-- =========================================
+       REUSABLE PARTİ OYUNU NASIL OYNANIR REHBER MODALI
+       ========================================= -->
+  <div id="modal-party-game-guide" class="modal-backdrop" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(7,3,17,0.88); backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:16px;">
+    <div class="card" style="max-width:480px; width:100%; max-height:88vh; overflow-y:auto; background:linear-gradient(135deg, rgba(22,27,46,0.98), rgba(15,23,42,0.98)); border:2px solid rgba(0,245,212,0.4); border-radius:24px; padding:22px; text-align:left; box-shadow:0 15px 40px rgba(0,0,0,0.8); position:relative;">
+      <button type="button" id="btn-close-party-guide" style="position:absolute; top:16px; right:16px; background:rgba(255,255,255,0.1); border:none; width:34px; height:34px; border-radius:50%; color:#FFF; font-size:1.2rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>
+      
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <span id="guide-modal-icon" style="font-size:2.4rem; filter:drop-shadow(0 0 12px rgba(0,245,212,0.6));">🎮</span>
+        <div>
+          <h2 id="guide-modal-title" style="font-size:1.35rem; font-weight:900; color:#FFF; margin:0;">Oyun Adı</h2>
+          <span id="guide-modal-badge" style="font-size:0.72rem; font-weight:800; color:var(--primary); background:rgba(0,245,212,0.15); padding:2px 8px; border-radius:999px;">ÖZEL MOD</span>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px; margin-bottom:14px; font-size:0.8rem; font-weight:800;">
+        <div style="background:rgba(255,255,255,0.06); padding:6px 10px; border-radius:10px; border:1px solid rgba(255,255,255,0.1);">
+          👥 <span id="guide-modal-players">3-10 Kişi</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.06); padding:6px 10px; border-radius:10px; border:1px solid rgba(255,255,255,0.1);">
+          ⏱️ <span id="guide-modal-duration">60s / Tur</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <h3 style="font-size:0.85rem; font-weight:900; color:var(--gold); text-transform:uppercase; margin-bottom:4px;">🎯 Oyunun Amacı</h3>
+        <p id="guide-modal-objective" style="font-size:0.84rem; color:#CBD5E1; line-height:1.45;"></p>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <h3 style="font-size:0.85rem; font-weight:900; color:var(--primary); text-transform:uppercase; margin-bottom:6px;">🕹️ Adım Adım Nasıl Oynanır?</h3>
+        <ul id="guide-modal-how-to" style="font-size:0.82rem; color:#CBD5E1; line-height:1.5; padding-left:16px; display:flex; flex-direction:column; gap:6px;"></ul>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <h3 style="font-size:0.85rem; font-weight:900; color:#FF2E93; text-transform:uppercase; margin-bottom:6px;">🏆 Puanlama ve Kazanma</h3>
+        <ul id="guide-modal-scoring" style="font-size:0.82rem; color:#CBD5E1; line-height:1.45; padding-left:16px; display:flex; flex-direction:column; gap:4px;"></ul>
+      </div>
+
+      <div style="background:rgba(251,191,36,0.1); border-left:3px solid var(--gold); border-radius:10px; padding:10px 12px; margin-bottom:16px;">
+        <h3 style="font-size:0.8rem; font-weight:900; color:var(--gold); margin-bottom:4px;">💡 Parti Taktikleri</h3>
+        <ul id="guide-modal-tips" style="font-size:0.8rem; color:#FDE68A; line-height:1.4; list-style:none; display:flex; flex-direction:column; gap:4px;"></ul>
+      </div>
+
+      <button type="button" id="guide-modal-launch-btn" class="btn-main primary" style="width:100%; font-size:1.05rem; font-weight:900; padding:12px; border-radius:14px;">
+        🚀 Şimdi Oyunu Başlat
+      </button>
+    </div>
+  </div>
+
+  <!-- =========================================
+       1.6. İSİM ŞEHİR PARTİSİ EKRANI (HOST)
+       ========================================= -->
+  <section id="screen-isim-sehir" class="screen" style="padding: calc(env(safe-area-inset-top, 24px) + 16px) 16px 100px; max-width: 520px; margin: 0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <button type="button" id="btn-back-from-isim-sehir" class="btn-round-abort" style="margin:0; position:static;">
+        <span>← Parti Arenası</span>
+      </button>
+      <span style="font-size:0.8rem; font-weight:800; background:rgba(251,191,36,0.2); color:var(--gold); border:1px solid rgba(251,191,36,0.4); padding:4px 12px; border-radius:999px;">
+        🎡 İSİM ŞEHİR PARTİSİ
+      </span>
+    </div>
+
+    <!-- STAGE 1: LOBİ & ÇARK ÇEVİRME -->
+    <div id="isim-stage-setup" class="card" style="margin-bottom:14px;">
+      <!-- Mod Seçimi -->
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <button type="button" id="btn-isim-mode-wifi" class="btn-main active" style="flex:1; font-size:0.85rem; padding:10px 8px; border-radius:12px; background:rgba(0,245,212,0.2); border:1.5px solid var(--primary); color:#FFF;">
+          ☁️ Çoklu Telefon (Bulut / İnternet)
+        </button>
+        <button type="button" id="btn-isim-mode-local" class="btn-main" style="flex:1; font-size:0.85rem; padding:10px 8px; border-radius:12px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.15); color:var(--text-dim);">
+          🎲 Tek Cihaz (Masada Oyna)
+        </button>
+      </div>
+
+      <!-- Wi-Fi / Bulut Bağlantı Kutusu -->
+      <div id="isim-wifi-box" style="background:rgba(0,0,0,0.35); border-radius:16px; padding:14px; margin-bottom:14px; text-align:center;">
+        <div style="font-size:0.8rem; font-weight:800; color:var(--text-dim); margin-bottom:4px;">ARKADAŞLARIN BU QR'I OKUTARAK KATILSIN:</div>
+        <div style="font-size:0.75rem; color:#00F5D4; font-weight:800; margin-bottom:6px;">☁️ Firebase Bulut Odası: Hotspot veya aynı Wi-Fi gerekmez!</div>
+        <div id="isim-qr-canvas" style="display:inline-block; margin:6px 0; border:2px solid var(--primary); border-radius:12px; padding:6px; background:#0B0E14;"></div>
+        <div style="font-size:1.1rem; font-weight:900; color:var(--gold); margin-top:2px;">
+          ODA KODU: <span id="lbl-isim-room-code" style="letter-spacing:3px;">----</span>
+        </div>
+        <div id="isim-player-count-badge" style="font-size:0.8rem; font-weight:800; color:var(--primary); margin-top:4px;">1 Oyuncu Bağlı</div>
+        <div id="isim-connected-players" style="margin-top:8px;"></div>
+      </div>
+
+      <!-- Local Masa Modu Kutusu -->
+      <div id="isim-local-box" style="display:none; background:rgba(0,0,0,0.35); border-radius:16px; padding:14px; margin-bottom:14px; text-align:center;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:0.85rem; font-weight:800; color:var(--gold);">👥 MASADAKİ OYUNCULAR:</span>
+          <button type="button" id="btn-isim-add-local-player" style="background:rgba(0,245,212,0.15); border:1px solid var(--primary); color:var(--primary); font-size:0.75rem; font-weight:800; border-radius:8px; padding:4px 10px; cursor:pointer;">
+            + Oyuncu Ekle
+          </button>
+        </div>
+        <div id="isim-local-players-list" style="display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-bottom:8px;"></div>
+        <p style="font-size:0.78rem; color:#94A3B8; margin-top:6px;">Telefon masanın ortasında durur. Çarkı çevirip süreyi başlatın, ilk bitiren butona basıp 1 dakikayı tetikler!</p>
+      </div>
+
+      <!-- Kural Bilgilendirmesi -->
+      <div style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.35); border-radius:12px; padding:10px 14px; margin-bottom:14px; text-align:center;">
+        <div style="font-size:0.85rem; font-weight:900; color:var(--gold);">⚡ KURAL: BAŞTA SÜRE YOK!</div>
+        <div style="font-size:0.78rem; color:#CBD5E1; margin-top:2px; line-height:1.35;">
+          İlk bitiren oyuncu "BİTİRDİM" tuşuna basar ve herkes için son 1 dakika başlar. Hatalı/eksik ilk bitirene -20 ceza yazılır!
+        </div>
+      </div>
+
+      <!-- Kategori Yönetim Butonu ve Aktif Kategori Listesi -->
+      <div style="background:rgba(255,255,255,0.04); border:1.5px solid rgba(255,255,255,0.1); border-radius:14px; padding:12px; margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="font-size:0.82rem; font-weight:800; color:var(--gold);">
+            📋 AKTİF KATEGORİLER (<span id="lbl-isim-cat-count">6</span>)
+          </div>
+          <button type="button" id="btn-open-isim-cat-modal" style="background:linear-gradient(135deg, rgba(0,245,212,0.2), rgba(0,245,212,0.1)); border:1.5px solid var(--primary); color:#00F5D4; font-size:0.78rem; font-weight:800; border-radius:8px; padding:5px 10px; cursor:pointer;">
+            ⚙️ Özelleştir / Ekle-Çıkar
+          </button>
+        </div>
+        <div id="isim-active-categories-preview" style="display:flex; flex-wrap:wrap; gap:6px;">
+          <!-- JS tarafından doldurulacak -->
+        </div>
+      </div>
+
+      <!-- 3D ÇARK CANVAS -->
+      <div style="position:relative; width:280px; height:280px; margin:0 auto 14px;">
+        <canvas id="isim-sehir-wheel-canvas" width="280" height="280" style="width:280px; height:280px;"></canvas>
+      </div>
+
+      <!-- Çarkı Çevir Butonu -->
+      <button type="button" id="btn-spin-isim-wheel" class="btn-main btn-action-gold" style="background:#FBBF24 !important; background:linear-gradient(135deg, #FBBF24, #D97706) !important; color:#0B0E14 !important; font-size:1.15rem; font-weight:900; padding:15px 20px; width:100%; border-radius:16px; border:none; box-shadow:0 0 25px rgba(251,191,36,0.45); cursor:pointer;">
+        🎡 ÇARKI ÇEVİR VE BAŞLAT!
+      </button>
+
+      <!-- Çıkan Harf Göstergesi -->
+      <div id="isim-winning-letter-badge" style="display:none; margin-top:14px; text-align:center;">
+        <span style="font-size:0.8rem; font-weight:800; color:var(--text-dim);">KAZANAN HARF:</span>
+        <div id="isim-winning-letter" style="font-size:3.5rem; font-weight:900; color:var(--gold); line-height:1; filter:drop-shadow(0 0 15px rgba(251,191,36,0.8));">A</div>
+      </div>
+    </div>
+
+    <!-- STAGE 2: YARIŞMA SÜRECİ & SAYAÇ -->
+    <div id="isim-stage-wheel" class="card" style="display:none; text-align:center;">
+      <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:10px 16px; border-radius:14px; border:1px solid rgba(255,255,255,0.1); margin-bottom:12px;">
+        <div style="text-align:left;">
+          <span style="font-size:0.75rem; font-weight:800; color:var(--text-dim); display:block;">TUR HARFİ</span>
+          <div id="isim-play-letter-hero" style="font-size:3.2rem; font-weight:900; color:var(--gold); line-height:1; filter:drop-shadow(0 0 18px rgba(251,191,36,0.9));">?</div>
+        </div>
+        <div style="text-align:right;">
+          <div id="isim-play-timer-title" style="font-size:0.75rem; font-weight:800; color:var(--text-dim);">GEÇEN SÜRE</div>
+          <div id="isim-play-timer" style="font-size:2.4rem; font-weight:900; color:var(--primary); line-height:1.1;">00:00</div>
+        </div>
+      </div>
+      
+      <!-- 60 Saniye Geri Sayım Alarm Bannerı -->
+      <div id="isim-host-countdown-banner" style="display:none; background:linear-gradient(135deg, rgba(239,68,68,0.3), rgba(185,28,28,0.4)); border:2px solid #EF4444; border-radius:14px; padding:10px 14px; margin:10px 0;"></div>
+
+      <!-- Oyuncu Seçici Sekmeleri (Tek Cihazda Çok Oyuncu İçin) -->
+      <div id="isim-play-player-tabs" style="display:none; gap:8px; overflow-x:auto; padding-bottom:6px; margin:10px 0; -webkit-overflow-scrolling:touch;"></div>
+
+      <!-- Cevap Yazma Formu -->
+      <div style="margin:10px 0 14px; text-align:left;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:0.8rem; font-weight:800; color:var(--gold);">📝 CEVAPLARINIZI YAZIN:</span>
+          <span id="isim-play-filled-badge" style="font-size:0.75rem; font-weight:800; color:var(--primary); background:rgba(0,245,212,0.12); padding:2px 8px; border-radius:999px;">0 / 6 Dolu</span>
+        </div>
+        <div id="isim-play-inputs-container" style="display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+
+      <div style="margin:16px 0 8px;">
+        <button type="button" id="btn-isim-host-stop" class="btn-bitti" style="width:100%; font-size:1.1rem; padding:15px; border-radius:14px; font-weight:900;">
+          🛑 BİTTİ! (1 Dk Süre Başlat)
+        </button>
+      </div>
+    </div>
+
+    <!-- STAGE 3: CEVAP İNCELEME & PUANLAMA -->
+    <div id="isim-stage-review" class="card" style="display:none;">
+      <div id="isim-review-host-finisher-box" style="display:none;"></div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div>
+          <span id="isim-review-cat-step" style="font-size:0.75rem; font-weight:800; color:var(--gold); background:rgba(251,191,36,0.15); padding:2px 8px; border-radius:6px;">1 / 6</span>
+          <h3 id="isim-review-cat-name" style="font-size:1.3rem; font-weight:900; color:#FFF; margin-top:4px;">👤 İSİM</h3>
+        </div>
+        <button type="button" id="btn-isim-next-cat" class="btn-main primary" style="font-size:0.85rem; padding:8px 14px; border-radius:10px;">
+          Sonraki ➔
+        </button>
+      </div>
+
+      <div id="isim-review-answers-grid"></div>
+
+      <div style="margin-top:16px;">
+        <button type="button" id="btn-isim-finish-review" class="btn-main" style="background:linear-gradient(135deg, #10B981, #059669); color:#FFF; font-size:1rem; font-weight:900; width:100%; padding:12px; border-radius:12px;">
+          ✅ Puanları Onayla & Tabloya Geç
+        </button>
+      </div>
+    </div>
+
+    <!-- STAGE 4: LİDERLİK TABLOSU -->
+    <div id="isim-stage-scoreboard" class="card" style="display:none; text-align:center;">
+      <div style="font-size:3rem; margin-bottom:4px;">🏆</div>
+      <h2 style="font-size:1.5rem; font-weight:900; color:var(--gold); margin-bottom:4px;">Tur Liderlik Tablosu</h2>
+      <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:16px;">Herkesin toplam puanları ve sıralaması!</p>
+
+      <div id="isim-final-scoreboard-list"></div>
+
+      <div style="margin-top:18px;">
+        <button type="button" id="btn-isim-next-round" class="btn-main btn-action-gold" style="background:#FBBF24 !important; background:linear-gradient(135deg, #FBBF24, #D97706) !important; color:#0B0E14 !important; font-size:1.1rem; font-weight:900; width:100%; padding:14px; border-radius:14px; border:none; box-shadow:0 0 20px rgba(251,191,36,0.45); cursor:pointer;">
+          🎡 Sonraki Tura Başla
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================
+       1.7. ŞARKIYI DEVAM ETTİR (MELODİ DÜELLOSU)
+       ========================================= -->
+  <section id="screen-sarki-duello" class="screen" style="padding: calc(env(safe-area-inset-top, 24px) + 16px) 16px 100px; max-width: 520px; margin: 0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <button type="button" id="btn-back-from-sarki-duello" class="btn-round-abort" style="margin:0; position:static;">
+        <span>← Parti Arenası</span>
+      </button>
+      <div id="sarki-score-box" style="display:none; gap:8px;">
+        <span id="sarki-score-a" style="font-size:0.8rem; font-weight:800; background:rgba(239,68,68,0.2); color:#EF4444; padding:4px 10px; border-radius:8px;">🔴 0 P</span>
+        <span id="sarki-score-b" style="font-size:0.8rem; font-weight:800; background:rgba(59,130,246,0.2); color:#3B82F6; padding:4px 10px; border-radius:8px;">🔵 0 P</span>
+      </div>
+    </div>
+
+    <div class="card" style="text-align:center; padding:22px 18px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <span id="sarki-genre" style="font-size:0.75rem; font-weight:800; background:rgba(168,85,247,0.2); color:#C084FC; padding:3px 10px; border-radius:999px;">🎸 Rock</span>
+        <div id="sarki-timer" style="font-size:1.4rem; font-weight:900; color:var(--primary);">10s</div>
+      </div>
+
+      <h2 id="sarki-title" style="font-size:1.6rem; font-weight:900; color:#FFF; margin-bottom:2px;">Şarkı Adı</h2>
+      <div id="sarki-artist" style="font-size:0.95rem; font-weight:800; color:var(--gold); margin-bottom:12px;">🎤 Sanatçı</div>
+
+      <div id="sarki-turn-badge" style="display:inline-block; font-size:0.8rem; font-weight:900; padding:4px 14px; border-radius:999px; margin-bottom:14px;">🔴 SIRA: 1. TAKIMDA</div>
+
+      <!-- Şarkı Sözleri Alanı -->
+      <div style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(255,255,255,0.1); border-radius:16px; padding:18px; margin-bottom:16px; text-align:left;">
+        <p id="sarki-lyrics-before" style="font-size:0.95rem; line-height:1.6; color:#E2E8F0; white-space:pre-line;"></p>
+        <div style="margin-top:12px; font-weight:900; color:var(--gold); font-size:1.05rem;">
+          🎵 [ ??? DEVAMINI SÖYLE ??? ] 🎵
+        </div>
+      </div>
+
+      <!-- Cevap Kutusu (Gizli / Açılır) -->
+      <div id="sarki-answer-box" style="display:none; background:linear-gradient(135deg, rgba(251,191,36,0.18), rgba(255,46,147,0.18)); border:2px solid #FBBF24; border-radius:16px; padding:16px; margin-bottom:16px; font-size:1.15rem; font-weight:900; color:#FFFFFF; text-shadow:0 0 10px rgba(251,191,36,0.4); text-align:center;">
+      </div>
+
+      <!-- Butonlar -->
+      <button type="button" id="btn-sarki-reveal" class="btn-main btn-action-gold" style="background:#FBBF24 !important; background:linear-gradient(135deg, #FBBF24 0%, #F59E0B 50%, #D97706 100%) !important; color:#0B0E14 !important; font-size:1.08rem !important; font-weight:900 !important; padding:15px 20px !important; border-radius:16px !important; width:100% !important; border:none !important; box-shadow:0 4px 22px rgba(251,191,36,0.55) !important; cursor:pointer; text-transform:uppercase; letter-spacing:0.5px; display:flex; justify-content:center; align-items:center; gap:8px;">
+        <span style="font-size:1.25rem;">👀</span> <span>GERÇEK SÖZÜ GÖSTER</span>
+      </button>
+
+      <div id="sarki-judge-btns" style="display:none; gap:10px; margin-top:10px;">
+        <button type="button" id="btn-sarki-correct" class="btn-main" style="flex:1; background:linear-gradient(135deg, #10B981, #059669); color:#FFF; font-size:0.95rem; font-weight:900; padding:12px; border-radius:12px;">
+          ✅ Doğru (+10 P)
+        </button>
+        <button type="button" id="btn-sarki-wrong" class="btn-main" style="flex:1; background:linear-gradient(135deg, #EF4444, #B91C1C); color:#FFF; font-size:0.95rem; font-weight:900; padding:12px; border-radius:12px;">
+          ❌ Yanlış (0 P)
+        </button>
+      </div>
+
+      <div style="margin-top:12px;">
+        <button type="button" id="btn-sarki-next" class="btn-party-guide" style="background:transparent; border:none; color:var(--text-dim); font-size:0.85rem; font-weight:800; cursor:pointer;">
+          Sonraki Şarkıya Geç ➔
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================
+       1.8. SON SÖZÜ KİM SÖYLER? (KELİME BOMBASI)
+       ========================================= -->
+  <section id="screen-kelime-bombasi" class="screen" style="padding: calc(env(safe-area-inset-top, 24px) + 16px) 16px 100px; max-width: 520px; margin: 0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <button type="button" id="btn-back-from-kelime-bombasi" class="btn-round-abort" style="margin:0; position:static;">
+        <span>← Parti Arenası</span>
+      </button>
+      <span style="font-size:0.8rem; font-weight:800; background:rgba(236,72,153,0.2); color:#F472B6; padding:4px 10px; border-radius:8px;">
+        💣 KELİME BOMBASI
+      </span>
+    </div>
+
+    <!-- Aktif Bomba Aşaması -->
+    <div id="kelime-active-stage" class="card" style="text-align:center; padding:24px 18px;">
+      <div id="kelime-cat-title" style="font-size:1.25rem; font-weight:900; color:#FFF; margin-bottom:8px;">🛒 Süpermarkette Satılan Şeyler</div>
+      <div id="kelime-letter-badge" style="display:inline-block; font-size:1.6rem; font-weight:900; color:var(--gold); background:rgba(251,191,36,0.15); border:1.5px solid var(--gold); padding:4px 20px; border-radius:999px; margin-bottom:18px;">
+        HARF: K
+      </div>
+
+      <!-- Sayaç Çubuğu -->
+      <div style="background:rgba(255,255,255,0.1); border-radius:999px; height:14px; overflow:hidden; margin-bottom:8px;">
+        <div id="kelime-timer-bar" style="height:100%; width:100%; background:linear-gradient(90deg, #00F5D4, #FBBF24); transition:width 0.05s linear;"></div>
+      </div>
+      <div id="kelime-timer-val" style="font-size:2.8rem; font-weight:900; color:#FFF; margin-bottom:16px;">15.0s</div>
+
+      <!-- Büyük Pas Butonu -->
+      <button type="button" id="btn-kelime-pass" class="btn-main" style="background:linear-gradient(135deg, #EC4899, #7928CA); color:#FFF; font-size:1.35rem; font-weight:900; padding:20px; width:100%; border-radius:20px; box-shadow:0 0 30px rgba(236,72,153,0.5); cursor:pointer;">
+        👉 SIRADAKİNE PASLA!
+      </button>
+
+      <div id="kelime-pass-count" style="font-size:0.85rem; font-weight:800; color:var(--text-dim); margin-top:14px;">0 Pas</div>
+    </div>
+
+    <!-- Patlama Aşaması -->
+    <div id="kelime-exploded-stage" class="card" style="display:none; text-align:center; padding:30px 18px; border-color:#EF4444; box-shadow:0 0 40px rgba(239,68,68,0.4);">
+      <div style="font-size:4rem; margin-bottom:6px;">💥</div>
+      <h2 style="font-size:1.8rem; font-weight:900; color:#EF4444; margin-bottom:6px;">BOMBA PATLADI!</h2>
+      <p id="kelime-exploded-desc" style="font-size:0.95rem; color:#CBD5E1; margin-bottom:20px;">Süre doldu ve bomba elinde patladı!</p>
+
+      <button type="button" id="btn-kelime-restart" class="btn-main" style="background:linear-gradient(135deg, #EF4444, #B91C1C); color:#FFF; font-size:1.1rem; font-weight:900; padding:14px; width:100%; border-radius:14px;">
+        💣 Yeni Tura Başla
+      </button>
+    </div>
+  </section>
+
+  <!-- =========================================
+       1.9. GÜLMEME MEYDAN OKUMASI (KAMERA DÜELLOSU)
+       ========================================= -->
+  <section id="screen-gulmeme-meydani" class="screen" style="padding: calc(env(safe-area-inset-top, 24px) + 16px) 16px 100px; max-width: 520px; margin: 0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <button type="button" id="btn-back-from-gulmeme" class="btn-round-abort" style="margin:0; position:static;">
+        <span>← Parti Arenası</span>
+      </button>
+      <div style="display:flex; gap:8px;">
+        <span id="gulmeme-score-p1" style="font-size:0.8rem; font-weight:800; background:rgba(6,182,212,0.2); color:#22D3EE; padding:4px 10px; border-radius:8px;">1. Oyuncu: 0 P</span>
+        <span id="gulmeme-score-p2" style="font-size:0.8rem; font-weight:800; background:rgba(236,72,153,0.2); color:#F472B6; padding:4px 10px; border-radius:8px;">2. Oyuncu: 0 P</span>
+      </div>
+    </div>
+
+    <!-- Aktif Düello -->
+    <div id="gulmeme-active-duel" class="card" style="text-align:center; padding:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="font-size:0.8rem; font-weight:800; color:var(--text-dim);">GÜLMEK & SIRITMAK YASAK!</span>
+        <div id="gulmeme-timer" style="font-size:1.4rem; font-weight:900; color:var(--primary);">60s</div>
+      </div>
+
+      <!-- Kamera Viewfinder -->
+      <div style="position:relative; width:100%; height:240px; background:#000; border-radius:16px; overflow:hidden; border:2px solid var(--primary); margin-bottom:12px;">
+        <video id="gulmeme-video" playsinline muted autoplay style="width:100%; height:100%; object-fit:cover; transform:scaleX(-1);"></video>
+        <div id="gulmeme-cam-fallback" style="display:none; position:absolute; inset:0; align-items:center; justify-content:center; flex-direction:column; gap:8px; background:rgba(15,23,42,0.9);">
+          <span style="font-size:2.5rem;">🎭</span>
+          <span style="font-size:0.85rem; color:#CBD5E1;">Göz göze bakın ve gülmeyin!</span>
+        </div>
+      </div>
+
+      <!-- Komik Şaka / Görev Kutusu -->
+      <div style="background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.12); border-radius:14px; padding:14px; margin-bottom:14px; min-height:60px; display:flex; align-items:center; justify-content:center;">
+        <p id="gulmeme-prompt-text" style="font-size:0.95rem; font-weight:800; color:var(--gold); line-height:1.4; transition:opacity 0.2s;">Hazırlan...</p>
+      </div>
+
+      <!-- Güldü Butonları -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <button type="button" id="btn-guldu-p1" class="btn-main" style="background:linear-gradient(135deg, #06B6D4, #0891B2); color:#FFF; font-size:0.92rem; font-weight:900; padding:12px 8px; border-radius:12px;">
+          😂 1. OYUNCU GÜLDÜ!
+        </button>
+        <button type="button" id="btn-guldu-p2" class="btn-main" style="background:linear-gradient(135deg, #EC4899, #BE185D); color:#FFF; font-size:0.92rem; font-weight:900; padding:12px 8px; border-radius:12px;">
+          😂 2. OYUNCU GÜLDÜ!
+        </button>
+      </div>
+    </div>
+
+    <!-- Düello Bitti -->
+    <div id="gulmeme-duel-over" class="card" style="display:none; text-align:center; padding:26px 18px;">
+      <div style="font-size:3.5rem; margin-bottom:6px;">😂</div>
+      <h2 id="gulmeme-result-text" style="font-size:1.4rem; font-weight:900; color:var(--gold); margin-bottom:16px;">Düello Bitti!</h2>
+      <button type="button" id="btn-gulmeme-restart" class="btn-main primary" style="font-size:1.05rem; font-weight:900; padding:14px; width:100%; border-radius:14px;">
+        😆 Yeni Düelloya Başla
+      </button>
+    </div>
+  </section>
+  <section id="screen-countdown" class="screen">
+    <button type="button" id="btn-abort-countdown" class="btn-round-abort btn-countdown-abort" title="Oyunu İptal Et & Menüye Dön">
+      <span>← Ana Menü</span>
+    </button>
+    <div class="countdown-box">
+      <div class="forehead-anim">📱</div>
+      <div id="countdown-team-badge" class="countdown-team-pill" style="display:none;">🔴 Kırmızı Takım Sırası</div>
+      <div class="countdown-guidance">TELEFONU ALNINA KOY!</div>
+      <div id="countdown-category-name" class="countdown-category">Seçilen Kategori</div>
+      <div id="countdown-number" class="countdown-number">3</div>
+      <p class="countdown-instruction">
+        Arkadaşların sana kelimeyi anlatsın!<br>
+        <strong>Aşağı Eğil:</strong> DOĞRU ✅ &nbsp;|&nbsp; <strong>Yukarı Bak:</strong> PAS ⏭️
+      </p>
+      <div class="countdown-calib-wrap">
+        <button type="button" id="btn-countdown-calibrate" class="btn-countdown-calib" title="Alnındaki Açıyı Nötr Olarak Sıfırla">
+          <span>🎯 Şimdi Kalibre Et</span>
+          <span id="countdown-calib-val" class="calib-mini-tag">0°</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- =========================================
+       3. TUR / OYUN EKRANI
+       ========================================= -->
+  <section id="screen-round" class="screen">
+    <!-- Canlı Tam Ekran Kamera Arka Planı (Dikey & Yatay Modda Canlı Vizör) -->
+    <video id="round-fullscreen-camera-video" class="round-camera-bg" playsinline muted autoplay></video>
+    <div id="round-camera-scrim" class="round-camera-scrim"></div>
+
+    <div id="round-flash" class="round-flash-overlay"></div>
+    <!-- İkinci Telefon Wi-Fi Zil / Buzzer Uyarısı -->
+    <div id="buzzer-alert-overlay" class="buzzer-alert-overlay" style="display:none;">
+      <div class="buzzer-alert-pill">
+        <span class="buzzer-alert-icon">🔔</span>
+        <span class="buzzer-alert-text">İKİNCİ TELEFON ZİLİ ÇALDI! (HATA / YASAK KELİME!)</span>
+      </div>
+    </div>
+
+    <!-- Üst Kontrol Barı -->
+    <div class="round-top-bar">
+      <!-- Çıkış / Menü Butonu -->
+      <button type="button" id="btn-abort-round" class="btn-round-abort" title="Turu Bitir ve Menüye Dön">
+        <span>✕ Menü</span>
+      </button>
+
+      <div class="timer-box">
+        <span id="round-timer-text" class="timer-text">60s</span>
+        <div class="timer-bar-track">
+          <div id="round-timer-bar" class="timer-bar-fill"></div>
+        </div>
+      </div>
+
+      <!-- Orta Bilgi: Aktif Takım ve Canlı Eğim Göstergesi -->
+      <div class="round-center-hud">
+        <div id="round-team-indicator" class="round-team-badge" style="display:none;">Takım</div>
+        <div id="round-tilt-indicator" class="tilt-status-badge">🟢 DİK DUR</div>
+      </div>
+
+      <!-- Sağ Bilgi: Skorlar ve Mini Kamera Önizleme -->
+      <div class="round-right-hud">
+        <div class="round-scores">
+          <div id="round-score-correct" class="score-badge">✅ 0</div>
+          <div id="round-score-pass" class="score-badge">⏭️ 0</div>
+        </div>
+        <!-- Mini Kamera Önizleme (PiP) -->
+        <div id="camera-pip-container" class="camera-pip">
+          <span class="camera-rec-dot"></span>
+          <video id="camera-pip-video" playsinline muted autoplay></video>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3D Kelime Kartı Sahnesi -->
+    <div class="round-word-stage">
+      <!-- Özel Kural Modu Başlık Rozetleri -->
+      <div id="bomb-status-indicator" class="bomb-hud-badge" style="display:none;">
+        <span class="bomb-pulse-icon">💣🔥</span>
+        <span id="bomb-status-text">BOMBA AKTİF! ELDEN ELE!</span>
+      </div>
+      <div id="mime-banner-indicator" class="mime-hud-badge" style="display:none;">
+        <span>🤫 SESSİZ SİNEMA: SADECE JEST & MİMİK!</span>
+      </div>
+      <div id="letter-banner-indicator" class="letter-hud-badge" style="display:none;">
+        <span>🚫 YASAK HARF: <strong id="val-forbidden-letter">E</strong> (Bu harfle konuşmak yasak!)</span>
+      </div>
+      <div id="taboo-banner-indicator" class="taboo-hud-badge" style="display:none;">
+        <span class="taboo-badge-icon">🚫</span>
+        <span>KLASİK TABU: YASAKLI KELİMELERİ SÖYLEME!</span>
+      </div>
+
+      <!-- Bomba Modu: Hemen Devret Uyarısı -->
+      <div id="bomb-pass-prompt" class="bomb-pass-prompt" style="display:none;">
+        👉 HEMEN YANINDAKİNE VER!
+      </div>
+
+      <div id="round-word-card" class="word-card-3d">
+        <div id="golden-card-badge" class="golden-card-badge" style="display:none;">
+          <span>⭐ 2X ALTIN KART (ÇİFT PUAN!) ⭐</span>
+        </div>
+        <h1 id="round-word" class="main-word">KELİME</h1>
+        <div id="round-taboo-list" class="taboo-list" style="display: none;"></div>
+      </div>
+    </div>
+
+    <!-- Bomba Patlama Tam Ekran Animasyon Katmanı -->
+    <div id="bomb-explosion-overlay" class="bomb-explosion-screen" style="display:none;">
+      <div class="boom-flash"></div>
+      <div class="boom-content">
+        <div class="boom-emoji">💥💣💥</div>
+        <h1 class="boom-title">BOOOOOOM!</h1>
+        <p class="boom-subtitle">BOMBA ELİNDE PATLADI!</p>
+        <div class="boom-penalty" id="boom-penalty-desc">Bu turun kaybedeni sensin!</div>
+      </div>
+    </div>
+
+    <!-- Dokunmatik Kontrol Alanı (Üst yarı serbest dokunma) -->
+    <div class="touch-controls">
+      <button id="touch-btn-pass" class="touch-half" aria-label="Pas Geç"></button>
+      <button id="touch-btn-correct" class="touch-half" aria-label="Doğru Bilindi"></button>
+    </div>
+
+    <!-- Dikey ve Elde Oynama Hızlı Aksiyon Barı (Portrait Handheld Action Bar) -->
+    <div id="round-handheld-bar" class="round-handheld-bar">
+      <button type="button" id="btn-handheld-pass" class="btn-hand-action btn-hand-pass" title="Pas Geç">
+        <span class="btn-hand-icon">⏭️</span>
+        <span class="btn-hand-label">PAS</span>
+      </button>
+      <button type="button" id="btn-handheld-taboo" class="btn-hand-action btn-hand-taboo" title="Tabu Yaptı (-1 Puan)" style="display:none;">
+        <span class="btn-hand-icon">🚫</span>
+        <span class="btn-hand-label">TABU! (-1)</span>
+      </button>
+      <button type="button" id="btn-handheld-correct" class="btn-hand-action btn-hand-correct" title="Doğru Bilindi">
+        <span class="btn-hand-icon">✅</span>
+        <span class="btn-hand-label">DOĞRU</span>
+      </button>
+    </div>
+
+    <!-- Alt İpucu (Yatay Modda Görünür) -->
+    <div class="round-bottom-hint">
+      <span>👈 Sol Dokun veya Başını Kaldır: PAS</span>
+      <span>👉 Sağ Dokun veya Başını Öne Eğ: DOĞRU</span>
+    </div>
+  </section>
+
+
+  <!-- =========================================
+       4. ÖZET VE VİDEO İZLEME EKRANI
+       ========================================= -->
+  <section id="screen-summary" class="screen">
+    <div class="summary-header">
+      <h2 id="summary-title">🎉 Tur Bitti!</h2>
+      <div id="summary-team-notice" class="summary-team-notice" style="display:none;"></div>
+
+      <!-- Takım Maç Tablosu -->
+      <div id="summary-team-scoreboard" class="summary-scoreboard-row" style="display:none;"></div>
+
+      <div class="summary-score-cards">
+        <div class="score-stat-card">
+          <div id="summary-correct-count" class="stat-number correct">0</div>
+          <div class="stat-label">BU TUR DOĞRU</div>
+        </div>
+        <div class="score-stat-card">
+          <div id="summary-passed-count" class="stat-number pass">0</div>
+          <div class="stat-label">BU TUR PAS</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kaydedilen Canlı HUD Komik Video Bölümü -->
+    <section id="summary-video-section" class="video-section">
+      <div class="video-section-title">
+        <span>🎬</span>
+        <span>Parti Video Kaydı</span>
+        <span class="hud-badge-tag">Kelime Damgalı</span>
+      </div>
+
+      <div class="video-container">
+        <video id="summary-video" controls playsinline></video>
+      </div>
+
+      <div class="video-controls-bar">
+        <div class="speed-buttons">
+          <span style="font-size:0.85rem; font-weight:700; color:var(--text-dim);">Hız:</span>
+          <button id="btn-speed-1" class="speed-btn">1x</button>
+          <button id="btn-speed-15" class="speed-btn active">⚡ 1.5x Komik</button>
+          <button id="btn-speed-2" class="speed-btn">🚀 2x Kahkaha</button>
+        </div>
+
+        <div class="video-action-buttons">
+          <button id="btn-share-video" class="btn-video-action">
+            <span>📲 Paylaş</span>
+          </button>
+          <button id="btn-download-video" class="btn-video-action">
+            <span>💾 Videoyu İndir</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Oynanan Kelimeler Listesi -->
+    <section>
+      <h3 class="section-title">📋 Tur Kelimeleri</h3>
+      <div id="summary-words-list" class="summary-words-grid"></div>
+    </section>
+
+    <!-- Parti Ceza Çarkı Çağrısı -->
+    <div class="dare-wheel-callout-wrap" style="margin: 16px 0; text-align: center;">
+      <button type="button" id="btn-open-dare-wheel-summary" class="btn-dare-wheel-callout">
+        <span class="dare-icon">🎭</span>
+        <span>Kaybedene Meydan Oku! (Ceza Çarkı)</span>
+      </button>
+    </div>
+
+    <!-- Aksiyon Butonları -->
+    <div class="summary-actions">
+      <button id="btn-play-again" class="btn-primary-big">
+        🔄 Tekrar Oyna
+      </button>
+      <button id="btn-go-home" class="btn-secondary-big">
+        🏠 Ana Menü
+      </button>
+    </div>
+  </section>
+
+
+  <!-- =========================================
+       5. MAÇ KAZANANI EKRANI (TAKIM SAVAŞI SONU)
+       ========================================= -->
+  <section id="screen-match-winner" class="screen match-winner-screen">
+    <div class="winner-box">
+      <div class="winner-trophy">🏆</div>
+      <h2 id="winner-team-title" class="winner-title">KIRMIZI TAKIM KAZANDI!</h2>
+      <p class="winner-subtitle">Müthiş bir mücadeleydi! İşte nihai maç skoru:</p>
+
+      <div id="winner-final-scores" class="winner-scores-grid"></div>
+
+      <!-- Maç Sonu Kaybedene Ceza Çarkı -->
+      <div class="dare-wheel-callout-wrap" style="margin: 20px 0; text-align: center;">
+        <button type="button" id="btn-open-dare-wheel-match" class="btn-dare-wheel-callout">
+          <span class="dare-icon">🎭</span>
+          <span>Kaybeden Takıma Ceza Çarkını Çevir!</span>
+        </button>
+      </div>
+
+      <div class="summary-actions" style="margin-top: 24px;">
+        <button id="btn-rematch" class="btn-primary-big">
+          ⚔️ Rövanş Maçı Yap
+        </button>
+        <button id="btn-winner-home" class="btn-secondary-big">
+          🏠 Kategoriler
+        </button>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- =========================================
+       5.5. VAMPİR - KÖYLÜ OYUN ALANI (TEK & ÇOKLU TELEFON)
+       ========================================= -->
+  <section id="screen-vampire" class="screen vampire-screen" style="padding: calc(env(safe-area-inset-top, 24px) + 26px) 16px 24px; max-width: 540px; margin: 0 auto;">
+    <!-- Üst Bar: Geri Dön & Başlık -->
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button type="button" id="btn-vampire-back-home" class="btn-round-abort" style="display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:12px; padding:8px 14px; color:#FFF; font-weight:800; cursor:pointer;">
+          <span>← Parti Arenası</span>
+        </button>
+        <button type="button" id="btn-vampire-rules-toggle" class="btn-round-abort" style="display:inline-flex; align-items:center; gap:6px; background:rgba(0,245,212,0.15); border:1px solid var(--primary); border-radius:12px; padding:8px 12px; color:var(--primary); font-weight:800; cursor:pointer;">
+          <span>📖 Kurallar</span>
+        </button>
+      </div>
+      <div style="text-align:right;">
+        <span style="font-size:0.75rem; font-weight:800; color:#FF2E93; letter-spacing:1px; text-transform:uppercase;">KAFANA TAK! PARTİ</span>
+        <div style="font-size:1.1rem; font-weight:900; color:#FFF;">🧛‍♂️ VAMPİR - KÖYLÜ</div>
+      </div>
+    </header>
+
+    <!-- 1. HUB: OYUN MODU SEÇİMİ (TEK TELEFON VS ÇOKLU TELEFON) -->
+    <div id="vampire-hub-select" class="vampire-hub-container">
+      <div style="text-align:center; margin-bottom:20px;">
+        <div style="font-size:3rem; margin-bottom:6px; filter:drop-shadow(0 0 20px rgba(255,46,147,0.7));">🏰</div>
+        <h2 style="font-size:1.6rem; font-weight:900; color:#FFF; margin-bottom:6px;">Köy Meydanına Hoş Geldiniz!</h2>
+        <p style="font-size:0.86rem; color:var(--text-dim); line-height:1.4;">
+          Gece çöktüğünde vampirler aranızdan birini kurban seçecek. Gündüz ise köy halkı toplanıp vampiri bulup asmaya çalışacak! Nasıl oynamak istersiniz?
+        </p>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <!-- Mod 1: Tek Telefon Elden Ele -->
+        <div id="btn-vampire-choose-single" class="vampire-mode-card" role="button" tabindex="0" style="background:linear-gradient(135deg, rgba(30,27,75,0.85), rgba(15,23,42,0.95)); border:2px solid rgba(0,245,212,0.5); border-radius:20px; padding:20px; cursor:pointer; box-shadow:0 10px 30px rgba(0,245,212,0.15); transition:all 0.2s;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:2rem;">📱</span>
+              <div>
+                <span style="background:rgba(0,245,212,0.2); color:#00F5D4; font-size:0.7rem; font-weight:800; padding:2px 8px; border-radius:999px;">EN KOLAY & PRATİK</span>
+                <h3 style="font-size:1.2rem; font-weight:900; color:#FFF; margin:2px 0 0;">Tek Telefon (Elden Ele)</h3>
+              </div>
+            </div>
+            <span style="font-size:1.3rem; color:#00F5D4;">➔</span>
+          </div>
+          <p style="font-size:0.82rem; color:#CBD5E1; line-height:1.4; margin:0;">
+            Tek bir telefon yeterli! Telefonu elden ele uzatın, herkes bas-tut gizli kartla rolünü görsün. Ardından telefon masaya konur ve sesli moderatör geceyi & oylamayı yönetir.
+          </p>
+        </div>
+
+        <!-- Mod 2: Çoklu Telefon QR Kod -->
+        <div id="btn-vampire-choose-multi" class="vampire-mode-card" role="button" tabindex="0" style="background:linear-gradient(135deg, rgba(69,10,10,0.85), rgba(15,23,42,0.95)); border:2px solid rgba(255,46,147,0.5); border-radius:20px; padding:20px; cursor:pointer; box-shadow:0 10px 30px rgba(255,46,147,0.2); transition:all 0.2s;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:2rem;">🌐</span>
+              <div>
+                <span style="background:rgba(255,46,147,0.25); color:#FF8E53; font-size:0.7rem; font-weight:800; padding:2px 8px; border-radius:999px;">JACKBOX / ODADAKİ HERKES</span>
+                <h3 style="font-size:1.2rem; font-weight:900; color:#FFF; margin:2px 0 0;">Aynı Ağda Çoklu Telefon (QR)</h3>
+              </div>
+            </div>
+            <span style="font-size:1.3rem; color:#FF2E93;">➔</span>
+          </div>
+          <p style="font-size:0.82rem; color:#CBD5E1; line-height:1.4; margin:0;">
+            Bu telefon ana TV / masa panosu olur. Arkadaşlarınız kendi telefonlarından kamerayla ekrandaki QR kodu okutur (uygulama yüklemek gerekmez); rollerini, gece eylemlerini ve oylarını kendi ekranlarından kullanırlar!
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. TEK TELEFON MODU KONTEYNERİ -->
+    <div id="vampire-single-container" style="display:none;">
+      <!-- Lobi / Oyuncu Ekleme -->
+      <div id="vampire-single-lobby">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <button type="button" id="btn-vampire-back-hub-1" style="background:none; border:none; color:var(--primary); font-size:0.85rem; font-weight:800; cursor:pointer;">
+            ⬅️ Mod Seçimine Dön
+          </button>
+          <span style="font-size:0.75rem; color:var(--text-dim); font-weight:700;">TEK TELEFON MODU</span>
+        </div>
+
+        <div class="card" style="text-align:center; margin-bottom:16px;">
+          <h3 style="font-size:1.2rem; font-weight:900; color:#FFF; margin-bottom:6px;">👥 Köy Halkını Oluştur</h3>
+          <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:14px;">
+            Oyuna katılacak arkadaşlarınızın isimlerini ekleyin (En az 4 oyuncu önerilir):
+          </p>
+
+          <div style="display:flex; gap:8px; margin-bottom:12px;">
+            <input type="text" id="input-single-player-name" class="form-input" placeholder="Oyuncu adı yazın..." style="flex:1;" maxlength="15">
+            <button type="button" id="btn-add-single-player" class="btn-primary-big" style="padding:10px 18px; font-size:0.9rem; flex-shrink:0;">
+              ➕ Ekle
+            </button>
+          </div>
+
+          <!-- Hızlı Doldur Butonları -->
+          <div style="display:flex; justify-content:center; gap:8px; margin-bottom:14px;">
+            <button type="button" id="btn-quick-fill-4" class="btn-secondary" style="font-size:0.75rem; padding:5px 10px;">⚡ 4 Kişilik</button>
+            <button type="button" id="btn-quick-fill-6" class="btn-secondary" style="font-size:0.75rem; padding:5px 10px;">⚡ 6 Kişilik</button>
+            <button type="button" id="btn-quick-fill-8" class="btn-secondary" style="font-size:0.75rem; padding:5px 10px;">⚡ 8 Kişilik</button>
+          </div>
+
+          <div style="font-size:0.8rem; font-weight:800; color:var(--primary); margin-bottom:8px;">
+            Eklenen Oyuncular (<span id="single-player-count">0</span>):
+          </div>
+          <div id="single-players-list" class="player-pills" style="justify-content:center; min-height:40px; margin-bottom:14px;"></div>
+
+          <!-- Rol Ayarları -->
+          <div style="background:rgba(0,0,0,0.3); border-radius:14px; padding:12px; margin-bottom:16px; text-align:left;">
+            <div style="font-size:0.8rem; font-weight:800; color:#FF8E53; margin-bottom:8px;">⚙️ ROL DAĞILIMI AYARLARI:</div>
+            <div style="display:flex; flex-direction:column; gap:8px; font-size:0.82rem;">
+              <label style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+                <span>🧛‍♂️ Vampir Sayısı:</span>
+                <select id="single-setting-vampires" class="custom-select" style="width:75px; padding:4px 8px; font-size:0.82rem;">
+                  <option value="1">1</option>
+                  <option value="2" selected>2</option>
+                  <option value="3">3</option>
+                </select>
+              </label>
+              <label style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+                <span>🩺 Doktor Rolü (Gece 1 kişiyi kurtarır):</span>
+                <input type="checkbox" id="single-setting-doctor" checked style="width:18px; height:18px; accent-color:var(--primary);">
+              </label>
+              <label style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+                <span>🕵️ Komiser Rolü (Gece 1 kişiyi sorgular):</span>
+                <input type="checkbox" id="single-setting-detective" checked style="width:18px; height:18px; accent-color:var(--primary);">
+              </label>
+            </div>
+          </div>
+
+          <button type="button" id="btn-start-single-game-roles" class="btn-main primary" style="font-size:1.05rem; padding:14px;">
+            🎭 Rolleri Dağıt & Oyunu Başlat
+          </button>
+        </div>
+      </div>
+
+      <!-- Dinamik Tek Telefon Oyun Sahnesi (Peek, Night, Reveal, Discuss, Vote) -->
+      <div id="vampire-single-screen"></div>
+    </div>
+
+    <!-- 3. ÇOKLU TELEFON MODU KONTEYNERİ -->
+    <div id="vampire-multi-container" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <button type="button" id="btn-vampire-back-hub-2" style="background:none; border:none; color:var(--primary); font-size:0.85rem; font-weight:800; cursor:pointer;">
+          ⬅️ Mod Seçimine Dön
+        </button>
+        <span style="font-size:0.75rem; color:var(--text-dim); font-weight:700;">ÇOKLU TELEFON (HOST PANO)</span>
+      </div>
+
+      <div id="vampire-multi-screen"></div>
+    </div>
+  </section>
+
+  <!-- =========================================
+       5.6. CASUS KİM? (SPYFALL) OYUN ALANI
+       ========================================= -->
+  <section id="screen-spy" class="screen spy-screen" style="padding: calc(env(safe-area-inset-top, 24px) + 26px) 16px 24px; max-width: 540px; margin: 0 auto;">
+    <header class="spy-header" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+      <button type="button" id="btn-spy-back-home" class="btn-round-abort" style="display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:12px; padding:8px 14px; color:#FFF; font-weight:800; cursor:pointer;">
+        <span>← Parti Arenası</span>
+      </button>
+      <div style="text-align:right;">
+        <span style="font-size:0.75rem; font-weight:800; color:#FBBF24; letter-spacing:1px; text-transform:uppercase;">KAFANA TAK! PARTİ</span>
+        <div style="font-size:1.1rem; font-weight:900; color:#FFF;">🕵️ CASUS KİM? (SPYFALL)</div>
+      </div>
+    </header>
+
+    <div id="spy-setup-screen">
+      <div class="card" style="text-align:center; max-width:440px; margin:0 auto; padding:20px; border:2px solid rgba(251,191,36,0.4); box-shadow:0 12px 35px rgba(251,191,36,0.15);">
+        <div style="font-size:3rem; margin-bottom:6px; filter:drop-shadow(0 0 15px rgba(251,191,36,0.5));">🕵️</div>
+        <h2 style="font-size:1.55rem; font-weight:900; color:#FFF; margin-bottom:4px;">Aramızda Bir Casus Var!</h2>
+        <p style="font-size:0.84rem; color:var(--text-dim); line-height:1.4; margin-bottom:14px;">
+          Casus nerede olduğumuzu bilmiyor. Diğer herkes gizli mekanı ve rolünü biliyor! Birbirinize sorular sorup casusu ifşa edin.
+        </p>
+
+        <div style="text-align:left; margin-bottom:14px;">
+          <label style="font-size:0.8rem; font-weight:800; color:var(--text-dim); margin-bottom:6px; display:block;">Oyuncuları Ekleyin (En az 3 kişi):</label>
+          <div style="display:flex; gap:8px; margin-bottom:8px;">
+            <input type="text" id="input-spy-player-name" class="form-input" placeholder="Oyuncu adı..." style="flex:1;" maxlength="15">
+            <button type="button" id="btn-add-spy-player" class="btn-primary-big" style="padding:10px 18px; font-size:0.9rem; flex-shrink:0;">
+              ➕ Ekle
+            </button>
+          </div>
+          <div style="display:flex; justify-content:center; gap:8px; margin-bottom:10px;">
+            <button type="button" id="btn-spy-fill-4" class="btn-secondary" style="font-size:0.75rem; padding:4px 10px;">⚡ 4 Kişi</button>
+            <button type="button" id="btn-spy-fill-6" class="btn-secondary" style="font-size:0.75rem; padding:4px 10px;">⚡ 6 Kişi</button>
+            <button type="button" id="btn-spy-fill-8" class="btn-secondary" style="font-size:0.75rem; padding:4px 10px;">⚡ 8 Kişi</button>
+          </div>
+          <div id="spy-players-list" class="player-pills" style="justify-content:center; min-height:40px;"></div>
+        </div>
+
+        <!-- Casus Sayısı ve Soru Sorma Süresi Seçim Alanı (Net, Okunaklı & Yüksek Kontrastlı) -->
+        <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:18px;">
+          <!-- 1. Casus Sayısı -->
+          <div class="spy-config-card" style="background:linear-gradient(135deg, rgba(30,27,75,0.9), rgba(15,23,42,0.95)); border:2px solid rgba(251,191,36,0.5); border-radius:16px; padding:14px; text-align:left; box-shadow:0 6px 20px rgba(0,0,0,0.4);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <span style="font-size:0.95rem; font-weight:900; color:#FFF; display:flex; align-items:center; gap:6px;">
+                <span style="font-size:1.15rem;">🕵️</span> Casus Sayısı:
+              </span>
+              <span id="spy-count-badge" style="background:#FBBF24; color:#0B0E14; font-weight:900; font-size:0.85rem; padding:3px 12px; border-radius:999px; box-shadow:0 0 10px rgba(251,191,36,0.5);">
+                1 Casus
+              </span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <button type="button" class="btn-spy-opt-count active" data-val="1" style="background:linear-gradient(135deg, #FBBF24, #D97706); color:#0B0E14; border:none; padding:12px; border-radius:12px; font-weight:900; font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 0 16px rgba(251,191,36,0.45); transition:all 0.2s;">
+                👤 1 Casus
+              </button>
+              <button type="button" class="btn-spy-opt-count" data-val="2" style="background:rgba(255,255,255,0.08); color:#CBD5E1; border:1.5px solid rgba(255,255,255,0.2); padding:12px; border-radius:12px; font-weight:800; font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all 0.2s;">
+                👥 2 Casus
+              </button>
+            </div>
+            <select id="select-spy-count" style="display:none;">
+              <option value="1" selected>1 Casus</option>
+              <option value="2">2 Casus</option>
+            </select>
+          </div>
+
+          <!-- 2. Soru Sorma Süresi -->
+          <div class="spy-config-card" style="background:linear-gradient(135deg, rgba(30,27,75,0.9), rgba(15,23,42,0.95)); border:2px solid rgba(0,245,212,0.5); border-radius:16px; padding:14px; text-align:left; box-shadow:0 6px 20px rgba(0,0,0,0.4);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <span style="font-size:0.95rem; font-weight:900; color:#FFF; display:flex; align-items:center; gap:6px;">
+                <span style="font-size:1.15rem;">⏱️</span> Soru Sorma Süresi:
+              </span>
+              <span id="spy-dur-badge" style="background:#00F5D4; color:#0B0E14; font-weight:900; font-size:0.85rem; padding:3px 12px; border-radius:999px; box-shadow:0 0 10px rgba(0,245,212,0.5);">
+                5 Dakika
+              </span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+              <button type="button" class="btn-spy-opt-dur" data-val="180" style="background:rgba(255,255,255,0.08); color:#CBD5E1; border:1.5px solid rgba(255,255,255,0.2); padding:12px 6px; border-radius:12px; font-weight:800; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">
+                3 Dk
+              </button>
+              <button type="button" class="btn-spy-opt-dur active" data-val="300" style="background:linear-gradient(135deg, #00F5D4, #00BBF9); color:#0B0E14; border:none; padding:12px 6px; border-radius:12px; font-weight:900; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 16px rgba(0,245,212,0.45); transition:all 0.2s;">
+                5 Dk
+              </button>
+              <button type="button" class="btn-spy-opt-dur" data-val="480" style="background:rgba(255,255,255,0.08); color:#CBD5E1; border:1.5px solid rgba(255,255,255,0.2); padding:12px 6px; border-radius:12px; font-weight:800; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">
+                8 Dk
+              </button>
+            </div>
+            <select id="select-spy-duration" style="display:none;">
+              <option value="180">3 Dakika</option>
+              <option value="300" selected>5 Dakika</option>
+              <option value="480">8 Dakika</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="button" id="btn-start-spy-round" class="btn-main" style="background:linear-gradient(135deg, #F59E0B, #D97706); color:#FFF; font-size:1.1rem; padding:15px; width:100%;">
+          🚀 Rolleri Dağıt & Oyunu Başlat ➔
+        </button>
+      </div>
+    </div>
+
+    <div id="spy-game-content"></div>
+  </section>
+
+  <!-- =========================================
+       5.7. SAATLİ BOMBA (TICK TACK BOOM) OYUN ALANI
+       ========================================= -->
+  <section id="screen-bomb" class="screen bomb-screen" style="padding: calc(env(safe-area-inset-top, 24px) + 26px) 16px 24px; max-width: 540px; margin: 0 auto;">
+    <header class="bomb-header" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+      <button type="button" id="btn-bomb-back-home" class="btn-round-abort" style="display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:12px; padding:8px 14px; color:#FFF; font-weight:800; cursor:pointer;">
+        <span>← Parti Arenası</span>
+      </button>
+      <div style="text-align:right;">
+        <span style="font-size:0.75rem; font-weight:800; color:#EF4444; letter-spacing:1px; text-transform:uppercase;">KAFANA TAK! PARTİ</span>
+        <div style="font-size:1.1rem; font-weight:900; color:#FFF;">💣 SAATLİ BOMBA</div>
+      </div>
+    </header>
+
+    <div id="bomb-game-content">
+      <div class="card" style="text-align:center; max-width:440px; margin:0 auto; padding:24px; border:2px solid rgba(239,68,68,0.4); box-shadow:0 12px 35px rgba(239,68,68,0.15);">
+        <div style="font-size:4rem; margin-bottom:8px; filter:drop-shadow(0 0 20px rgba(239,68,68,0.6));">💣</div>
+        <h2 style="font-size:1.75rem; font-weight:900; color:#FFF; margin-bottom:6px;">Saatli Bomba!</h2>
+        <p style="font-size:0.88rem; color:#CBD5E1; line-height:1.4; margin-bottom:16px;">
+          Bomba elinde patlamadan kategoriden geçerli bir kelime söyle ve hemen telefonu yanındakine fırlat! Süre gizlidir (18-38 sn). Patlayana ceza görevi!
+        </p>
+        <button type="button" id="btn-launch-bomb-round" class="btn-main" style="background:linear-gradient(135deg, #EF4444, #B91C1C); color:#FFF; font-size:1.15rem; padding:16px; width:100%;">
+          💣 Bombayı Ateşle (1. Tur) ➔
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================
+       5.8. ŞİŞE ÇEVİRMECE (DOĞRULUK MU CESARET Mİ) OYUN ALANI
+       ========================================= -->
+  <section id="screen-bottle" class="screen bottle-screen" style="padding: calc(env(safe-area-inset-top, 24px) + 26px) 16px 24px; max-width: 540px; margin: 0 auto;">
+    <header class="bottle-header" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+      <button type="button" id="btn-bottle-back-home" class="btn-round-abort" style="display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:12px; padding:8px 14px; color:#FFF; font-weight:800; cursor:pointer;">
+        <span>← Parti Arenası</span>
+      </button>
+      <div style="text-align:right;">
+        <span style="font-size:0.75rem; font-weight:800; color:#FF2E93; letter-spacing:1px; text-transform:uppercase;">KAFANA TAK! PARTİ</span>
+        <div style="font-size:1.1rem; font-weight:900; color:#FFF;">🍾 ŞİŞE ÇEVİRMECE</div>
+      </div>
+    </header>
+
+    <div class="card" style="text-align:center; max-width:460px; margin:0 auto; padding:18px; border:2px solid rgba(255,46,147,0.4); box-shadow:0 12px 35px rgba(255,46,147,0.15);">
+      <div style="display:flex; gap:8px; margin-bottom:16px;">
+        <button type="button" id="btn-bottle-mode-party" class="rule-chip active" style="flex:1; padding:8px; justify-content:center; font-size:0.85rem;">
+          🎉 Parti Modu
+        </button>
+        <button type="button" id="btn-bottle-mode-adult" class="rule-chip" style="flex:1; padding:8px; justify-content:center; font-size:0.85rem;">
+          🔥 +18 Yetişkin & Çiftler
+        </button>
+      </div>
+
+      <div id="bottle-arena" style="position:relative; width:220px; height:220px; margin:10px auto 20px; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle, rgba(255,46,147,0.2) 0%, rgba(0,0,0,0.6) 70%); border-radius:50%; border:2px dashed rgba(255,255,255,0.2);">
+        <div id="spinning-bottle-img" style="font-size:5.5rem; transition:transform 3.5s cubic-bezier(0.15, 0.9, 0.3, 1); filter:drop-shadow(0 8px 25px rgba(255,46,147,0.7)); cursor:pointer;">
+          🍾
+        </div>
+      </div>
+
+      <button type="button" id="btn-spin-bottle" class="btn-main primary" style="font-size:1.15rem; padding:15px; width:100%; margin-bottom:14px;">
+        🍾 ŞİŞEYİ ÇEVİR ➔
+      </button>
+
+      <div id="bottle-action-area"></div>
+    </div>
+  </section>
+
+  <!-- =========================================
+       5.9. A'DAN Z'YE PASSAPAROLA OYUN ALANI
+       ========================================= -->
+  <section id="screen-passaparola" class="screen passaparola-screen" style="padding: calc(env(safe-area-inset-top, 24px) + 20px) 16px 100px; max-width: 520px; margin: 0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <button type="button" id="btn-back-from-passaparola" class="btn-round-abort" style="margin:0; position:static;">
+        <span>← Parti Arenası</span>
+      </button>
+      <span style="font-size:0.8rem; font-weight:800; background:rgba(0,245,212,0.15); color:var(--primary); border:1px solid var(--primary); padding:4px 12px; border-radius:999px;">
+        🎯 A'DAN Z'YE PASSAPAROLA
+      </span>
+    </div>
+
+    <!-- 1. HAZIRLIK AŞAMASI (SETUP) -->
+    <div id="passa-setup-stage" class="card" style="text-align:center; padding:28px 18px;">
+      <div style="font-size:3.5rem; margin-bottom:6px;">🎯</div>
+      <h2 style="font-size:1.6rem; font-weight:900; color:#FFF; margin-bottom:4px;">A'dan Z'ye Passaparola</h2>
+      <p style="font-size:0.88rem; color:#CBD5E1; line-height:1.45; margin-bottom:18px;">
+        24 harflik dairesel alfabe çarkında zamana karşı yarış! Harfin sorusunu bil, takıldığında "PAS" de. 120 saniyede en yüksek doğruyu topla!
+      </p>
+
+      <div style="display:flex; justify-content:center; gap:10px; margin-bottom:20px;">
+        <span style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); padding:6px 14px; border-radius:999px; font-size:0.82rem; font-weight:800;">🔤 24 Harf</span>
+        <span style="background:rgba(0,245,212,0.15); border:1px solid var(--primary); color:var(--primary); padding:6px 14px; border-radius:999px; font-size:0.82rem; font-weight:800;">⏱️ 120 Saniye</span>
+        <span style="background:rgba(251,191,36,0.15); border:1px solid var(--gold); color:var(--gold); padding:6px 14px; border-radius:999px; font-size:0.82rem; font-weight:800;">🟢 +10 Puan</span>
+      </div>
+
+      <button type="button" id="btn-passa-start" class="btn-main primary" style="font-size:1.15rem; font-weight:900; padding:15px; width:100%; border-radius:14px; box-shadow:0 0 25px rgba(0,245,212,0.4);">
+        🚀 YARIŞMAYI BAŞLAT ➔
+      </button>
+    </div>
+
+    <!-- 2. AKTİF YARIŞMA AŞAMASI (PLAY) -->
+    <div id="passa-play-stage" class="card" style="display:none; text-align:center; padding:18px 14px;">
+      <!-- Süre ve İstatistik Çubuğu -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div style="display:flex; gap:6px;">
+          <span id="passa-stat-correct" style="font-size:0.78rem; font-weight:800; background:rgba(16,185,129,0.2); color:#10B981; border:1px solid #10B981; padding:3px 10px; border-radius:8px;">0 Doğru</span>
+          <span id="passa-stat-wrong" style="font-size:0.78rem; font-weight:800; background:rgba(239,68,68,0.2); color:#EF4444; border:1px solid #EF4444; padding:3px 10px; border-radius:8px;">0 Yanlış</span>
+        </div>
+        <div id="passa-timer-display" style="font-size:1.6rem; font-weight:900; color:var(--primary); font-family:var(--font-heading);">2:00</div>
+        <span id="passa-stat-score" style="font-size:0.85rem; font-weight:900; background:rgba(251,191,36,0.2); color:var(--gold); border:1px solid var(--gold); padding:3px 12px; border-radius:8px;">0 P</span>
+      </div>
+
+      <!-- 24 Harfli Dairesel Alfabe Çarkı -->
+      <div class="passa-wheel-wrapper">
+        <div class="passa-center-box">
+          <span style="font-size:0.68rem; font-weight:800; color:var(--text-dim); text-transform:uppercase;">HARF</span>
+          <div id="passa-center-letter" class="passa-center-letter">A</div>
+        </div>
+        <div id="passa-wheel-nodes"></div>
+      </div>
+
+      <!-- Soru Kutusu -->
+      <div style="background:rgba(0,0,0,0.45); border:1.5px solid rgba(255,255,255,0.15); border-radius:16px; padding:16px; margin-bottom:14px; min-height:85px; display:flex; align-items:center; justify-content:center;">
+        <p id="passa-question-text" style="font-size:1rem; font-weight:800; color:#FFF; line-height:1.45; margin:0;">Soru yükleniyor...</p>
+      </div>
+
+      <!-- Gizli/Açılır Doğru Cevap Kutusu -->
+      <div id="passa-answer-reveal-box" style="display:none; background:rgba(251,191,36,0.18); border:1.5px solid var(--gold); border-radius:12px; padding:10px; margin-bottom:12px; font-weight:900; color:var(--gold); font-size:1rem;"></div>
+
+      <div style="display:flex; justify-content:center; margin-bottom:12px;">
+        <button type="button" id="btn-passa-reveal-answer" style="background:none; border:none; color:var(--text-dim); font-size:0.8rem; font-weight:800; cursor:pointer;">
+          👀 Cevabı Göster
+        </button>
+      </div>
+
+      <!-- Kontrol Butonları: PAS, DOĞRU, YANLIŞ -->
+      <div style="display:grid; grid-template-columns:1fr 1.3fr 1fr; gap:8px;">
+        <button type="button" id="btn-passa-pass" class="btn-main" style="background:linear-gradient(135deg, #FBBF24, #D97706); color:#0B0E14; font-size:0.95rem; font-weight:900; padding:14px 6px; border-radius:14px;">
+          🟡 PAS
+        </button>
+        <button type="button" id="btn-passa-correct" class="btn-main" style="background:linear-gradient(135deg, #10B981, #059669); color:#FFF; font-size:1rem; font-weight:900; padding:14px 6px; border-radius:14px; box-shadow:0 0 15px rgba(16,185,129,0.4);">
+          🟢 DOĞRU (+10)
+        </button>
+        <button type="button" id="btn-passa-wrong" class="btn-main" style="background:linear-gradient(135deg, #EF4444, #B91C1C); color:#FFF; font-size:0.95rem; font-weight:900; padding:14px 6px; border-radius:14px;">
+          🔴 YANLIŞ (0)
+        </button>
+      </div>
+    </div>
+
+    <!-- 3. SONUÇ AŞAMASI (RESULT) -->
+    <div id="passa-result-stage" class="card" style="display:none; text-align:center; padding:28px 18px;">
+      <div style="font-size:3.5rem; margin-bottom:6px;">🏆</div>
+      <h2 id="passa-result-title" style="font-size:1.6rem; font-weight:900; color:var(--gold); margin-bottom:8px;">Yarışma Tamamlandı!</h2>
+      <div id="passa-result-score" style="font-size:3rem; font-weight:900; color:var(--primary); line-height:1; margin-bottom:18px;">0 Puan</div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:24px;">
+        <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:12px 6px;">
+          <div id="passa-result-correct" style="font-size:1.5rem; font-weight:900; color:#10B981;">0</div>
+          <div style="font-size:0.75rem; color:#94A3B8; font-weight:800; margin-top:2px;">DOĞRU</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:12px 6px;">
+          <div id="passa-result-wrong" style="font-size:1.5rem; font-weight:900; color:#EF4444;">0</div>
+          <div style="font-size:0.75rem; color:#94A3B8; font-weight:800; margin-top:2px;">YANLIŞ</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:12px 6px;">
+          <div id="passa-result-rate" style="font-size:1.5rem; font-weight:900; color:var(--gold);">%0</div>
+          <div style="font-size:0.75rem; color:#94A3B8; font-weight:800; margin-top:2px;">BAŞARI</div>
+        </div>
+      </div>
+
+      <button type="button" id="btn-passa-restart" class="btn-main btn-action-gold" style="font-size:1.1rem; font-weight:900; padding:14px; width:100%; border-radius:14px;">
+        🔄 Yeniden Oyna
+      </button>
+    </div>
+  </section>
+
+  <!-- =========================================
+       5.10. KLASİK ÇARKIFELEK OYUN ALANI
+       ========================================= -->
+  <section id="screen-carkifelek" class="screen carkifelek-screen" style="padding: calc(env(safe-area-inset-top, 24px) + 20px) 16px 100px; max-width: 520px; margin: 0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <button type="button" id="btn-back-from-carkifelek" class="btn-round-abort" style="margin:0; position:static;">
+        <span>← Parti Arenası</span>
+      </button>
+      <span style="font-size:0.8rem; font-weight:800; background:rgba(251,191,36,0.15); color:var(--gold); border:1px solid var(--gold); padding:4px 12px; border-radius:999px;">
+        🎡 KLASİK ÇARKIFELEK
+      </span>
+    </div>
+
+    <!-- Takım Puanları Barı -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+      <div style="background:rgba(239,68,68,0.15); border:1.5px solid #EF4444; border-radius:14px; padding:10px 12px; text-align:left;">
+        <div id="cark-team-1-name" style="font-size:0.8rem; font-weight:800; color:#EF4444;">🔴 Kırmızı Takım</div>
+        <div id="cark-team-1-score" style="font-size:1.4rem; font-weight:900; color:#FFF;">0 P</div>
+      </div>
+      <div style="background:rgba(59,130,246,0.15); border:1.5px solid #3B82F6; border-radius:14px; padding:10px 12px; text-align:left;">
+        <div id="cark-team-2-name" style="font-size:0.8rem; font-weight:800; color:#3B82F6;">🔵 Mavi Takım</div>
+        <div id="cark-team-2-score" style="font-size:1.4rem; font-weight:900; color:#FFF;">0 P</div>
+      </div>
+    </div>
+
+    <!-- Sıra Rozeti & Kategori -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:6px;">
+      <span id="cark-turn-badge" style="background:#EF4444; color:#FFF; font-weight:900; font-size:0.8rem; padding:4px 14px; border-radius:999px; box-shadow:0 0 10px rgba(239,68,68,0.5);">
+        🎯 SIRA: KIRMIZI TAKIM
+      </span>
+      <span id="cark-puzzle-category" style="font-size:0.78rem; font-weight:800; color:var(--gold); background:rgba(251,191,36,0.15); padding:3px 10px; border-radius:8px;">
+        🎬 Popüler Türk Filmi
+      </span>
+    </div>
+
+    <!-- Gizli Kelime / Atasözü Panosu -->
+    <div id="cark-puzzle-board" class="cark-puzzle-board"></div>
+
+    <!-- Durum Mesajı Çubuğu -->
+    <div id="cark-status-banner" style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(255,255,255,0.15); border-radius:12px; padding:10px 14px; font-size:0.9rem; font-weight:800; color:#00F5D4; text-align:center; margin-bottom:14px;">
+      🎡 Çarkı çevirerek başlayın!
+    </div>
+
+    <!-- Dönen Çark Canvas -->
+    <div style="position:relative; width:280px; height:280px; margin:0 auto 14px;">
+      <canvas id="carkifelek-wheel-canvas" width="280" height="280" style="width:280px; height:280px;"></canvas>
+    </div>
+
+    <!-- Ana Aksiyon Butonları -->
+    <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:8px; margin-bottom:14px;">
+      <button type="button" id="btn-cark-spin" class="btn-main btn-action-gold" style="font-size:1.1rem; font-weight:900; padding:14px; border-radius:14px;">
+        🎡 ÇARKI ÇEVİR!
+      </button>
+      <button type="button" id="btn-cark-solve" class="btn-main" style="background:linear-gradient(135deg, #10B981, #059669); color:#FFF; font-size:0.95rem; font-weight:900; padding:14px 8px; border-radius:14px;">
+        🎯 TAHMİN ET
+      </button>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px;">
+      <button type="button" id="btn-cark-buy-vowel" class="btn-secondary" style="font-size:0.85rem; font-weight:800; padding:10px; border-radius:12px;">
+        🅰️ Sesli Harf Al (-250 P)
+      </button>
+      <button type="button" id="btn-cark-new-puzzle" class="btn-secondary" style="font-size:0.85rem; font-weight:800; padding:10px; border-radius:12px;">
+        🔄 Yeni Bulmaca
+      </button>
+    </div>
+
+    <!-- Sessiz Harf Klavyesi -->
+    <div class="card" style="padding:14px;">
+      <div style="font-size:0.8rem; font-weight:800; color:var(--text-dim); margin-bottom:8px; text-align:left;">
+        SESSİZ HARFLER (Çarkı çevirip birini seçin):
+      </div>
+      <div id="cark-consonants-keyboard" class="cark-keyboard-grid"></div>
+    </div>
+  </section>
+
+  <!-- Sesli Harf Satın Alma Modalı -->
+  <div id="modal-cark-vowels" class="modal-overlay" style="display:none;">
+    <div class="modal-card" style="max-width:380px; padding:22px; text-align:center;">
+      <h3 style="font-size:1.25rem; font-weight:900; color:var(--gold); margin-bottom:4px;">Sesli Harf Satın Al</h3>
+      <p style="font-size:0.85rem; color:#CBD5E1; margin-bottom:16px;">Takım puanınızdan 250 puan düşülecektir.</p>
+      <div id="cark-vowels-list" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; margin-bottom:16px;"></div>
+      <button type="button" onclick="document.getElementById('modal-cark-vowels').style.display='none'" class="btn-secondary" style="width:100%; padding:10px; font-weight:800;">
+        Vazgeç
+      </button>
+    </div>
+  </div>
+
+  <!-- Tur Kazanma Modalı -->
+  <div id="modal-cark-round-won" class="modal-overlay" style="display:none;">
+    <div class="modal-card" style="max-width:400px; padding:28px 20px; text-align:center;">
+      <div style="font-size:3.5rem; margin-bottom:6px;">🎉</div>
+      <h2 style="font-size:1.6rem; font-weight:900; color:var(--gold); margin-bottom:6px;">TUR TAMAMLANDI!</h2>
+      <p id="cark-round-winner-text" style="font-size:1.1rem; font-weight:900; color:#FFF; margin-bottom:20px;"></p>
+      <button type="button" onclick="document.getElementById('modal-cark-round-won').style.display='none'; window.__carkifelek.newRound();" class="btn-main btn-action-gold" style="width:100%; padding:14px; font-weight:900; font-size:1.05rem; border-radius:14px;">
+        🎡 Sıradaki Bulmacaya Geç ➔
+      </button>
+    </div>
+  </div>
+
+  <!-- =========================================
+       VAMPİR - KÖYLÜ KURALLAR & REHBER MODALI
+       ========================================= -->
+  <div id="modal-vampire-rules" class="modal-overlay">
+    <div class="modal-card" style="max-width:480px; padding:22px; max-height:85vh; overflow-y:auto;">
+      <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:1.8rem;">📖</span>
+          <h2 style="font-size:1.3rem; font-weight:900; color:#FFF; margin:0;">Vampir - Köylü Nasıl Oynanır?</h2>
+        </div>
+        <button type="button" id="btn-close-vampire-rules" class="modal-close-btn" aria-label="Kapat">&times;</button>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.5; color:#CBD5E1; text-align:left;">
+        <div style="background:rgba(255,46,147,0.15); border:1px solid #FF2E93; border-radius:12px; padding:10px;">
+          <strong style="color:#FFF;">🎯 OYUNUN AMACI:</strong>
+          <p style="margin-top:2px;">Köylüler aralarındaki gizli vampirleri bulup asmaya çalışır. Vampirler ise kimliklerini gizleyerek her gece bir köylüyü avlar.</p>
+        </div>
+
+        <div>
+          <strong style="color:var(--primary); font-size:0.95rem;">🎭 ROLLER VE GÖREVLERİ:</strong>
+          <ul style="padding-left:18px; margin-top:6px; display:flex; flex-direction:column; gap:6px;">
+            <li><strong style="color:#FF2E93;">🧛‍♂️ Vampir:</strong> Gece gözlerini açar ve avlanacak masum köylüyü fısıltıyla seçer. Gündüz masum köylü taklidi yapar.</li>
+            <li><strong style="color:#38BDF8;">🩺 Doktor:</strong> Her gece bir kişiyi (veya kendini) vampir saldırısından kurtarmak için işaret eder.</li>
+            <li><strong style="color:#FBBF24;">🕵️ Komiser:</strong> Her gece şüphelendiği 1 kişinin kimliğini gizlice soruşturur ve vampir olup olmadığını öğrenir.</li>
+            <li><strong style="color:#10B981;">🧑‍🌾 Masum Köylü:</strong> Gece uyur. Gündüz ipuçları ve tartışmalarla vampirleri bulup asmaya çalışır.</li>
+          </ul>
+        </div>
+
+        <div>
+          <strong style="color:#FFE600; font-size:0.95rem;">🔄 TUR AŞAMALARI:</strong>
+          <ol style="padding-left:18px; margin-top:6px; display:flex; flex-direction:column; gap:4px;">
+            <li><strong>🌙 Gece:</strong> Herkes başını eğer. Moderatör sırayla vampirleri, doktoru ve komiseri uyandırır.</li>
+            <li><strong>☀️ Sabah:</strong> Güneş doğar, gece kimin öldüğü (veya doktorun kimi kurtardığı) açıklanır.</li>
+            <li><strong>🗣️ Tartışma:</strong> Köy halkı 60 saniye boyunca birbirine tuzak sorular sorarak şüphelileri tartışır.</li>
+            <li><strong>⚖️ Linç Oylaması:</strong> Köy halkı en çok şüphelendiği kişiye oy verir. Çoğunluğu alan kişi asılır ve rolü açığa çıkar!</li>
+          </ol>
+        </div>
+      </div>
+
+      <button type="button" id="btn-confirm-vampire-rules" class="btn-main primary" style="font-size:1rem; padding:12px; width:100%; margin-top:16px;">
+        👍 Anladım, Oyuna Başla!
+      </button>
+    </div>
+  </div>
+
+  <!-- =========================================
+       6. ÖZEL PAKET & AI DESTE SİHİRBAZI MODALI
+       ========================================= -->
+  <div id="modal-custom-deck" class="modal-overlay">
+    <div class="modal-card custom-deck-modal-card">
+      <div class="modal-header">
+        <div class="header-icon">✨</div>
+        <h2>Yeni Deste Paketi Ekle</h2>
+        <button type="button" id="btn-close-custom-modal" class="modal-close-btn" aria-label="Kapat">&times;</button>
+      </div>
+
+      <!-- Deste Oluşturma Sekmeleri -->
+      <div class="deck-mode-tabs">
+        <button type="button" id="tab-btn-deck-ai" class="deck-tab-btn active">
+          <span>🪄 AI ile Üret</span>
+        </button>
+        <button type="button" id="tab-btn-deck-manual" class="deck-tab-btn">
+          <span>✍️ Elle Ekle</span>
+        </button>
+        <button type="button" id="tab-btn-deck-scan" class="deck-tab-btn">
+          <span>📷 QR Kod Tara</span>
+        </button>
+      </div>
+
+      <!-- 1. AI SİHİRBAZI FORMU -->
+      <div id="deck-panel-ai" class="deck-tab-panel active">
+        <p class="deck-help-text">
+          İstediğiniz bir konsepti yazın; yapay zeka saniyeler içinde arkadaş ortamınızı kahkahaya boğacak kartları otomatik üretsin!
+        </p>
+
+        <form id="form-ai-deck">
+          <div class="form-group">
+            <label for="ai-deck-theme">Deste Teması / Fikri</label>
+            <input type="text" id="ai-deck-theme" class="form-input" placeholder="Örn: 90'lar Türk Dizileri, Yazılımcı Çilesi..." required>
+          </div>
+
+          <!-- Hızlı İlham Çipleri -->
+          <div class="ai-theme-chips">
+            <button type="button" class="theme-chip" data-theme="🎬 90'lar Nostalji Türk Dizileri">🎬 90'lar Dizileri</button>
+            <button type="button" class="theme-chip" data-theme="💻 Yazılımcı & Ofis Çilesi">💻 Yazılımcı Çilesi</button>
+            <button type="button" class="theme-chip" data-theme="💍 Köy Düğünü & Akraba Muhabbetleri">💍 Köy Düğünü</button>
+            <button type="button" class="theme-chip" data-theme="🍔 Gece Acıktıran Sokak Lezzetleri">🍔 Sokak Lezzetleri</button>
+            <button type="button" class="theme-chip" data-theme="🚗 Sanayi Esnafı & Araba Geyiği">🚗 Sanayi Esnafı</button>
+          </div>
+
+          <div class="ai-options-row">
+            <div class="form-group flex-1">
+              <label for="ai-deck-count">Kelime Sayısı</label>
+              <select id="ai-deck-count" class="custom-select">
+                <option value="20">20 Kelime (Hızlı)</option>
+                <option value="30" selected>30 Kelime (Standart)</option>
+                <option value="40">40 Kelime (Mega Paket)</option>
+              </select>
+            </div>
+
+            <div class="form-group flex-1">
+              <label for="ai-deck-mode">Oyun Tipi</label>
+              <select id="ai-deck-mode" class="custom-select">
+                <option value="normal" selected>🎯 Klasik Mod</option>
+                <option value="taboo">🚫 Tabu Modu (Yasaklı)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <label for="ai-gemini-key" style="margin-bottom:0;">Google Gemini API Anahtarı</label>
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" style="font-size:0.75rem; color:var(--secondary); text-decoration:none;">
+                🔑 Ücretsiz Anahtar Al ➔
+              </a>
+            </div>
+            <input type="password" id="ai-gemini-key" class="form-input" placeholder="AIzaSy... (Girildiğinde kaydedilir; boşsa yerel Ollama denenir)" autocomplete="off">
+          </div>
+
+          <!-- Yükleniyor Göstergesi -->
+          <div id="ai-generating-loader" class="ai-loader-box" style="display:none;">
+            <div class="ai-spinner"></div>
+            <div class="ai-loader-text" id="ai-loader-status">Yapay zeka kartları tasarlıyor...</div>
+          </div>
+
+          <div class="modal-actions modal-deck-actions">
+            <button type="button" class="btn-modal-cancel" id="btn-cancel-ai-deck">
+              <span>✕ Vazgeç</span>
+            </button>
+            <button type="submit" id="btn-submit-ai-deck" class="btn-modal-submit btn-modal-ai-submit">
+              <span>🪄 AI ile Desteyi Oluştur</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 2. ELLE EKLEME FORMU -->
+      <div id="deck-panel-manual" class="deck-tab-panel">
+        <p class="deck-help-text">
+          Arkadaş grubunuza özel iç şakaları ve ortak anılarınızı kendiniz yazın.
+        </p>
+        <form id="form-custom-deck">
+          <div class="form-group">
+            <label for="custom-deck-title">Deste Başlığı</label>
+            <input type="text" id="custom-deck-title" class="form-input" placeholder="Örn: Bizim Ekip & Ofis Geyiği">
+          </div>
+
+          <div class="form-group">
+            <label for="custom-deck-words">Kelimeler (Her satıra bir kelime)</label>
+            <textarea id="custom-deck-words" class="form-textarea" rows="6" placeholder="Ahmet&#10;Pazartesi Toplantısı&#10;Kahve Makinesi&#10;Maaş Günü&#10;Patron"></textarea>
+          </div>
+
+          <div class="modal-actions modal-deck-actions">
+            <button type="button" class="btn-modal-cancel" id="btn-cancel-manual-deck">
+              <span>✕ Vazgeç</span>
+            </button>
+            <button type="submit" id="btn-submit-manual-deck" class="btn-modal-submit btn-modal-manual-submit">
+              <span>💾 Desteyi Kaydet & Ekle</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 3. QR KOD TARA & İÇERİ AKTAR PANELİ -->
+      <div id="deck-panel-scan" class="deck-tab-panel">
+        <p class="deck-help-text">
+          Arkadaşının telefonunda açılan <strong>Deste QR Kodunu</strong> kamerana göster; deste anında telefonuna yüklensin!
+        </p>
+
+        <!-- Kamera Vizörü / Tarama Alanı -->
+        <div class="qr-scanner-box">
+          <video id="qr-scan-video" playsinline muted autoplay></video>
+          <canvas id="qr-scan-canvas" style="display:none;"></canvas>
+          <div class="qr-scanner-reticle">
+            <div class="reticle-laser"></div>
+          </div>
+          <div id="qr-scan-placeholder" class="qr-placeholder-text">
+            <span style="font-size:2rem; display:block; margin-bottom:8px;">📷</span>
+            <span>Kamera kapalı veya izin bekleniyor</span>
+            <button type="button" id="btn-start-qr-camera" class="btn-primary-big" style="margin-top:12px; font-size:0.88rem; padding:8px 18px;">
+              Kamerayı Başlat
+            </button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; text-align:center;">
+          <label for="file-qr-image" class="btn-secondary" style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:0.85rem; padding:8px 16px;">
+            <span>🖼️ Galeriden QR Görseli Seç</span>
+          </label>
+          <input type="file" id="file-qr-image" accept="image/*" style="display:none;">
+        </div>
+
+        <!-- Algılanan Deste Önizleme Kartı -->
+        <div id="qr-detected-deck-card" class="scanned-deck-card" style="display:none; margin-top:16px;">
+          <div class="scanned-header">
+            <span class="scanned-icon" id="scanned-deck-icon">✨</span>
+            <div>
+              <div class="scanned-title" id="scanned-deck-title">Deste Başlığı</div>
+              <div class="scanned-badge" id="scanned-deck-count">0 Kelime</div>
+            </div>
+          </div>
+          <div class="scanned-words-preview" id="scanned-words-preview"></div>
+          <button type="button" id="btn-save-scanned-deck" class="btn-primary-big" style="width:100%; margin-top:12px; font-size:0.95rem;">
+            📥 Desteyi Telefonuma Yükle & Kaydet
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================
+       6.0. TURU BİTİR / MENÜYE DÖNÜŞ ONAY MODALI
+       ========================================= -->
+  <div id="modal-abort-round" class="modal-overlay">
+    <div class="modal-card abort-modal-card">
+      <div style="font-size:3.2rem; margin-bottom:10px;">⚠️</div>
+      <h3 style="color:#FF416C; margin-bottom:8px;">Turu Bitir ve Menüye Dön?</h3>
+      <p style="font-size:0.9rem; color:var(--text-dim); margin-bottom:24px; line-height:1.5;">
+        Şu an devam eden tur yarıda kalacak ve bu turun skorları kaydedilmeyecek. Menüye dönmek istediğinize emin misiniz?
+      </p>
+      <div class="modal-actions-stacked">
+        <button type="button" id="btn-abort-round-cancel" class="btn-modal-action-primary">
+          ▶️ Oyuna Devam Et
+        </button>
+        <button type="button" id="btn-abort-round-confirm" class="btn-modal-action-danger">
+          ✕ Evet, Menüye Dön
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================
+       6.0.1. KAMERA KAYIT VE İZİN ONAY MODALI
+       ========================================= -->
+  <div id="modal-camera-confirm" class="modal-overlay">
+    <div class="modal-card camera-confirm-card">
+      <div style="font-size:3.2rem; margin-bottom:10px;">📹</div>
+      <h3 style="color:#00F5D4; margin-bottom:8px;">Komik Anlar Kaydedilsin mi?</h3>
+      <p style="font-size:0.9rem; color:var(--text-dim); margin-bottom:18px; line-height:1.5;">
+        Ön kamera ile oyun boyunca arkadaşlarınızın eğlenceli tepkileri ve kelime alt yazısı kaydedilsin mi? Tur bitiminde videoyu izleyebilir ve telefonunuza indirebilirsiniz.
+      </p>
+
+      <div class="camera-consent-options" style="margin-bottom:20px;">
+        <label class="checkbox-label" style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem; color:#CBD5E1;">
+          <input type="checkbox" id="chk-camera-remember" style="width:18px; height:18px; accent-color:var(--secondary);">
+          <span>Seçimimi hatırla (Bir daha sorma)</span>
+        </label>
+      </div>
+
+      <div class="modal-actions-stacked">
+        <button type="button" id="btn-camera-opt-on" class="btn-modal-action-camera">
+          📹 Kamerayı Aç ve Kaydet
+        </button>
+        <button type="button" id="btn-camera-opt-off" class="btn-modal-action-secondary">
+          🚫 Kamerasız Oyna
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================
+       6.1. YETİŞKİNLER (+18) PIN KİLİDİ MODALI
+       ========================================= -->
+  <div id="modal-pin-lock" class="modal-overlay">
+    <div class="modal-card pin-modal-card">
+      <div style="font-size:3.5rem; margin-bottom:10px;">🔞</div>
+      <h3 style="color:#FF416C;">Yetişkinler (+18) Kilidi</h3>
+      <p style="font-size:0.88rem; color:var(--text-dim); margin-bottom:20px; line-height:1.5;">
+        Bu kategori yetişkinlere özel çılgın ve muzip kelimeler içerir. Devam etmek için 4 haneli PIN kodunu girin.
+      </p>
+
+      <form id="form-pin-lock">
+        <div class="form-group" style="text-align:center;">
+          <input type="password" id="input-pin-code" class="form-input pin-input" maxlength="4" placeholder="••••" autocomplete="off" required>
+          <div id="pin-error-msg" class="pin-error-text" style="display:none;">Hatalı PIN! (Varsayılan: 1818)</div>
+        </div>
+
+        <div class="modal-actions" style="justify-content:center; gap:14px;">
+          <button type="button" id="btn-close-pin-modal" class="btn-secondary">Vazgeç</button>
+          <button type="submit" class="btn-primary-big" style="padding:10px 24px; font-size:1rem; background:linear-gradient(135deg, #FF0844, #FF416C);">Kilidi Aç</button>
+        </div>
+        <div style="margin-top:12px; text-align:center;">
+          <button type="button" id="btn-forgot-pin-link" style="background:none; border:none; color:var(--text-dim); font-size:0.8rem; text-decoration:underline; cursor:pointer;">
+            🔑 Şifremi Unuttum / Güvenli Sıfırla
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================
+       6.1.1. PIN GÜVENLİK VE SIFIRLAMA MODALI
+       ========================================= -->
+  <div id="modal-pin-reset" class="modal-overlay">
+    <div class="modal-card" style="max-width: 380px;">
+      <div class="modal-header">
+        <h2>🔐 PIN Güvenlik Doğrulaması</h2>
+        <button type="button" id="btn-close-pin-reset-modal" class="modal-close" aria-label="Kapat">&times;</button>
+      </div>
+      <p class="modal-desc" id="pin-reset-prompt-desc" style="font-size:0.86rem; line-height:1.4; color:var(--text-secondary); margin-bottom:12px;">
+        Yetkisiz sıfırlamayı önlemek için güvenlik doğrulamasını tamamlayın.
+      </p>
+
+      <div id="pin-reset-question-badge" class="pin-question-badge" style="background:rgba(121, 40, 202, 0.2); border:1px solid rgba(121, 40, 202, 0.4); border-radius:10px; padding:10px 12px; margin-bottom:14px; text-align:left; font-size:0.88rem; color:#E2E8F0;">
+        <span style="color:#A78BFA; font-weight:700;">❓ Soru: </span><span id="pin-reset-question-text">Kurtarma cevabınız nedir?</span>
+      </div>
+
+      <form id="form-pin-reset-verify">
+        <div class="form-group" style="text-align:left; margin-bottom:14px;">
+          <label for="input-reset-auth" style="font-size:0.82rem; font-weight:700; color:#A78BFA;">Kurtarma Cevabınız veya Mevcut PIN</label>
+          <input type="text" id="input-reset-auth" class="form-input" placeholder="Gizli cevabınız veya PIN" autocomplete="off" required style="font-size:0.92rem; padding:10px 12px;">
+          <div id="reset-auth-error" class="pin-error-text" style="display:none; margin-top:8px;"></div>
+        </div>
+
+        <div class="modal-actions" style="justify-content:space-between; gap:10px;">
+          <button type="button" id="btn-cancel-pin-reset" class="btn-secondary">İptal</button>
+          <button type="submit" class="btn-primary-big" style="padding:10px 20px; font-size:0.92rem; background:linear-gradient(135deg, #FF0844, #FF416C);">
+            🔓 Doğrula ve Sıfırla
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================
+       6.1.2. TAKIMLAR ARASI SKOR PANOSU (LİDERLİK YERİNE)
+       ========================================= -->
+  <div id="modal-team-scoreboard" class="modal-overlay">
+    <div class="modal-card team-scoreboard-card" style="max-width: 440px; text-align: center;">
+      <div class="modal-header">
+        <div class="header-icon">🏆</div>
+        <h2>Takımlar Arası Skor Panosu</h2>
+        <button type="button" id="btn-close-team-scoreboard" class="modal-close" aria-label="Kapat">&times;</button>
+      </div>
+
+      <p class="modal-desc" style="font-size:0.86rem; color:var(--text-secondary); margin-bottom:14px;">
+        Parti takım savaşları karşılaşma istatistikleri ve galibiyet karnesi
+      </p>
+
+      <!-- Takım Başarı Özeti (Head-to-Head Kartları) -->
+      <div id="team-scoreboard-cards" class="team-scoreboard-grid">
+        <!-- JS ile dinamik doldurulur -->
+      </div>
+
+      <!-- Karşılaşma Geçmişi Başlığı -->
+      <div class="match-history-header" style="margin-top:16px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.82rem; font-weight:800; color:#A78BFA; text-transform:uppercase; letter-spacing:0.5px;">📜 Son Maçlar</span>
+        <button type="button" id="btn-clear-team-scores" class="btn-text-danger" style="font-size:0.75rem; color:#FF416C; background:none; border:none; cursor:pointer; font-weight:700;">
+          🗑️ Skorları Temizle
+        </button>
+      </div>
+
+      <!-- Son Karşılaşmalar Listesi -->
+      <div id="team-match-history-list" class="team-match-history-list" style="max-height: 200px; overflow-y: auto;">
+        <!-- JS ile doldurulur -->
+      </div>
+
+      <div class="modal-actions" style="margin-top:16px; justify-content:center; gap:10px;">
+        <button type="button" id="btn-launch-team-battle-from-scores" class="btn-primary-big" style="padding:10px 22px; font-size:0.92rem;">
+          ⚔️ Yeni Takım Savaşı Başlat
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- =========================================
+       6.1.3. TAKIM KADER ÇARKI MODALI (2 Aşamalı: Kategori & Süre)
+       ========================================= -->
+  <div id="modal-team-fortune-wheel" class="modal-overlay">
+    <div class="modal-card team-fortune-card" style="max-width: 420px; text-align: center;">
+      <div class="modal-header">
+        <div class="team-fortune-title-wrap">
+          <span class="fortune-title-icon">🎡</span>
+          <div>
+            <h2 class="fortune-main-title">Takım Kader Çarkı</h2>
+            <div class="fortune-main-sub">2 Aşamalı Şans Çarkı (Kategori & Süre)</div>
+          </div>
+        </div>
+        <button type="button" id="btn-close-team-fortune" class="modal-close" aria-label="Kapat">&times;</button>
+      </div>
+
+      <!-- Sıradaki Takım Bilgi Kartı -->
+      <div id="team-fortune-active-banner" class="team-fortune-banner">
+        <span id="team-fortune-badge" class="team-fortune-badge">🔴 Kırmızı Ejderhalar</span>
+        <span class="team-fortune-hint">şansını deniyor!</span>
+      </div>
+
+      <!-- 2 Aşama Göstergesi (Stepper) -->
+      <div class="fortune-stepper">
+        <div id="fortune-step-1" class="fortune-step active">
+          <span class="step-num">1</span>
+          <span class="step-label">🎯 Kategori Çarkı</span>
+        </div>
+        <div class="fortune-step-arrow">➔</div>
+        <div id="fortune-step-2" class="fortune-step">
+          <span class="step-num">2</span>
+          <span class="step-label">⏱️ Süre & Kural Çarkı</span>
+        </div>
+      </div>
+
+      <!-- Çark Sahnesi -->
+      <div id="team-fortune-wheel-stage" class="wheel-stage fortune-wheel-stage">
+        <div class="wheel-pointer">🔻</div>
+        <div class="wheel-canvas-wrapper" style="position:relative; width:280px; height:280px; margin:0 auto;">
+          <canvas id="team-fortune-canvas" width="280" height="280" style="width:280px; height:280px; border-radius:50%;"></canvas>
+          <button type="button" id="btn-team-fortune-center" class="wheel-center-btn">
+            <span>ÇEVİR</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Çark Sonuç / Bilgilendirme Kutusu -->
+      <div id="team-fortune-result-box" class="team-fortune-result-box">
+        <div class="fortune-result-row">
+          <div class="fortune-result-col">
+            <span class="fortune-result-title">📂 Kategori</span>
+            <span id="fortune-result-category" class="fortune-result-val">Bekleniyor...</span>
+          </div>
+          <div class="fortune-result-col">
+            <span class="fortune-result-title">⏱️ Süre & Kural</span>
+            <span id="fortune-result-duration" class="fortune-result-val">Bekleniyor...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Her İki Takımın Çarkı Tamamlandığında Çıkan Karşılaşma Özeti (VS) -->
+      <div id="team-fortune-matchup-summary" class="team-fortune-matchup-box" style="display: none;">
+        <div class="fortune-matchup-heading">⚔️ KADER ÇARKI MAÇ EŞLEŞMESİ ⚔️</div>
+        <div id="fortune-matchup-teams-list" class="fortune-matchup-list"></div>
+      </div>
+
+      <!-- Aksiyon Butonları -->
+      <div class="team-fortune-actions">
+        <button type="button" id="btn-spin-team-fortune" class="btn-primary fortune-action-btn">
+          <span>🎲 1. Aşama: Kategori Çarkını Çevir!</span>
+        </button>
+        <button type="button" id="btn-next-team-spin" class="btn-primary fortune-action-btn" style="display: none; background: linear-gradient(135deg, #0072FF, #00F5D4);">
+          <span>👉 2. Takıma Geç: [Mavi Takım] Çarkını Çevirsin!</span>
+        </button>
+        <button type="button" id="btn-launch-fortune-round" class="btn-primary fortune-action-btn" style="display: none; background: linear-gradient(135deg, #00E676, #00B0FF);">
+          <span>🚀 Şans Turunu Başlat!</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- =========================================
+       6.2. DONANIM & KALİBRASYON MERKEZİ (AYARLAR MODALI)
+       ========================================= -->
+  <div id="modal-settings-hub" class="modal-overlay">
+    <div class="modal-card settings-hub-card">
+      <div class="hub-header">
+        <div class="hub-title">
+          <span>⚙️ Ayarlar & Güvenlik Merkezi</span>
+        </div>
+        <button type="button" id="btn-close-settings-hub" class="hub-close-x" aria-label="Kapat">&times;</button>
+      </div>
+
+      <!-- 5 Kapsamlı Sekme Başlığı (Modern Segmented Bar) -->
+      <div class="hub-tabs" role="tablist">
+        <button type="button" id="tab-btn-security" class="hub-tab active" role="tab" aria-selected="true" title="PIN & Güvenlik Ayarları">
+          <span class="hub-tab-icon">🔒</span>
+          <span class="hub-tab-label">Güvenlik</span>
+        </button>
+        <button type="button" id="tab-btn-gameplay" class="hub-tab" role="tab" aria-selected="false" title="Oyun Modu & Süre Ayarları">
+          <span class="hub-tab-icon">⏱️</span>
+          <span class="hub-tab-label">Oyun</span>
+        </button>
+        <button type="button" id="tab-btn-motion" class="hub-tab" role="tab" aria-selected="false" title="Eğim Sensörü & Kalibrasyon">
+          <span class="hub-tab-icon">📱</span>
+          <span class="hub-tab-label">Sensör</span>
+        </button>
+        <button type="button" id="tab-btn-camera" class="hub-tab" role="tab" aria-selected="false" title="Ön Kamera & Kayıt Ayarları">
+          <span class="hub-tab-icon">📹</span>
+          <span class="hub-tab-label">Kamera</span>
+        </button>
+        <button type="button" id="tab-btn-system" class="hub-tab" role="tab" aria-selected="false" title="İzinler, Ağ & Teşhis">
+          <span class="hub-tab-icon">🛡️</span>
+          <span class="hub-tab-label">İzinler</span>
+        </button>
+      </div>
+
+      <!-- 1. SEKME: GÜVENLİK, ŞİFRE & KATEGORİ KİLİTLEME -->
+      <div id="hub-content-security" class="hub-tab-content active">
+        <!-- PIN Belirleme & Değiştirme Kartı -->
+        <div class="security-card">
+          <div class="security-card-header">
+            <div class="sec-icon">🔐</div>
+            <div>
+              <h3>PIN Kodu Belirleme & Değiştirme</h3>
+              <p>Yetişkinler (+18) ve kilitlediğiniz kategorileri açmak için kullanılan 4 haneli güvenlik kodu (Varsayılan: <strong>1818</strong>).</p>
+            </div>
+          </div>
+
+          <form id="form-change-pin" class="pin-change-form">
+            <div class="pin-inputs-row">
+              <div class="pin-field">
+                <label for="input-current-pin">Mevcut PIN</label>
+                <input type="password" id="input-current-pin" maxlength="4" placeholder="••••" class="form-input pin-mini-input" autocomplete="off" required>
+              </div>
+              <div class="pin-field">
+                <label for="input-new-pin">Yeni PIN (4 Rakam)</label>
+                <input type="password" id="input-new-pin" maxlength="4" placeholder="••••" class="form-input pin-mini-input" autocomplete="off" required>
+              </div>
+              <div class="pin-field">
+                <label for="input-new-pin-confirm">Yeni PIN Tekrar</label>
+                <input type="password" id="input-new-pin-confirm" maxlength="4" placeholder="••••" class="form-input pin-mini-input" autocomplete="off" required>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top:14px; margin-bottom:8px; text-align:left;">
+              <label for="select-recovery-question" style="font-size:0.8rem; color:#A78BFA; font-weight:700;">
+                🔑 Güvenlik Kurtarma Sorusu (Şifre unutulursa doğrulamak için)
+              </label>
+              <select id="select-recovery-question" class="custom-select" style="font-size:0.85rem; padding:8px 10px; margin-top:4px;">
+                <option value="İlk evcil hayvanınızın adı nedir?">İlk evcil hayvanınızın adı nedir?</option>
+                <option value="Doğduğunuz şehir neresidir?">Doğduğunuz şehir neresidir?</option>
+                <option value="En sevdiğiniz film veya dizi nedir?">En sevdiğiniz film veya dizi nedir?</option>
+                <option value="Çocukluk lakabınız veya ilk okulunuz?">Çocukluk lakabınız veya ilk okulunuz?</option>
+                <option value="Özel gizli kurtarma kelimem">Özel gizli kurtarma kelimem</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom:12px; text-align:left;">
+              <label for="input-recovery-answer" style="font-size:0.8rem; color:#A78BFA; font-weight:700;">
+                Gizli Kurtarma Cevabınız
+              </label>
+              <input type="text" id="input-recovery-answer" class="form-input" placeholder="Gizli cevabınız (Örn: Karabaş veya İzmir)" autocomplete="off" style="font-size:0.88rem; padding:8px 12px;">
+            </div>
+
+            <div id="pin-change-status-msg" class="pin-status-text" style="display:none;"></div>
+
+            <div class="pin-form-actions">
+              <button type="submit" class="btn-primary-big" style="padding:10px 22px; font-size:0.92rem;">
+                💾 PIN ve Güvenlik Sorusunu Kaydet
+              </button>
+              <button type="button" id="btn-open-reset-pin-modal" class="btn-secondary" style="font-size:0.85rem;" title="Mevcut PIN veya Kurtarma Sorusu gerektirir">
+                🔒 PIN Sıfırla (Güvenlik Korumalı)
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Kategori Kilitleme Listesi (Ebeveyn Denetimi) -->
+        <div class="security-card" style="margin-top:18px;">
+          <div class="security-card-header">
+            <div class="sec-icon">🛡️</div>
+            <div>
+              <h3>Kategori Kilitleme (Ebeveyn Denetimi)</h3>
+              <p>Açık olan kategoriler kilitlenir ve oyuna başlanmadan önce PIN kodu sorar.</p>
+            </div>
+          </div>
+
+          <div id="category-locks-container" class="category-locks-list">
+            <!-- JS ile tüm kategorilerin kilit anahtarları dinamik üretilir -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. SEKME: OYUN & SÜRE TERCİHLERİ -->
+      <div id="hub-content-gameplay" class="hub-tab-content">
+        <div class="hub-settings-list">
+          <div class="hub-setting-row duration-setting-row">
+            <div class="setting-labels">
+              <div class="title">⏱️ Tur Süresi</div>
+              <div class="subtitle">Her turda kelimeleri anlatmak için tanınan süre</div>
+            </div>
+            <div class="duration-controls-wrap">
+              <select id="select-duration" class="custom-select duration-select">
+                <option value="30">30 Saniye (Hızlı & Yıldırım)</option>
+                <option value="45">45 Saniye (Dinamik)</option>
+                <option value="60" selected>60 Saniye (Standart)</option>
+                <option value="90">90 Saniye (Uzun)</option>
+                <option value="120">120 Saniye (Mega Tur)</option>
+                <option value="custom">✏️ Özel (Manuel Süre Belirle)</option>
+              </select>
+
+              <!-- Manuel / Özel Süre Giriş Paneli (Özel seçildiğinde açılır) -->
+              <div id="custom-duration-box" class="custom-duration-box" style="display: none;">
+                <div class="custom-duration-inputs">
+                  <button type="button" id="btn-custom-dur-minus" class="dur-step-btn" title="10 saniye azalt">-10s</button>
+                  <div class="dur-input-field-wrap">
+                    <input type="number" id="input-custom-duration" min="10" max="300" step="5" value="60" class="custom-dur-input">
+                    <span class="dur-unit-label">sn</span>
+                  </div>
+                  <button type="button" id="btn-custom-dur-plus" class="dur-step-btn" title="10 saniye artır">+10s</button>
+                </div>
+                <div class="custom-dur-hint">10 ile 300 saniye arasında istediğiniz tur süresini belirleyin</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hub-setting-row">
+            <div class="setting-labels">
+              <div class="title">📹 Canlı Video HUD Kaydı</div>
+              <div class="subtitle">Ön kamera anlatım anlarını ve kelime alt yazısını kaydeder</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-camera" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- =========================================
+               SES EFEKTLERİ, SOUNDBOARD & TEST İSTASYONU
+               ========================================= -->
+          <div class="hub-sound-station-card">
+            <!-- Üst Başlık & Ana Ses Açma/Kapama -->
+            <div class="hub-sound-header-row">
+              <div class="setting-labels">
+                <div class="title">🔊 Ses Efektleri & Soundboard</div>
+                <div class="subtitle">Tüm oyun içi ve parti seslerini test edin, dinleyin veya durdurun</div>
+              </div>
+              <label class="toggle-switch" title="Tüm Sesleri Aç / Kapat">
+                <input type="checkbox" id="toggle-sound" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- Play & Stop Master Kontrol Barı -->
+            <div class="sound-test-master-bar">
+              <div class="test-master-info">
+                <span class="test-master-badge">🎧 DEMO TEST</span>
+                <span id="sound-test-status" class="test-master-status">Tüm sesleri sırayla dinle</span>
+              </div>
+              <div class="test-master-actions">
+                <button type="button" id="btn-sound-test-play" class="btn-sound-master btn-sound-play" title="Tüm efektleri sırayla çal">
+                  <span class="btn-icon">▶️</span> PLAY
+                </button>
+                <button type="button" id="btn-sound-test-stop" class="btn-sound-master btn-sound-stop" title="Çalan tüm sesleri ve testleri hemen durdur">
+                  <span class="btn-icon">⏹️</span> STOP
+                </button>
+              </div>
+            </div>
+
+            <!-- 1. Kategori: Oyun İçi Temel Sesler -->
+            <div class="sound-category-wrap">
+              <div class="sound-category-title">🎯 Oyun İçi Temel Sesler</div>
+              <div class="soundboard-grid">
+                <button type="button" class="btn-fx-sound" data-fx="correct" title="Doğru Tahmin (Sihir Çanı)">
+                  <span class="fx-icon">🟢</span>
+                  <span class="fx-label">Doğru</span>
+                </button>
+                <button type="button" class="btn-fx-sound" data-fx="pass" title="Pas Geçme (Yay Sesi)">
+                  <span class="fx-icon">🔴</span>
+                  <span class="fx-label">Pas</span>
+                </button>
+                <button type="button" class="btn-fx-sound" data-fx="tick" title="Saat Tik-Tak Sayacı">
+                  <span class="fx-icon">⏱️</span>
+                  <span class="fx-label">Tik-Tak</span>
+                </button>
+                <button type="button" class="btn-fx-sound" data-fx="countdown" title="Son 5 Saniye Bip Sayacı">
+                  <span class="fx-icon">⏳</span>
+                  <span class="fx-label">Geri Sayım</span>
+                </button>
+                <button type="button" class="btn-fx-sound" data-fx="drumroll" title="Trampet & Davul">
+                  <span class="fx-icon">🥁</span>
+                  <span class="fx-label">Davul</span>
+                </button>
+                <button type="button" class="btn-fx-sound" data-fx="bomb" title="Bomba Tik & Patlaması">
+                  <span class="fx-icon">💣</span>
+                  <span class="fx-label">Bomba</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 2. Kategori: Parti & Tezahürat Sesleri -->
+            <div class="sound-category-wrap">
+              <div class="sound-category-title">🎉 Parti & Tezahürat Efektleri</div>
+              <div class="soundboard-grid">
+                <button type="button" class="btn-fx-sound" data-fx="applause" title="Gerçek Tiyatro Salonu Alkışı">
+                  <span class="fx-icon">👏</span>
+                  <span class="fx-label">Alkış</span>
+                </button>
+                <button type="button" class="btn-fx-sound" data-fx="airhorn" title="Parti Havalı Korna">
+                  <span class="fx-icon">🎺</span>
+                  <span class="fx-label">Korna</span>
+                </button>
+                <button type="button" class="btn-fx-sound" data-fx="vuvuzela" title="Stadyum Vuvuzela">
+                  <span class="fx-icon">📣</span>
+                  <span class="fx-label">Vuvuzela</span>
+                </button>
+                <button type="button" class="btn-fx-sound" data-fx="bell" title="Boks & Round Zili">
+                  <span class="fx-icon">🔔</span>
+                  <span class="fx-label">Zil</span>
+                </button>
+                <button type="button" class="btn-fx-sound" data-fx="clownhorn" title="Palyaço Kornası">
+                  <span class="fx-icon">🎪</span>
+                  <span class="fx-label">Palyaço</span>
+                </button>
+                <button type="button" class="btn-fx-sound" data-fx="buzzer" title="Yarışma Buzzer'ı">
+                  <span class="fx-icon">🚨</span>
+                  <span class="fx-label">Buzzer</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 5 FARKLI ALKIŞ ÖRNEĞİ DİNLEME & SEÇME İSTASYONU -->
+            <div class="sound-category-wrap applause-samples-wrap" style="background: rgba(0, 245, 212, 0.05); border: 1.5px solid rgba(0, 245, 212, 0.3); border-radius: 16px; padding: 10px 12px; margin: 4px 0;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div class="sound-category-title" style="color:#00F5D4; font-size:0.82rem; font-weight:800; margin:0;">
+                  👏 5 Yeni Net & Neşeli Alkış Tarzı (Dokun & Dinle)
+                </div>
+                <span id="active-applause-name-badge" style="font-size:0.7rem; padding:2px 8px; border-radius:10px; background:rgba(0,245,212,0.18); color:#00F5D4; font-weight:700;">
+                  Seçili: 1. Hızlı Stüdyo
+                </span>
+              </div>
+              <div class="applause-samples-grid" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:6px;">
+                <button type="button" class="btn-applause-sample active" data-sample="ornek1_net_hizli_studyo" title="Temiz & Hızlı Stüdyo Alkışı">
+                  <span style="font-size:1.15rem; display:block;">👏</span>
+                  <span style="font-size:0.68rem; font-weight:800; display:block; margin-top:2px;">1. Stüdyo</span>
+                </button>
+                <button type="button" class="btn-applause-sample" data-sample="ornek2_neseli_kucuk_grup" title="Neşeli Küçük Grup Kutlaması">
+                  <span style="font-size:1.15rem; display:block;">🎈</span>
+                  <span style="font-size:0.68rem; font-weight:800; display:block; margin-top:2px;">2. Neşeli</span>
+                </button>
+                <button type="button" class="btn-applause-sample" data-sample="ornek3_kipir_kipir_parti" title="Kıpır Kıpır Hareketli Parti">
+                  <span style="font-size:1.15rem; display:block;">🎉</span>
+                  <span style="font-size:0.68rem; font-weight:800; display:block; margin-top:2px;">3. Kıpır</span>
+                </button>
+                <button type="button" class="btn-applause-sample" data-sample="ornek4_ritmik_tempo" title="Ritmik Parti Temposu">
+                  <span style="font-size:1.15rem; display:block;">🥁</span>
+                  <span style="font-size:0.68rem; font-weight:800; display:block; margin-top:2px;">4. Ritmik</span>
+                </button>
+                <button type="button" class="btn-applause-sample" data-sample="ornek5_genc_aydinlik" title="Genç & Aydınlık Kutlama">
+                  <span style="font-size:1.15rem; display:block;">✨</span>
+                  <span style="font-size:0.68rem; font-weight:800; display:block; margin-top:2px;">5. Aydınlık</span>
+                </button>
+              </div>
+              <div id="applause-sample-desc" style="font-size:0.74rem; color:var(--text-secondary); margin-top:8px; line-height:1.3; text-align:center;">
+                👏 <strong>1. Temiz & Hızlı Stüdyo Alkışı:</strong> Sıfır yankı, pürüzsüz stüdyo ortamı. El şaklamaları tane tane, hızlı ve son derece net.
+              </div>
+            </div>
+
+            <!-- 3. Kategori: Arka Plan Parti Müziği (Play & Stop ile) -->
+            <div class="sound-category-wrap music-category-wrap">
+              <div class="sound-category-title">🎵 Arka Plan Parti Müziği</div>
+              <div class="music-theme-controls-new">
+                <select id="select-music-theme" class="custom-select music-theme-select">
+                  <option value="none">🔕 Sessiz & Sade (Müziksiz)</option>
+                  <option value="suspense" selected>💓 Kalp Atışı Nabzı (Gerilim)</option>
+                  <option value="ticking_clock">⏱️ Yarışma Sayacı (Tansiyon)</option>
+                  <option value="noir_mystery">🕵️ Gizem & Tekinsiz (Ağır Gerilim)</option>
+                  <option value="minimal_drone">🌌 Sinematik Odaklanma (Ambiyans)</option>
+                </select>
+                <div class="music-test-btns">
+                  <button type="button" id="btn-music-play" class="btn-music-ctrl btn-play" title="Seçili Müziği Dinle">
+                    ▶️ ÇAL
+                  </button>
+                  <button type="button" id="btn-music-stop" class="btn-music-ctrl btn-stop" title="Müziği Durdur">
+                    ⏹️ DURDUR
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hub-setting-row">
+            <div class="setting-labels">
+              <div class="title">📳 Titreşimli Geri Bildirim (Haptik)</div>
+              <div class="subtitle">Telefon alındayken doğru, pas ve son 5 saniye kalp atışı titreşimi</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-haptics" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="hub-setting-row">
+            <div class="setting-labels">
+              <div class="title">💡 Ekranı Uyanık Tut (WakeLock)</div>
+              <div class="subtitle">Oyun esnasında telefon ekranının kararmasını ve uykuya geçmesini önler</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-wakelock" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. SEKME: EĞİM & KALİBRASYON -->
+      <div id="hub-content-motion" class="hub-tab-content">
+        <!-- Canlı Eğim Ufuk Çizgisi (Horizon Gauge) -->
+        <div class="horizon-gauge-wrapper">
+          <div class="horizon-zones-header">
+            <span class="zone-tag pass">⬆️ ARKAYA: PAS</span>
+            <span class="zone-tag neutral">🟢 DİK DURUŞ</span>
+            <span class="zone-tag correct">⬇️ ÖNE: DOĞRU</span>
+          </div>
+
+          <div class="horizon-track">
+            <!-- Orta nötr işaretçisi -->
+            <div class="horizon-center-marker"></div>
+            <!-- Canlı hareket eden eğim topu / baloncuk -->
+            <div id="horizon-bubble" class="horizon-bubble">
+              <span id="horizon-bubble-icon">📱</span>
+            </div>
+          </div>
+
+          <div class="horizon-angle-readout">
+            <span id="horizon-angle-text">0°</span>
+            <span id="horizon-zone-status" class="status-pill neutral">Nötr Duruş</span>
+          </div>
+          <div id="horizon-sensor-info" style="font-size:0.75rem; color:var(--text-dim); text-align:center; margin-top:8px;">
+            Sensör: Bekleniyor... | Z: 0.00 | Nötr: 0.00
+          </div>
+        </div>
+
+        <!-- Kalibrasyon Aksiyonları -->
+        <div class="hub-action-box">
+          <button type="button" id="btn-hub-save-neutral" class="btn-primary-big hub-action-btn">
+            🎯 Şu Anki Baş Duruşumu Sıfırla (Nötr Kaydet)
+          </button>
+          <p class="hub-help-text">
+            Telefonu alnınıza koyup dik durun ve butona basın. Oyun bu açıyı sıfır noktası kabul edecektir.
+          </p>
+        </div>
+
+        <!-- Hassasiyet ve Yön Kontrolleri -->
+        <div class="hub-settings-list">
+          <div class="hub-setting-row has-range">
+            <div class="setting-labels">
+              <div class="title">Tetikleme Eşik Açısı</div>
+              <div class="subtitle">Ne kadar öne/arkaya eğilince tetiklensin?</div>
+            </div>
+            <div class="setting-control range-control">
+              <input type="range" id="hub-slider-threshold" min="15" max="45" value="22" class="range-slider">
+              <span id="hub-threshold-value" class="range-badge">22°</span>
+            </div>
+          </div>
+
+          <div class="hub-setting-row">
+            <div class="setting-labels">
+              <div class="title">Eğim Yönünü Ters Çevir</div>
+              <div class="subtitle">Öne eğilince Pas, Arkaya bakınca Doğru olsun</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="hub-toggle-invert">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="hub-setting-row">
+            <div class="setting-labels">
+              <div class="title">🖐️ Dokunmatik Mod (Sensörsüz)</div>
+              <div class="subtitle">Telefonu masaya koyup ekrana dokunarak oyna (Sol=Pas, Sağ=Doğru)</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="hub-toggle-touchonly">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. SEKME: KAMERA & GÖRÜNTÜ DENETİMİ -->
+      <div id="hub-content-camera" class="hub-tab-content">
+        <div class="camera-test-wrapper">
+          <div class="camera-preview-box">
+            <video id="hub-camera-preview" playsinline muted autoplay></video>
+            <div id="hub-camera-placeholder" class="camera-placeholder">
+              <div style="font-size:3rem; margin-bottom:8px;">📹</div>
+              <div>Kamera kapalı veya henüz izin verilmedi</div>
+            </div>
+          </div>
+
+          <div class="camera-actions-row">
+            <button type="button" id="btn-hub-start-camera" class="btn-primary-big" style="padding:10px 20px; font-size:0.95rem;">
+              📹 Kamerayı Test Et & Aç
+            </button>
+            <button type="button" id="btn-hub-switch-camera" class="btn-secondary">
+              🔄 Ön / Arka Kamera Değiştir
+            </button>
+          </div>
+
+          <div class="camera-diagnostic-info">
+            <div class="diag-item">
+              <span class="diag-label">Kamera İzni:</span>
+              <span id="diag-cam-status" class="diag-value">Bekleniyor...</span>
+            </div>
+            <div class="diag-item">
+              <span class="diag-label">Seçili Kamera:</span>
+              <span id="diag-cam-facing" class="diag-value">Ön Kamera (Selfie)</span>
+            </div>
+            <div class="diag-item">
+              <span class="diag-label">Video HUD Baskısı:</span>
+              <span class="diag-value" style="color:var(--secondary);">Aktif (Reels/TikTok Formatı)</span>
+            </div>
+          </div>
+
+          <!-- Kamera & Video Kayıt Ayarları -->
+          <div class="hub-settings-list" style="margin-top:16px;">
+            <div class="hub-setting-row">
+              <div class="setting-labels">
+                <div class="title">📹 Komik Anları Kaydet (Video)</div>
+                <div class="subtitle">Oyun esnasında ön kamera ile tepkileri ve kelimeleri kaydeder</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggle-setting-camera-record" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="hub-setting-row">
+              <div class="setting-labels">
+                <div class="title">❓ Her Oyun Başında Onay Sor</div>
+                <div class="subtitle">Her yeni kategoriye tıklandığında kamera kaydı için onay penceresi açar</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="toggle-setting-camera-prompt" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="hub-setting-row has-select">
+              <div class="setting-labels">
+                <div class="title">🎬 Video Kayıt Formatı & Codec</div>
+                <div class="subtitle">Android cihazlarda en yüksek stabilite için WebM (VP8/Opus) önerilir</div>
+              </div>
+              <div class="setting-control">
+                <select id="select-setting-camera-format" class="custom-select">
+                  <option value="webm" selected>WebM (VP8 / Opus - Android Tam Uyum)</option>
+                  <option value="mp4">MP4 (H.264 / AAC - Cihaz Donanımına Bağlı)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="hub-setting-row has-select">
+              <div class="setting-labels">
+                <div class="title">📱 Tercih Edilen Kamera</div>
+                <div class="subtitle">Oyun sırasında kullanılacak kamera</div>
+              </div>
+              <div class="setting-control">
+                <select id="select-setting-camera-facing" class="custom-select">
+                  <option value="user" selected>Ön Kamera (Selfie / Alın - Tavsiye Edilen)</option>
+                  <option value="environment">Arka Kamera (Ana Kamera)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="hub-action-box" style="margin-top:12px;">
+              <button type="button" id="btn-reset-camera-prefs" class="btn-secondary" style="width:100%; justify-content:center; font-size:0.85rem;">
+                🔄 Kamera Tercihlerini & Onayını Sıfırla
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. SEKME: SİSTEM İZİNLERİ & HTTPS -->
+      <div id="hub-content-system" class="hub-tab-content">
+        <div class="system-diagnostics-list">
+          <div class="system-diag-card">
+            <div class="card-icon" id="sys-https-icon">🔒</div>
+            <div class="card-details">
+              <div class="card-title">HTTPS / Güvenli Bağlam Durumu</div>
+              <div id="sys-https-desc" class="card-desc">Denetleniyor...</div>
+            </div>
+            <div id="sys-https-badge" class="status-badge">Bilinmiyor</div>
+          </div>
+
+          <div class="system-diag-card">
+            <div class="card-icon">📱</div>
+            <div class="card-details">
+              <div class="card-title">iOS Jiroskop Sensör İzni</div>
+              <div class="card-desc">iPhone/iPad Safari kullanıyorsanız sensör izni vermeniz gerekebilir.</div>
+            </div>
+            <button type="button" id="btn-sys-request-motion" class="btn-secondary" style="font-size:0.8rem;">
+              İzin İste
+            </button>
+          </div>
+
+          <!-- APK Paylaşım Kartı -->
+          <div class="system-diag-card" style="border: 1.5px solid rgba(0, 245, 212, 0.45); background: linear-gradient(135deg, rgba(0, 245, 212, 0.1) 0%, rgba(121, 40, 202, 0.15) 100%);">
+            <div class="card-icon" style="font-size:2rem;">📲</div>
+            <div class="card-details">
+              <div class="card-title" style="color:#00F5D4; font-size:1rem; font-weight:900;">Kafana Tak! APK Paylaş</div>
+              <div class="card-desc" style="font-size:0.8rem; line-height:1.4;">
+                Oyunu arkadaşlarının telefonuna anında yükle (WhatsApp, Quick Share, Bluetooth veya Yerel Wi-Fi).
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
+              <button type="button" id="btn-share-app-apk" class="btn-primary-big" style="padding:8px 14px; font-size:0.82rem; background:linear-gradient(135deg, #00F5D4, #7928CA); white-space:nowrap;">
+                🚀 APK Paylaş
+              </button>
+              <button type="button" id="btn-open-apk-qr" class="btn-secondary" style="padding:6px 10px; font-size:0.75rem; white-space:nowrap;">
+                📷 QR ile İndirt
+              </button>
+            </div>
+          </div>
+
+          <div class="system-troubleshoot-box">
+            <h4>💡 Telefonda Kamera Açılmıyorsa:</h4>
+            <ol>
+              <li>Telefonunuzun adres çubuğuna mutlaka <strong>https://</strong> ile girdiğinizden emin olun (Örn: <code>https://192.168.1.159:3443</code>).</li>
+              <li>Tarayıcı "Bağlantınız gizli değil" uyarısı verirse <strong>Gelişmiş -> Siteye İlerle</strong> butonuna basın.</li>
+              <li>Kamera izin istem penceresi çıktığında <strong>İzin Ver</strong> seçeneğini işaretleyin.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top:24px; justify-content:center;">
+        <button type="button" id="btn-hub-done" class="btn-primary-big" style="padding:12px 36px;">
+          Kaydet & Kapat
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APK İndirme QR Modalı -->
+  <!-- APK İndirme QR Modalı (7/24 Kesintisiz Bulut & Yerel Wi-Fi) -->
+  <div id="modal-apk-qr-download" class="modal-overlay">
+    <div class="modal-card" style="max-width: 410px; text-align: center;">
+      <div class="modal-header">
+        <div class="header-icon">📲</div>
+        <h2>Kafana Tak! APK İndir</h2>
+        <button type="button" id="btn-close-apk-qr" class="modal-close" aria-label="Kapat">&times;</button>
+      </div>
+
+      <!-- İndirme Kaynağı Sekmeleri -->
+      <div class="apk-source-tabs" style="display:flex; gap:6px; margin:6px 0 10px; background:rgba(0,0,0,0.4); padding:4px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);">
+        <button type="button" id="tab-apk-cloud" class="apk-source-tab active" style="flex:1; padding:7px 8px; border-radius:8px; border:none; font-size:0.78rem; font-weight:800; cursor:pointer; transition:all 0.2s; background:linear-gradient(135deg, #00F5D4, #0072FF); color:#0B0E14;">
+          🌐 7/24 Bulut (Önerilen)
+        </button>
+        <button type="button" id="tab-apk-local" class="apk-source-tab" style="flex:1; padding:7px 8px; border-radius:8px; border:none; font-size:0.78rem; font-weight:800; cursor:pointer; transition:all 0.2s; background:transparent; color:var(--text-secondary);">
+          📶 Yerel Wi-Fi
+        </button>
+      </div>
+
+      <div id="apk-status-pill" class="apk-status-pill" style="font-size:0.73rem; padding:4px 10px; border-radius:20px; margin-bottom:10px; display:inline-block; font-weight:700; background:rgba(0,245,212,0.15); color:#00F5D4; border:1px solid rgba(0,245,212,0.4);">
+        🟢 7/24 Kesintisiz Aktif (PC Kapalıyken de İndirilebilir)
+      </div>
+
+      <p id="apk-modal-desc" class="modal-desc" style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:10px; line-height:1.4;">
+        Arkadaşınız telefon kamerasını bu QR koda tutsun; bilgisayarınız kapalı olsa dahi APK anında insin!
+      </p>
+
+      <div class="qr-canvas-wrapper" style="background:#FFF; padding:12px; border-radius:18px; display:inline-block; margin:0 auto 10px; box-shadow:0 8px 30px rgba(0,245,212,0.25);">
+        <canvas id="qr-apk-download-canvas" width="220" height="220"></canvas>
+      </div>
+
+      <div class="apk-download-link-box" style="font-size:0.7rem; color:var(--text-dim); margin-bottom:12px; word-break:break-all; padding:6px 10px; background:rgba(0,0,0,0.35); border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
+        <span id="apk-download-url-text">https://github.com/wmurat7/kafanatak-party/releases/latest/download/KafanaTak-v1.0.apk</span>
+      </div>
+
+      <div class="modal-actions" style="justify-content:center; gap:8px;">
+        <button type="button" id="btn-copy-apk-link" class="btn-secondary" style="font-size:0.8rem; padding:8px 14px;">
+          📋 Linki Kopyala
+        </button>
+        <button type="button" id="btn-direct-download-apk" class="btn-primary-big" style="padding:8px 16px; font-size:0.8rem;">
+          💾 Telefona İndir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================
+       6.3. OYUNCU PROFİLİ & REKORLAR MODALI
+       ========================================= -->
+  <div id="modal-player-profile" class="modal-overlay">
+    <div class="modal-card profile-card-modal">
+      <div class="modal-header">
+        <div class="header-icon">👑</div>
+        <h2>Oyuncu Profili & Rekorlar</h2>
+        <button type="button" id="btn-close-profile-modal" class="modal-close-btn" aria-label="Kapat">&times;</button>
+      </div>
+
+      <!-- Profil Kimlik Düzenleme -->
+      <section class="profile-identity-section">
+        <div class="avatar-current-display">
+          <span id="profile-current-avatar" class="avatar-large">🦁</span>
+        </div>
+        <div class="avatar-name-input-box">
+          <label for="input-profile-name">Oyuncu Adınız</label>
+          <input type="text" id="input-profile-name" value="Parti Canavarı" maxlength="20" class="form-input">
+        </div>
+      </section>
+
+
+      <!-- Avatar Seçici -->
+      <section class="avatar-picker-section">
+        <label>Avatarınızı Seçin</label>
+        <div class="avatar-grid" id="avatar-grid-picker">
+          <button type="button" class="avatar-opt-btn active" data-avatar="🦁">🦁</button>
+          <button type="button" class="avatar-opt-btn" data-avatar="🦊">🦊</button>
+          <button type="button" class="avatar-opt-btn" data-avatar="🚀">🚀</button>
+          <button type="button" class="avatar-opt-btn" data-avatar="👑">👑</button>
+          <button type="button" class="avatar-opt-btn" data-avatar="⚡">⚡</button>
+          <button type="button" class="avatar-opt-btn" data-avatar="🎭">🎭</button>
+          <button type="button" class="avatar-opt-btn" data-avatar="🍕">🍕</button>
+          <button type="button" class="avatar-opt-btn" data-avatar="💎">💎</button>
+          <button type="button" class="avatar-opt-btn" data-avatar="🦄">🦄</button>
+          <button type="button" class="avatar-opt-btn" data-avatar="🥷">🥷</button>
+          <button type="button" class="avatar-opt-btn" data-avatar="🎸">🎸</button>
+          <button type="button" class="avatar-opt-btn" data-avatar="🐉">🐉</button>
+        </div>
+      </section>
+
+      <!-- 4 Başarı İstatistik Kartı -->
+      <section class="profile-stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">🎮</div>
+          <div class="stat-val" id="stat-total-games">0</div>
+          <div class="stat-lbl">Toplam Oyun</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🎯</div>
+          <div class="stat-val" id="stat-total-correct">0</div>
+          <div class="stat-lbl">Bilinen Kelime</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🏆</div>
+          <div class="stat-val" id="stat-high-score">0</div>
+          <div class="stat-lbl">Tur Rekoru</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⚔️</div>
+          <div class="stat-val" id="stat-team-wins">0</div>
+          <div class="stat-lbl">Takım Zaferi</div>
+        </div>
+      </section>
+
+      <!-- Son Maç Geçmişi -->
+      <section class="profile-history-section">
+        <h3>📜 Son Maç Geçmişi</h3>
+        <div id="profile-history-list" class="profile-history-list">
+          <p class="text-muted" style="text-align:center; padding:12px; font-size:0.85rem;">Henüz tamamlanan maç bulunmuyor.</p>
+        </div>
+      </section>
+
+      <div class="modal-actions" style="margin-top:20px; justify-content:space-between;">
+        <button type="button" id="btn-reset-profile-stats" class="btn-secondary" style="color:#FF416C; border-color:rgba(255,65,108,0.3); font-size:0.85rem;">
+          🗑️ İstatistikleri Sıfırla
+        </button>
+        <button type="button" id="btn-save-profile" class="btn-primary-big" style="padding:10px 28px; font-size:0.95rem;">
+          Kaydet & Kapat
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- =========================================
+       6.4. UYGULAMADAN ÇIKIŞ ONAY MODALI
+       ========================================= -->
+  <div id="modal-confirm-exit" class="modal-overlay">
+    <div class="modal-card exit-modal-card">
+      <div class="exit-modal-icon">🚪</div>
+      <h3 class="exit-modal-title">Oyundan Çıkılsın mı?</h3>
+      <p class="exit-modal-desc">
+        Kafana Tak! partisinden ayrılmak üzeresiniz. Çıkmak istediğinize emin misiniz?
+      </p>
+      <div class="modal-actions exit-modal-actions">
+        <button type="button" id="btn-cancel-app-exit" class="btn-modal-cancel">
+          <span>🎮 Oynamaya Devam Et</span>
+        </button>
+        <button type="button" id="btn-confirm-app-exit" class="btn-modal-submit btn-modal-exit-submit">
+          <span>🚪 Çıkış Yap</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================
+       6.5. CANLI SEYİRCİ & İKİNCİ EKRAN QR MODALI
+       ========================================= -->
+  <div id="modal-spectator-qr" class="modal-overlay">
+    <div class="modal-card spectator-qr-card" style="max-width: 420px; text-align: center;">
+      <div class="modal-header">
+        <div class="header-icon">👥</div>
+        <h2>Canlı Seyirci & İkinci Ekran</h2>
+        <button type="button" id="btn-close-spectator-qr" class="modal-close" aria-label="Kapat">&times;</button>
+      </div>
+
+      <p class="modal-desc" style="font-size:0.86rem; color:var(--text-secondary); margin-bottom:12px; line-height:1.4;">
+        Telefonu alnına koyan kişi hariç, odadaki herkes kamerasıyla bu QR kodu okutarak kelimeleri canlı izleyebilir ve sana tezahürat yapabilir!
+      </p>
+
+      <div class="qr-canvas-wrapper" style="background:#FFF; padding:12px; border-radius:18px; display:inline-block; margin:0 auto 10px; box-shadow:0 8px 30px rgba(0,245,212,0.25);">
+        <canvas id="qr-spectator-canvas" width="220" height="220"></canvas>
+      </div>
+
+      <div class="spectator-network-hint" style="display:flex; align-items:center; gap:10px; background:rgba(0,245,212,0.08); border:1.5px solid rgba(0,245,212,0.35); border-radius:14px; padding:10px 14px; margin-bottom:12px; text-align:left;">
+        <span style="font-size:1.5rem;">☁️</span>
+        <div style="font-size:0.78rem; color:#E2E8F0; line-height:1.4;">
+          <strong style="color:#00F5D4;">Firebase Bulut Odası Aktif:</strong> Arkadaşlarınız kendi mobil verisiyle veya ev Wi-Fi'ıyla anında bağlanabilir. Hotspot veya aynı ağda olma zorunluluğu yoktur!
+        </div>
+      </div>
+
+      <div class="spectator-ip-setting" style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:10px;">
+        <span style="font-size:0.75rem; color:#A78BFA; font-weight:700;">Host IP:</span>
+        <input type="text" id="input-spectator-ip" style="background:rgba(0,0,0,0.5); border:1px solid rgba(0,245,212,0.4); border-radius:6px; color:#00F5D4; font-family:monospace; font-size:0.8rem; padding:4px 8px; width:140px; text-align:center;" value="192.168.1.159">
+        <button type="button" id="btn-update-spectator-ip" style="background:#00F5D4; color:#0B0E14; border:none; border-radius:6px; font-weight:800; font-size:0.75rem; padding:5px 10px; cursor:pointer;">Yenile</button>
+      </div>
+
+      <div class="room-code-tag" style="background:rgba(121,40,202,0.25); border:1px solid rgba(121,40,202,0.5); border-radius:12px; padding:6px 14px; margin-bottom:10px;">
+        <div style="font-size:0.75rem; color:#A78BFA; font-weight:800; letter-spacing:1px; margin-bottom:2px;">ODA KODU</div>
+        <div id="spec-qr-room-code" style="font-size:1.5rem; font-weight:900; letter-spacing:3px; color:#00F5D4;">PARTI</div>
+      </div>
+
+      <div class="spectator-link-box" style="font-size:0.75rem; color:var(--text-dim); margin-bottom:14px; word-break:break-all; padding:6px 10px; background:rgba(0,0,0,0.3); border-radius:8px;">
+        <span id="spec-qr-link-text">http://.../spectator.html?room=PARTI</span>
+      </div>
+
+      <div class="modal-actions" style="gap:10px; justify-content:center;">
+        <button type="button" id="btn-copy-spectator-link" class="btn-secondary" style="font-size:0.85rem;">
+          📋 Bağlantıyı Kopyala
+        </button>
+        <button type="button" id="btn-open-spectator-browser" class="btn-primary-big" style="padding:10px 18px; font-size:0.85rem;">
+          🚀 Tarayıcıda Aç
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- =========================================
+       6.6. ÖZEL DESTE PAYLAŞIM QR MODALI
+       ========================================= -->
+  <div id="modal-deck-qr-share" class="modal-overlay">
+    <div class="modal-card deck-qr-card" style="max-width: 400px; text-align: center;">
+      <div class="modal-header">
+        <div class="header-icon" id="share-deck-icon">🎁</div>
+        <h2 id="share-deck-title">Desteyi QR ile Paylaş</h2>
+        <button type="button" id="btn-close-deck-share-qr" class="modal-close" aria-label="Kapat">&times;</button>
+      </div>
+
+      <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(121,40,202,0.25); border:1px solid rgba(121,40,202,0.5); border-radius:100px; padding:4px 14px; font-size:0.74rem; color:#A78BFA; font-weight:800; margin-bottom:10px;">
+        <span>⚡ %100 Çevrimdışı (İnternet veya Ağ Gerekmez)</span>
+      </div>
+
+      <p class="modal-desc" style="font-size:0.86rem; color:var(--text-secondary); margin-bottom:14px; line-height:1.4;">
+        Arkadaşın bu QR kodu kendi uygulamasında (Deste Ekle ➔ QR Kod Tara) okutarak desteyi saniyeler içinde telefonuna aktarabilir.
+      </p>
+
+      <div class="qr-canvas-wrapper" style="background:#FFF; padding:12px; border-radius:18px; display:inline-block; margin:0 auto 12px; box-shadow:0 8px 30px rgba(255,0,122,0.25);">
+        <canvas id="qr-deck-share-canvas" width="220" height="220"></canvas>
+      </div>
+
+      <div class="deck-share-meta-row" style="margin-bottom:14px;">
+        <span class="badge-pill" id="share-deck-word-count" style="background:rgba(0,245,212,0.15); color:#00F5D4; font-weight:800; padding:6px 14px; border-radius:999px; font-size:0.85rem;">
+          30 Kelime
+        </span>
+      </div>
+
+      <div class="modal-actions" style="justify-content:center;">
+        <button type="button" id="btn-done-deck-share" class="btn-primary-big" style="padding:10px 30px; font-size:0.9rem;">
+          Kapat
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- =========================================
+       6.7. PARTİ CEZA ÇARKI (MEYDAN OKUMA)
+       ========================================= -->
+  <div id="modal-party-dare-wheel" class="modal-overlay">
+    <div class="modal-card dare-wheel-card" style="max-width: 440px; text-align: center;">
+      <div class="modal-header">
+        <div class="header-icon">🎭</div>
+        <h2>Parti Ceza Çarkı</h2>
+        <button type="button" id="btn-close-dare-wheel" class="modal-close" aria-label="Kapat">&times;</button>
+      </div>
+
+      <p class="modal-desc" style="font-size:0.86rem; color:var(--text-secondary); margin-bottom:12px;">
+        Kaybeden tarafa veya oyuncuya rastgele eğlenceli parti görevi!
+      </p>
+
+      <div class="wheel-canvas-container" style="position:relative; width:280px; height:280px; margin:0 auto 16px;">
+        <div class="wheel-pointer" style="position:absolute; top:-12px; left:50%; transform:translateX(-50%); font-size:1.9rem; z-index:10; pointer-events:none; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.8));">🔻</div>
+        <canvas id="party-dare-canvas" width="280" height="280" style="width:280px; height:280px; border-radius:50%; box-shadow:0 0 25px rgba(255,46,147,0.4);"></canvas>
+        <button type="button" id="btn-spin-dare-center" class="wheel-center-button" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg, #FF2E93, #7928CA); border:3px solid #FFF; color:#FFF; font-weight:900; font-size:0.75rem; cursor:pointer; box-shadow:0 0 15px rgba(255,46,147,0.8); z-index:20;">
+          ÇEVİR
+        </button>
+      </div>
+
+      <div id="dare-result-box" class="dare-result-box" style="display:none; background:rgba(255,46,147,0.15); border:1.5px solid #FF2E93; border-radius:16px; padding:12px; margin-bottom:14px; animation:bounceIn 0.4s ease;">
+        <div style="font-size:0.78rem; font-weight:800; color:#FF8E53; text-transform:uppercase; margin-bottom:4px;">🎯 ÇIKAN CEZA / GÖREV:</div>
+        <div id="dare-result-text" style="font-size:1.05rem; font-weight:900; color:#FFF; line-height:1.3;">GÖREV METNİ</div>
+      </div>
+
+      <div class="modal-actions" style="justify-content:center; gap:10px;">
+        <button type="button" id="btn-spin-dare-wheel" class="btn-primary-big" style="padding:10px 24px; font-size:0.95rem;">
+          🎯 Çarkı Çevir!
+        </button>
+        <button type="button" id="btn-done-dare-wheel" class="btn-secondary-big" style="padding:10px 20px; font-size:0.95rem;">
+          Tamamdır!
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================
+       MODAL: İSİM ŞEHİR KATEGORİ ÖZELLEŞTİRME
+       ========================================= -->
+  <div id="modal-isim-categories" class="modal-overlay" style="display:none;">
+    <div class="modal-card" style="max-width:440px; padding:20px; text-align:left;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="font-size:1.2rem; font-weight:900; color:#FFF; margin:0; display:flex; align-items:center; gap:8px;">
+          <span>⚙️</span> Kategorileri Düzenle
+        </h3>
+        <button type="button" id="btn-close-isim-cat-modal" class="modal-close" style="position:static; font-size:1.3rem;">&times;</button>
+      </div>
+
+      <p style="font-size:0.82rem; color:var(--text-dim); margin-bottom:12px; line-height:1.4;">
+        Yarışmada çıkacak kategorileri belirleyin. İstemediğiniz kategoriyi <strong style="color:#FF416C;">✕</strong> ile çıkarabilir veya yeni özel kategori ekleyebilirsiniz. (En az 2 kategori gereklidir)
+      </p>
+
+      <!-- Mevcut Kategoriler -->
+      <label style="font-size:0.78rem; font-weight:800; color:var(--gold); display:block; margin-bottom:6px;">SEÇİLİ KATEGORİLER:</label>
+      <div id="isim-modal-cat-list" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; min-height:40px; padding:8px; background:rgba(0,0,0,0.3); border-radius:12px; border:1px solid rgba(255,255,255,0.1);">
+      </div>
+
+      <!-- Yeni Kategori Ekleme Formu -->
+      <label style="font-size:0.78rem; font-weight:800; color:var(--gold); display:block; margin-bottom:6px;">ÖZEL KATEGORİ EKLE:</label>
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <input type="text" id="inp-custom-cat-name" placeholder="Örn: Yemek, Futbolcu, Dizi..." maxlength="25" style="flex:1; background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.15); border-radius:10px; color:#FFF; font-size:0.9rem; padding:8px 12px; outline:none;">
+        <button type="button" id="btn-add-custom-cat" style="background:var(--primary); color:#0B0E14; border:none; border-radius:10px; font-weight:900; font-size:0.85rem; padding:0 14px; cursor:pointer;">
+          + Ekle
+        </button>
+      </div>
+
+      <!-- Hızlı Öneri Hapları -->
+      <label style="font-size:0.75rem; font-weight:800; color:var(--text-dim); display:block; margin-bottom:6px;">HIZLI ÖNERİLER (Tıkla ve Ekle):</label>
+      <div id="isim-quick-cat-suggestions" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:18px;">
+        <!-- JS tarafından doldurulacak: Yemek, Film/Dizi, Araba, Futbolcu, Ülke, Meslek, Renk, Marka -->
+      </div>
+
+      <!-- Alt Aksiyon Butonları -->
+      <div style="display:flex; gap:8px;">
+        <button type="button" id="btn-reset-default-cats" style="flex:1; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#FFF; border-radius:12px; padding:10px; font-size:0.85rem; font-weight:800; cursor:pointer;">
+          🔄 Varsayılana Dön
+        </button>
+        <button type="button" id="btn-save-isim-cats" style="flex:1.5; background:linear-gradient(135deg, var(--gold), #D97706); color:#0B0E14; border:none; border-radius:12px; padding:10px; font-size:0.9rem; font-weight:900; cursor:pointer; box-shadow:0 0 15px rgba(251,191,36,0.35);">
+          💾 Kaydet & Uygula
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================
+       7. YATAY EKRAN UYARISI
+       ========================================= -->
+  <div id="orientation-warning" class="orientation-warning-overlay">
+    <div class="rotate-phone-icon">🔄</div>
+    <h3>Telefonu Yatay Çevirin</h3>
+    <p>
+      Kafana Tak! oyununu oynamak ve alnınıza koyabilmek için lütfen telefonunuzu <strong>yatay konuma</strong> getirin.
+    </p>
+  </div>
+
+  <script type="module" src="js/game.js"></script>
+</body>
+</html>

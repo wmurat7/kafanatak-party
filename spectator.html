@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Kafana Tak! - Canlı Seyirci & İkinci Ekran</title>
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+  <meta name="theme-color" content="#0B0E14">
+  <style>
+    :root {
+      --bg: #0B0E14;
+      --card-bg: rgba(22, 27, 34, 0.85);
+      --primary: #7928CA;
+      --secondary: #00F5D4;
+      --accent: #FF007A;
+      --correct: #00F5D4;
+      --pass: #FF416C;
+      --text: #FFFFFF;
+      --text-dim: #94A3B8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(circle at 15% 20%, rgba(121, 40, 202, 0.25) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(0, 245, 212, 0.18) 0%, transparent 45%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Üst Bar */
+    header {
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 20, 30, 0.7);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-crown {
+      font-size: 1.5rem;
+      filter: drop-shadow(0 2px 8px rgba(255, 215, 0, 0.5));
+    }
+
+    .brand-title {
+      font-size: 1.1rem;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      background: linear-gradient(135deg, #FFF 0%, #00F5D4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .room-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(121, 40, 202, 0.25);
+      border: 1px solid rgba(121, 40, 202, 0.5);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #E2E8F0;
+    }
+
+    .room-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #00F5D4;
+      box-shadow: 0 0 8px #00F5D4;
+      animation: pulseDot 1.5s infinite;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Ana Sahne */
+    main {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      max-width: 600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Bekleme / Lobi Durumu */
+    .lobby-state-card {
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 32px 24px;
+      text-align: center;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .lobby-icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      animation: bounceFloat 2s infinite ease-in-out;
+    }
+
+    @keyframes bounceFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .lobby-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .lobby-desc {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .room-code-input-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .room-input {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: #FFF;
+      font-size: 1rem;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .room-input:focus {
+      outline: none;
+      border-color: var(--secondary);
+      box-shadow: 0 0 12px rgba(0, 245, 212, 0.3);
+    }
+
+    .btn-connect {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border: none;
+      color: #FFF;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .btn-connect:active {
+      transform: scale(0.96);
+    }
+
+    /* Oyun Canlı Sahnesi */
+    .gameplay-stage {
+      display: none;
+      width: 100%;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .gameplay-stage.active {
+      display: flex;
+    }
+
+    .round-meta-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 10px 16px;
+    }
+
+    .team-badge {
+      font-size: 0.85rem;
+      font-weight: 800;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #E11D48;
+      color: #FFF;
+      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+    }
+
+    .scores-row {
+      display: flex;
+      gap: 10px;
+      font-size: 0.9rem;
+      font-weight: 800;
+    }
+
+    .score-chip-correct {
+      color: var(--correct);
+    }
+
+    .score-chip-pass {
+      color: var(--pass);
+    }
+
+    /* Süre Sayacı */
+    .timer-ring-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: var(--secondary);
+    }
+
+    /* Kelime Kartı */
+    .word-card-spectator {
+      background: linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+      border: 2px solid rgba(0, 245, 212, 0.4);
+      border-radius: 28px;
+      padding: 36px 20px;
+      text-align: center;
+      width: 100%;
+      box-shadow: 0 20px 50px rgba(0, 245, 212, 0.15);
+      position: relative;
+      overflow: hidden;
+      animation: cardEnter 0.25s ease-out;
+    }
+
+    @keyframes cardEnter {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .word-card-spectator::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--secondary), var(--accent));
+    }
+
+    .cat-title-label {
+      font-size: 0.85rem;
+      color: #A78BFA;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .spectator-main-word {
+      font-size: 2.4rem;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      color: #FFFFFF;
+      line-height: 1.2;
+      text-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      word-break: break-word;
+    }
+
+    /* Tabu Yasaklı Kelimeler */
+    .spectator-taboo-box {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px dashed rgba(255, 65, 108, 0.3);
+      display: none;
+    }
+
+    .spectator-taboo-box.show {
+      display: block;
+    }
+
+    .taboo-header {
+      font-size: 0.78rem;
+      color: #FF416C;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .taboo-chips-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .taboo-chip {
+      background: rgba(255, 65, 108, 0.15);
+      border: 1px solid rgba(255, 65, 108, 0.4);
+      color: #FFA5B9;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 999px;
+    }
+
+    /* Seyirci Tezahürat Butonları (Audience Soundboard) */
+    .cheer-soundboard {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .cheer-title {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .cheer-buttons-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .btn-cheer {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      padding: 10px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: #FFF;
+      cursor: pointer;
+      transition: transform 0.12s ease, background 0.15s ease;
+    }
+
+    .btn-cheer:active {
+      transform: scale(0.9);
+      background: rgba(0, 245, 212, 0.2);
+      border-color: var(--secondary);
+    }
+
+    .cheer-emoji {
+      font-size: 1.6rem;
+    }
+
+    .cheer-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    /* Dev İkinci Telefon Parti Zili (Buzzer) */
+    .spectator-buzzer-section {
+      width: 100%;
+      margin: 16px 0 10px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .giant-party-buzzer {
+      width: 100%;
+      max-width: 330px;
+      height: 105px;
+      border-radius: 26px;
+      background: radial-gradient(circle at 50% 25%, #FF2E93 0%, #B9004B 65%, #680026 100%);
+      border: 4px solid #FFD166;
+      box-shadow: 0 10px 0 #4A001B, 0 16px 35px rgba(255, 46, 147, 0.55), inset 0 2px 5px rgba(255, 255, 255, 0.45);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.08s ease;
+      touch-action: manipulation;
+    }
+
+    .giant-party-buzzer:active {
+      transform: translateY(6px);
+      box-shadow: 0 4px 0 #4A001B, 0 8px 20px rgba(255, 46, 147, 0.8), inset 0 2px 8px rgba(0, 0, 0, 0.5);
+      background: radial-gradient(circle at 50% 50%, #FF0055 0%, #900038 100%);
+    }
+
+    .buzzer-inner-dome {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      pointer-events: none;
+    }
+
+    .buzzer-icon {
+      font-size: 2.2rem;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+      animation: buzzerJingle 1.8s infinite;
+    }
+
+    @keyframes buzzerJingle {
+      0%, 85%, 100% { transform: rotate(0deg); }
+      88% { transform: rotate(-14deg); }
+      92% { transform: rotate(14deg); }
+      96% { transform: rotate(-8deg); }
+    }
+
+    .buzzer-title {
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: #FFFFFF;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+    }
+
+    .buzzer-sub {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #FFD166;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Toast Bildirim */
+    .toast-pill {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(60px);
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--secondary);
+      color: #FFF;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      pointer-events: none;
+      transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      z-index: 100;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    .toast-pill.show {
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Üst Bar -->
+  <header>
+    <div class="brand-box">
+      <span class="brand-crown">👑</span>
+      <span class="brand-title">KAFANA TAK!</span>
+    </div>
+    <div class="room-badge">
+      <span class="room-dot"></span>
+      <span id="badge-room-name">ODA: PARTI</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- 1. Lobi / Bekleme Ekranı -->
+    <div id="card-lobby" class="lobby-state-card">
+      <div class="lobby-icon">📺</div>
+      <h2 class="lobby-title">Seyirci Ekranı</h2>
+      <p class="lobby-desc">
+        Telefonu alnına koyan arkadaşının kelimelerini canlı izle ve tezahürat yap!
+      </p>
+
+      <div class="room-code-input-row">
+        <input type="text" id="input-room-code" class="room-input" value="PARTI" maxlength="10" placeholder="ODA KODU">
+        <button type="button" id="btn-room-connect" class="btn-connect">Bağlan</button>
+      </div>
+
+      <div style="font-size: 0.78rem; color: var(--text-dim);">
+        💡 Ana telefondaki QR kodu okuttuysanız bağlantı otomatik başlar.
+      </div>
+    </div>
+
+    <!-- 2. Canlı Oyun Sahnesi -->
+    <div id="card-gameplay" class="gameplay-stage">
+      <div class="round-meta-bar">
+        <div id="spec-team-badge" class="team-badge">🔴 Kırmızı Takım</div>
+        <div class="timer-ring-box">
+          <span>⏱️</span>
+          <span id="spec-timer-text">60s</span>
+        </div>
+        <div class="scores-row">
+          <span class="score-chip-correct" id="spec-correct-text">✅ 0</span>
+          <span class="score-chip-pass" id="spec-pass-text">⏭️ 0</span>
+        </div>
+      </div>
+
+      <div class="word-card-spectator">
+        <div id="spec-category-label" class="cat-title-label">KATEGORİ</div>
+        <h1 id="spec-current-word" class="spectator-main-word">YÜKLENİYOR...</h1>
+
+        <div id="spec-taboo-box" class="spectator-taboo-box">
+          <div class="taboo-header">🚫 SÖYLENMESİ YASAK KELİMELER:</div>
+          <div id="spec-taboo-chips" class="taboo-chips-grid"></div>
+        </div>
+      </div>
+
+      <!-- DEV İKİNCİ TELEFON ZİL BUTONU (BUZZER) -->
+      <div class="spectator-buzzer-section">
+        <button type="button" id="btn-spectator-buzzer" class="giant-party-buzzer" title="Yasak kelime söylendiğinde veya hata yapıldığında bas!">
+          <div class="buzzer-inner-dome">
+            <span class="buzzer-icon">🔔</span>
+            <span class="buzzer-title">ZİL'E BAS!</span>
+            <span class="buzzer-sub">Yasak Kelime / Hata</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Seyirci Ses Efekti / Tezahürat Paneli -->
+      <div class="cheer-soundboard">
+        <div class="cheer-title">
+          <span>🎉 OYUNCUYA TEZAHÜRAT YAP (Sesi Ana Telefonda Çalar)</span>
+        </div>
+        <div class="cheer-buttons-grid">
+          <button type="button" class="btn-cheer" data-cheer="applause">
+            <span class="cheer-emoji">👏</span>
+            <span class="cheer-label">Alkış</span>
+          </button>
+          <button type="button" class="btn-cheer" data-cheer="horn">
+            <span class="cheer-emoji">🎺</span>
+            <span class="cheer-label">Vuvuzela</span>
+          </button>
+          <button type="button" class="btn-cheer" data-cheer="bell">
+            <span class="cheer-emoji">🔔</span>
+            <span class="cheer-label">Zil</span>
+          </button>
+          <button type="button" class="btn-cheer" data-cheer="boo">
+            <span class="cheer-emoji">😱</span>
+            <span class="cheer-label">Abooov</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast-pill" class="toast-pill"></div>
+
+  <script>
+    // URL parametresinden oda kodunu al
+    const params = new URLSearchParams(window.location.search);
+    const roomParam = (params.get('room') || 'PARTI').toUpperCase();
+
+    const inputRoom = document.getElementById('input-room-code');
+    const btnConnect = document.getElementById('btn-room-connect');
+    const badgeRoom = document.getElementById('badge-room-name');
+    const cardLobby = document.getElementById('card-lobby');
+    const cardGameplay = document.getElementById('card-gameplay');
+
+    const specTeam = document.getElementById('spec-team-badge');
+    const specTimer = document.getElementById('spec-timer-text');
+    const specCorrect = document.getElementById('spec-correct-text');
+    const specPass = document.getElementById('spec-pass-text');
+    const specCat = document.getElementById('spec-category-label');
+    const specWord = document.getElementById('spec-current-word');
+    const specTabooBox = document.getElementById('spec-taboo-box');
+    const specTabooChips = document.getElementById('spec-taboo-chips');
+    const toastPill = document.getElementById('toast-pill');
+
+    let currentRoom = roomParam;
+    inputRoom.value = currentRoom;
+    badgeRoom.textContent = `ODA: ${currentRoom}`;
+
+    function showToast(msg) {
+      toastPill.textContent = msg;
+      toastPill.classList.add('show');
+      setTimeout(() => toastPill.classList.remove('show'), 2000);
+    }
+
+    // BroadcastChannel (Aynı cihaz/sekme testleri için)
+    let broadcast = null;
+    try {
+      broadcast = new BroadcastChannel('kafanatak_spectator_' + currentRoom);
+      broadcast.onmessage = (e) => {
+        if (e.data) renderState(e.data);
+      };
+    } catch (e) {}
+
+    const FIREBASE_DB_URL = 'https://kafanatak-party-default-rtdb.firebaseio.com';
+    let sseSource = null;
+
+    function initCloudSSE() {
+      if (sseSource) { try { sseSource.close(); } catch (e) {} }
+      try {
+        if (typeof EventSource !== 'undefined') {
+          sseSource = new EventSource(`${FIREBASE_DB_URL}/kafanatak/spectator/${encodeURIComponent(currentRoom)}.json`);
+          sseSource.addEventListener('put', (e) => {
+            try {
+              const d = JSON.parse(e.data);
+              if (d && d.data) renderState(d.data);
+            } catch (err) {}
+          });
+          sseSource.addEventListener('patch', (e) => {
+            try {
+              pollState();
+            } catch (err) {}
+          });
+        }
+      } catch (err) {}
+    }
+
+    async function pollState() {
+      // 1. Firebase Bulut yoklaması
+      try {
+        const fbRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/spectator/${encodeURIComponent(currentRoom)}.json`);
+        if (fbRes.ok) {
+          const data = await fbRes.json();
+          if (data) {
+            renderState(data);
+            return;
+          }
+        }
+      } catch (err) {}
+
+      // 2. Yerel sunucu yoklaması
+      try {
+        const res = await fetch(`/api/room/state?room=${encodeURIComponent(currentRoom)}`);
+        if (res.ok) {
+          const data = await res.json();
+          renderState(data);
+        }
+      } catch (err) {}
+    }
+
+    function renderState(data) {
+      if (!data || data.status === 'idle' || !data.state) {
+        cardLobby.style.display = 'block';
+        cardGameplay.classList.remove('active');
+        return;
+      }
+
+      cardLobby.style.display = 'none';
+      cardGameplay.classList.add('active');
+
+      if (data.category) specCat.textContent = data.category;
+      if (data.word) specWord.textContent = data.word;
+
+      if (data.timeLeft !== undefined) specTimer.textContent = `${data.timeLeft}s`;
+      if (data.scoreCorrect !== undefined) specCorrect.textContent = `✅ ${data.scoreCorrect}`;
+      if (data.scorePass !== undefined) specPass.textContent = `⏭️ ${data.scorePass}`;
+
+      if (data.activeTeam) {
+        specTeam.textContent = data.activeTeam;
+        if (data.activeTeamColor) specTeam.style.backgroundColor = data.activeTeamColor;
+      }
+
+      if (data.taboo && Array.isArray(data.taboo) && data.taboo.length > 0) {
+        specTabooBox.classList.add('show');
+        specTabooChips.innerHTML = data.taboo.map(w => `<span class="taboo-chip">${w}</span>`).join('');
+      } else {
+        specTabooBox.classList.remove('show');
+        specTabooChips.innerHTML = '';
+      }
+    }
+
+    // Tezahürat Butonları
+    document.querySelectorAll('.btn-cheer').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const cheer = btn.dataset.cheer;
+        showToast('📣 Tezahürat gönderildi!');
+
+        // 1. Firebase Bulut Aksiyonu
+        try {
+          await fetch(`${FIREBASE_DB_URL}/kafanatak/spectator/${encodeURIComponent(currentRoom)}/actions.json`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cheer, sender: 'Seyirci', timestamp: Date.now() })
+          });
+        } catch (e) {}
+
+        // 2. Yerel Sunucu
+        try {
+          await fetch('/api/room/cheer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomId: currentRoom, cheer, sender: 'Seyirci' })
+          });
+        } catch (e) {}
+      });
+    });
+
+    // Dev Zil Butonu (Buzzer) Olayı
+    const btnBuzzer = document.getElementById('btn-spectator-buzzer');
+    if (btnBuzzer) {
+      let audioCtx = null;
+      function playLocalBuzzerSound() {
+        try {
+          if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(340, audioCtx.currentTime);
+          osc.frequency.setValueAtTime(270, audioCtx.currentTime + 0.12);
+          gain.gain.setValueAtTime(0.75, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.36);
+        } catch (e) {}
+      }
+
+      btnBuzzer.addEventListener('click', async () => {
+        playLocalBuzzerSound();
+        try { navigator.vibrate([140, 60, 140]); } catch (e) {}
+        showToast('🚨 ZİL ÇALINDI! (Ana Telefonda Yankılandı)');
+
+        if (broadcast) {
+          try {
+            broadcast.postMessage({ cheer: 'buzzer', sender: 'İkinci Telefon (Zil)' });
+          } catch (e) {}
+        }
+
+        // 1. Firebase Bulut
+        try {
+          await fetch(`${FIREBASE_DB_URL}/kafanatak/spectator/${encodeURIComponent(currentRoom)}/actions.json`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cheer: 'buzzer', sender: 'İkinci Telefon (Zil)', timestamp: Date.now() })
+          });
+        } catch (e) {}
+
+        // 2. Yerel Sunucu
+        try {
+          await fetch('/api/room/cheer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomId: currentRoom, cheer, sender: 'İkinci Telefon (Zil)' })
+          });
+        } catch (e) {}
+      });
+    }
+
+    btnConnect.addEventListener('click', () => {
+      const code = inputRoom.value.trim().toUpperCase() || 'PARTI';
+      currentRoom = code;
+      badgeRoom.textContent = `ODA: ${currentRoom}`;
+      showToast(`Odaya bağlanılıyor: ${currentRoom}`);
+      initCloudSSE();
+      pollState();
+    });
+
+    initCloudSSE();
+
+    // Periyodik senkronizasyon (750ms)
+    setInterval(pollState, 750);
+    pollState();
+  </script>
+</body>
+</html>

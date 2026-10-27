@@ -1,0 +1,15 @@
+{
+  "appId": "com.kafanatak.party",
+  "appName": "Kafana Tak!",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true
+  }
+}

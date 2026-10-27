@@ -1,0 +1,8 @@
+node_modules/
+android/app/build/
+android/.gradle/
+android/build/
+*.apk
+*.png
+scratch/
+.system_generated/

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Kafana Tak!</string>
+    <string name="title_activity_main">Kafana Tak!</string>
+    <string name="package_name">com.kafanatak.party</string>
+    <string name="custom_url_scheme">com.kafanatak.party</string>
+</resources>

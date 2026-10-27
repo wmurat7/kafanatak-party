@@ -1,0 +1,32 @@
+{
+  "name": "kafanatak-guess-up",
+  "version": "1.0.0",
+  "description": "Guess Up & Heads Up tarzı kameralı ve sensörlü parti tahmin oyunu",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "game",
+    "guessup",
+    "headsup",
+    "taboo",
+    "camera",
+    "party"
+  ],
+  "author": "Murat",
+  "license": "MIT",
+  "dependencies": {
+    "@capacitor-community/text-to-speech": "^8.0.2",
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/share": "^8.0.3",
+    "jsqr": "^1.4.0",
+    "qrcode": "^1.5.4",
+    "selfsigned": "^5.5.0"
+  }
+}

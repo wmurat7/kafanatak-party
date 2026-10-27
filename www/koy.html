@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Vampir - Köylü | Köy Meydanı Oyuncu Ekranı</title>
+  <style>
+    :root {
+      --bg: #0B0E14;
+      --card-bg: rgba(22, 27, 46, 0.9);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --primary: #00F5D4;
+      --vampire: #FF2E93;
+      --doctor: #38BDF8;
+      --detective: #FBBF24;
+      --villager: #10B981;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: radial-gradient(circle at 50% 0%, #1e102f 0%, var(--bg) 75%); color: var(--text); min-height: 100vh; padding: 20px 16px 40px; display: flex; flex-direction: column; align-items: center; user-select: none; }
+    .container { max-width: 480px; width: 100%; display: flex; flex-direction: column; gap: 16px; }
+
+    /* Header */
+    header { text-align: center; }
+    .header-logo { font-size: 2.4rem; display: inline-block; filter: drop-shadow(0 0 15px rgba(255, 46, 147, 0.5)); animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+    h1 { font-size: 1.6rem; font-weight: 900; background: linear-gradient(135deg, #FFF, var(--vampire), var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-top: 4px; }
+    .room-badge { display: inline-block; font-size: 0.78rem; font-weight: 800; padding: 3px 12px; border-radius: 999px; background: rgba(0, 245, 212, 0.15); border: 1px solid var(--primary); color: var(--primary); margin-top: 4px; }
+
+    /* Cards */
+    .card { background: var(--card-bg); border: 1.5px solid var(--card-border); border-radius: 20px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); backdrop-filter: blur(14px); text-align: center; }
+
+    /* Inputs & Forms */
+    .form-group { display: flex; flex-direction: column; gap: 6px; text-align: left; margin-bottom: 14px; }
+    .form-group label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); }
+    .input-field { background: rgba(0, 0, 0, 0.4); border: 1.5px solid rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 12px 14px; color: #FFF; font-size: 1rem; font-weight: 700; width: 100%; outline: none; transition: border-color 0.2s; }
+    .input-field:focus { border-color: var(--primary); }
+
+    /* Avatar Grid */
+    .avatar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px; }
+    .avatar-btn { background: rgba(255, 255, 255, 0.06); border: 1.5px solid rgba(255, 255, 255, 0.1); border-radius: 12px; font-size: 1.5rem; padding: 8px; cursor: pointer; transition: all 0.2s; }
+    .avatar-btn.selected { border-color: var(--primary); background: rgba(0, 245, 212, 0.2); transform: scale(1.1); box-shadow: 0 0 15px rgba(0, 245, 212, 0.4); }
+
+    /* Buttons */
+    .btn-main { background: linear-gradient(135deg, var(--vampire), #7928CA); border: none; border-radius: 999px; color: #FFF; font-size: 1.05rem; font-weight: 900; padding: 14px 28px; width: 100%; cursor: pointer; box-shadow: 0 4px 20px rgba(255, 46, 147, 0.4); transition: transform 0.15s, box-shadow 0.15s; }
+    .btn-main:active { transform: scale(0.97); }
+    .btn-main.primary { background: linear-gradient(135deg, var(--primary), #00ba9f); color: #0B0E14; box-shadow: 0 4px 20px rgba(0, 245, 212, 0.4); }
+
+    /* Player List in Lobby */
+    .player-pills { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 14px; }
+    .player-pill { display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12); padding: 6px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 700; }
+    .player-pill.dead { opacity: 0.4; text-decoration: line-through; background: rgba(255, 0, 0, 0.1); }
+
+    /* Secret Role Peek Card */
+    .role-peek-card { position: relative; width: 100%; height: 260px; border-radius: 20px; perspective: 1000px; margin: 10px 0; cursor: pointer; }
+    .role-peek-inner { position: absolute; width: 100%; height: 100%; border-radius: 20px; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
+    .role-peek-card.revealed .role-peek-inner { transform: rotateY(180deg); }
+    .card-front, .card-back { position: absolute; width: 100%; height: 100%; border-radius: 20px; backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    .card-front { background: linear-gradient(135deg, #1e1b4b, #0f172a); border: 2px dashed rgba(255, 255, 255, 0.25); }
+    .card-back { transform: rotateY(180deg); }
+    .card-back.vampir { background: linear-gradient(135deg, #450a0a, #831843); border: 2px solid var(--vampire); box-shadow: 0 0 30px rgba(255, 46, 147, 0.5); }
+    .card-back.doktor { background: linear-gradient(135deg, #082f49, #0369a1); border: 2px solid var(--doctor); box-shadow: 0 0 30px rgba(56, 189, 248, 0.5); }
+    .card-back.komiser { background: linear-gradient(135deg, #451a03, #b45309); border: 2px solid var(--detective); box-shadow: 0 0 30px rgba(251, 191, 36, 0.5); }
+    .card-back.koylu { background: linear-gradient(135deg, #064e3b, #047857); border: 2px solid var(--villager); box-shadow: 0 0 30px rgba(16, 185, 129, 0.5); }
+
+    /* Action List */
+    .action-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 14px; max-height: 280px; overflow-y: auto; }
+    .btn-target { display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.06); border: 1.5px solid rgba(255, 255, 255, 0.12); padding: 12px 16px; border-radius: 14px; color: #FFF; font-size: 0.95rem; font-weight: 800; cursor: pointer; transition: all 0.2s; }
+    .btn-target:hover, .btn-target:active { background: rgba(0, 245, 212, 0.15); border-color: var(--primary); }
+    .btn-target.selected { background: linear-gradient(135deg, rgba(255, 46, 147, 0.3), rgba(121, 40, 202, 0.3)); border-color: var(--vampire); box-shadow: 0 0 15px rgba(255, 46, 147, 0.4); }
+
+    /* Status Pills & Hints */
+    .status-box { background: rgba(0, 0, 0, 0.4); border-radius: 14px; padding: 12px; margin-top: 10px; font-size: 0.85rem; line-height: 1.4; color: var(--text-muted); }
+    .status-box strong { color: #FFF; }
+
+    /* Dead Overlay */
+    .dead-banner { background: rgba(239, 68, 68, 0.15); border: 1.5px solid #EF4444; color: #FCA5A5; padding: 10px; border-radius: 12px; font-size: 0.82rem; font-weight: 800; text-align: center; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-logo" id="header-icon">🧛‍♂️</div>
+      <h1>VAMPİR - KÖYLÜ</h1>
+      <div id="room-badge" class="room-badge">ODA: BEKLENİYOR</div>
+    </header>
+
+    <!-- 1. GİRİŞ & KATILMA EKRANI -->
+    <div id="screen-join" class="card">
+      <h2 style="font-size:1.25rem; font-weight:900; margin-bottom:12px;">Köy Meydanına Giriş</h2>
+      <div class="form-group">
+        <label for="input-room-code">Oda Kodu (4 Harf)</label>
+        <input type="text" id="input-room-code" class="input-field" maxlength="4" placeholder="Örn: KOY1" style="text-transform:uppercase; letter-spacing:3px; text-align:center;">
+      </div>
+      <div class="form-group">
+        <label for="input-player-name">Adınız / Lakabınız</label>
+        <input type="text" id="input-player-name" class="input-field" maxlength="15" placeholder="Adınızı yazın">
+      </div>
+      <div class="form-group">
+        <label>Avatarınızı Seçin</label>
+        <div class="avatar-grid" id="avatar-grid">
+          <button type="button" class="avatar-btn selected" data-avatar="🧑‍🌾">🧑‍🌾</button>
+          <button type="button" class="avatar-btn" data-avatar="🦊">🦊</button>
+          <button type="button" class="avatar-btn" data-avatar="🐺">🐺</button>
+          <button type="button" class="avatar-btn" data-avatar="🤠">🤠</button>
+          <button type="button" class="avatar-btn" data-avatar="🧙‍♂️">🧙‍♂️</button>
+          <button type="button" class="avatar-btn" data-avatar="👸">👸</button>
+          <button type="button" class="avatar-btn" data-avatar="🥷">🥷</button>
+          <button type="button" class="avatar-btn" data-avatar="🦁">🦁</button>
+          <button type="button" class="avatar-btn" data-avatar="🍕">🍕</button>
+          <button type="button" class="avatar-btn" data-avatar="🚀">🚀</button>
+        </div>
+      </div>
+      <button type="button" id="btn-join-room" class="btn-main primary">Köy Halkına Katıl ➔</button>
+    </div>
+
+    <!-- 2. LOBİ BEKLEME EKRANI -->
+    <div id="screen-lobby" class="card" style="display:none;">
+      <div style="font-size:2rem; margin-bottom:6px;">🏡</div>
+      <h2 style="font-size:1.2rem; font-weight:900;">Köy Meydanında Bekleniyor</h2>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">Host oyunu başlattığında rolünüz bu ekranda açığa çıkacaktır.</p>
+      
+      <div style="margin-top:16px; text-align:left;">
+        <span style="font-size:0.78rem; font-weight:800; color:var(--primary); text-transform:uppercase;">Toplanan Köylüler (<span id="lobby-player-count">0</span>):</span>
+        <div id="lobby-players-list" class="player-pills"></div>
+      </div>
+    </div>
+
+    <!-- 3. OYUN EKRANI -->
+    <div id="screen-game" style="display:none;" class="container">
+      <div id="dead-banner" class="dead-banner" style="display:none;">
+        ☠️ Ruhlar alemindesin! Bu gece elendin. Sessizce oyunu izle.
+      </div>
+
+      <!-- Gizli Rol Kartı -->
+      <div class="role-peek-card" id="role-peek-card">
+        <div class="role-peek-inner">
+          <div class="card-front">
+            <span style="font-size:3rem; margin-bottom:8px;">🔒</span>
+            <h3 style="font-size:1.15rem; font-weight:900;">GİZLİ ROLÜNÜ GÖR</h3>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">Kimseye göstermeden basılı tut!</p>
+          </div>
+          <div class="card-back" id="card-back-role">
+            <span id="role-icon" style="font-size:3.5rem; margin-bottom:6px;">❓</span>
+            <h2 id="role-title" style="font-size:1.5rem; font-weight:900; letter-spacing:1px;">ROL ADI</h2>
+            <p id="role-desc" style="font-size:0.82rem; color:#FFF; margin-top:6px; line-height:1.4; padding:0 10px;">Rol açıklaması</p>
+            <div id="role-sub-info" style="font-size:0.75rem; color:#FEE440; font-weight:800; margin-top:8px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Durum & Faz Kartı -->
+      <div class="card" id="phase-card">
+        <div id="phase-badge" style="font-size:0.78rem; font-weight:800; color:var(--primary); text-transform:uppercase; margin-bottom:4px;">1. GECE</div>
+        <h3 id="phase-title" style="font-size:1.25rem; font-weight:900;">Gece Çöktü...</h3>
+        <p id="phase-desc" style="font-size:0.85rem; color:var(--text-muted); margin-top:6px; line-height:1.4;">Köy halkı derin uykuda.</p>
+
+        <!-- Canlı Eylem Listesi (Vampir Seçimi / Doktor Koruması / Komiser Sorgusu / Gündüz Oyu) -->
+        <div id="action-container" style="display:none; margin-top:14px;">
+          <div id="action-title" style="font-size:0.82rem; font-weight:800; color:var(--vampire); text-align:left; margin-bottom:6px;">HEDEFİNİ SEÇ:</div>
+          <div id="action-targets-list" class="action-grid"></div>
+        </div>
+
+        <div id="detective-result-box" style="display:none; background:rgba(251, 191, 36, 0.15); border:1.5px solid var(--detective); border-radius:14px; padding:12px; margin-top:12px;">
+          <span style="font-size:0.78rem; font-weight:800; color:var(--detective);">🔍 KOMİSER İSTİHBARATI:</span>
+          <div id="detective-result-text" style="font-size:1.05rem; font-weight:900; color:#FFF; margin-top:4px;"></div>
+        </div>
+      </div>
+
+      <!-- Yaşayan Köylüler Durumu -->
+      <div class="card">
+        <div style="font-size:0.78rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Köy Halkı Durumu:</div>
+        <div id="game-players-list" class="player-pills"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentRoomId = '';
+    let myPlayerId = '';
+    let selectedAvatar = '🧑‍🌾';
+    let pollInterval = null;
+    let cachedRole = null;
+
+    // URL'den room parametresi al
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomParam = urlParams.get('room');
+    if (roomParam) {
+      document.getElementById('input-room-code').value = roomParam.toUpperCase();
+    }
+
+    // Avatar Seçimi
+    document.querySelectorAll('.avatar-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedAvatar = btn.dataset.avatar;
+      });
+    });
+
+    // Odaya Katıl
+    document.getElementById('btn-join-room').addEventListener('click', async () => {
+      const roomCode = document.getElementById('input-room-code').value.trim().toUpperCase();
+      const playerName = document.getElementById('input-player-name').value.trim();
+
+      if (!roomCode || roomCode.length < 3) {
+        alert('Lütfen geçerli bir oda kodu giriniz!');
+        return;
+      }
+      if (!playerName) {
+        alert('Lütfen adınızı giriniz!');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/vampire/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomId: roomCode, name: playerName, avatar: selectedAvatar })
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          alert(data.error || 'Odaya katılırken bir hata oluştu!');
+          return;
+        }
+
+        currentRoomId = data.roomId;
+        myPlayerId = data.playerId;
+        document.getElementById('room-badge').textContent = 'ODA: ' + currentRoomId;
+
+        document.getElementById('screen-join').style.display = 'none';
+        document.getElementById('screen-lobby').style.display = 'block';
+
+        startPolling();
+      } catch (e) {
+        alert('Sunucuya bağlanılamadı. Wi-Fi bağlantınızı kontrol edin.');
+      }
+    });
+
+    // Rol Kartı Basılı Tutma (Gizli İntro)
+    const peekCard = document.getElementById('role-peek-card');
+    function showRole() { peekCard.classList.add('revealed'); if (navigator.vibrate) navigator.vibrate(30); }
+    function hideRole() { peekCard.classList.remove('revealed'); }
+
+    peekCard.addEventListener('touchstart', showRole);
+    peekCard.addEventListener('touchend', hideRole);
+    peekCard.addEventListener('mousedown', showRole);
+    peekCard.addEventListener('mouseup', hideRole);
+    peekCard.addEventListener('mouseleave', hideRole);
+
+    function startPolling() {
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(fetchGameState, 1000);
+      fetchGameState();
+    }
+
+    async function fetchGameState() {
+      if (!currentRoomId || !myPlayerId) return;
+      try {
+        const res = await fetch(`/api/vampire/state?room=${currentRoomId}&player=${myPlayerId}`);
+        if (!res.ok) return;
+        const state = await res.json();
+        renderState(state);
+      } catch (e) {}
+    }
+
+    function renderState(state) {
+      if (state.phase === 'lobby') {
+        document.getElementById('screen-lobby').style.display = 'block';
+        document.getElementById('screen-game').style.display = 'none';
+        document.getElementById('lobby-player-count').textContent = state.players.length;
+        document.getElementById('lobby-players-list').innerHTML = state.players.map(p => `
+          <div class="player-pill"><span>${p.avatar}</span> <span>${p.name}</span></div>
+        `).join('');
+        return;
+      }
+
+      // Oyun Başladı!
+      document.getElementById('screen-lobby').style.display = 'none';
+      document.getElementById('screen-game').style.display = 'flex';
+
+      // Ölü durumu
+      const deadBanner = document.getElementById('dead-banner');
+      if (!state.myAlive) {
+        deadBanner.style.display = 'block';
+      } else {
+        deadBanner.style.display = 'none';
+      }
+
+      // Rol Kartı Güncelle
+      if (state.myRole && state.myRole !== cachedRole) {
+        cachedRole = state.myRole;
+        const cardBack = document.getElementById('card-back-role');
+        const roleIcon = document.getElementById('role-icon');
+        const roleTitle = document.getElementById('role-title');
+        const roleDesc = document.getElementById('role-desc');
+        const roleSub = document.getElementById('role-sub-info');
+
+        cardBack.className = 'card-back ' + state.myRole;
+
+        if (state.myRole === 'vampir') {
+          roleIcon.textContent = '🧛‍♂️';
+          roleTitle.textContent = 'VAMPİR';
+          roleDesc.textContent = 'Köy halkı uyurken gözlerinizi açın ve kurbanınızı seçin!';
+          if (state.vampirePartners && state.vampirePartners.length > 0) {
+            roleSub.textContent = 'Ortağın: ' + state.vampirePartners.map(p => p.name).join(', ');
+          } else {
+            roleSub.textContent = 'Tek başınasın!';
+          }
+        } else if (state.myRole === 'doktor') {
+          roleIcon.textContent = '🩺';
+          roleTitle.textContent = 'DOKTOR';
+          roleDesc.textContent = 'Her gece bir kişiyi (veya kendini) vampirlerin saldırısından kurtar!';
+          roleSub.textContent = 'Köyün can damarısın!';
+        } else if (state.myRole === 'komiser') {
+          roleIcon.textContent = '🕵️';
+          roleTitle.textContent = 'KOMİSER';
+          roleDesc.textContent = 'Her gece bir köylünün kimliğini gizlice araştır ve vampirleri ortaya çıkar!';
+          roleSub.textContent = 'Adaletin gözcüsü!';
+        } else {
+          roleIcon.textContent = '🧑‍🌾';
+          roleTitle.textContent = 'KÖYLÜ';
+          roleDesc.textContent = 'Masum bir köylüsün. Geceleri uyu, gündüzleri şüphelileri tartışıp oyla!';
+          roleSub.textContent = 'Birlik olursanız kazanırsınız!';
+        }
+      }
+
+      // Faz Kartı Güncelleme
+      const phaseBadge = document.getElementById('phase-badge');
+      const phaseTitle = document.getElementById('phase-title');
+      const phaseDesc = document.getElementById('phase-desc');
+      const actionContainer = document.getElementById('action-container');
+      const actionTitle = document.getElementById('action-title');
+      const actionList = document.getElementById('action-targets-list');
+      const detectiveBox = document.getElementById('detective-result-box');
+
+      phaseBadge.textContent = state.dayNumber + '. ' + state.phase.toUpperCase();
+      phaseDesc.textContent = state.narratorText || '';
+
+      const aliveTargets = state.players.filter(p => p.alive);
+
+      // GECE FAZI
+      if (state.phase === 'night') {
+        phaseTitle.textContent = '🌙 Gece Çöktü';
+        detectiveBox.style.display = 'none';
+
+        if (!state.myAlive) {
+          actionContainer.style.display = 'none';
+        } else if (state.myRole === 'vampir') {
+          actionContainer.style.display = 'block';
+          actionTitle.textContent = '🧛‍♂️ VAMPİR SALDIRISI (Kurban Seçin):';
+          actionTitle.style.color = 'var(--vampire)';
+          renderActionTargets(aliveTargets.filter(p => p.id !== state.myPlayerId), 'vampire_kill');
+        } else if (state.myRole === 'doktor') {
+          actionContainer.style.display = 'block';
+          actionTitle.textContent = '🩺 DOKTOR KORUMASI (Kimi Kurtaracaksın?):';
+          actionTitle.style.color = 'var(--doctor)';
+          renderActionTargets(aliveTargets, 'doctor_save');
+        } else if (state.myRole === 'komiser') {
+          actionContainer.style.display = 'block';
+          actionTitle.textContent = '🕵️ KOMİSER SORGULAMASI (Kimi Araştıracaksın?):';
+          actionTitle.style.color = 'var(--detective)';
+          renderActionTargets(aliveTargets.filter(p => p.id !== state.myPlayerId), 'detective_inspect');
+
+          if (state.detectiveResult) {
+            detectiveBox.style.display = 'block';
+            document.getElementById('detective-result-text').textContent = `${state.detectiveResult.targetName} bir ${state.detectiveResult.isVampire ? 'VAMPİR! 🧛‍♂️' : 'MASUM KÖYLÜ 🧑‍🌾'}`;
+          }
+        } else {
+          // Köylü
+          actionContainer.style.display = 'none';
+          phaseDesc.textContent = 'Zzz... Köy derin bir uykuya daldı. Sessizce bekleyin!';
+        }
+      }
+      // SABAH RAPORU
+      else if (state.phase === 'day_reveal') {
+        phaseTitle.textContent = '☀️ Güneş Doğdu!';
+        actionContainer.style.display = 'none';
+        detectiveBox.style.display = 'none';
+      }
+      // GÜNDÜZ TARTIŞMA
+      else if (state.phase === 'day_discuss') {
+        phaseTitle.textContent = '🗣️ Köy Meydanı Tartışması';
+        actionContainer.style.display = 'none';
+      }
+      // LİNÇ OYLAMASI
+      else if (state.phase === 'voting') {
+        phaseTitle.textContent = '⚖️ Oylama Vakti!';
+        if (state.myAlive) {
+          actionContainer.style.display = 'block';
+          actionTitle.textContent = 'KİMİ KÖYDEN ASMAK İSTİYORSUN?';
+          actionTitle.style.color = 'var(--primary)';
+          renderActionTargets(aliveTargets.filter(p => p.id !== state.myPlayerId), 'day_vote');
+        } else {
+          actionContainer.style.display = 'none';
+        }
+      }
+      // OYLAMA SONUCU
+      else if (state.phase === 'vote_result') {
+        phaseTitle.textContent = '⚖️ Oylama Kararı Açıklandı';
+        actionContainer.style.display = 'none';
+      }
+      // OYUN BİTTİ
+      else if (state.phase === 'game_over') {
+        phaseTitle.textContent = state.winner === 'vampir' ? '🧛‍♂️ VAMPİRLER KAZANDI!' : '🧑‍🌾 KÖYLÜLER KAZANDI!';
+        actionContainer.style.display = 'none';
+      }
+
+      // Oyuncu Listesini Güncelle
+      document.getElementById('game-players-list').innerHTML = state.players.map(p => `
+        <div class="player-pill ${p.alive ? '' : 'dead'}">
+          <span>${p.avatar}</span> 
+          <span>${p.name}</span>
+          ${p.role ? `<span style="font-size:0.7rem; color:var(--text-muted);">(${p.role})</span>` : ''}
+          ${!p.alive ? '☠️' : ''}
+        </div>
+      `).join('');
+    }
+
+    let currentSelectedTargetId = null;
+    function renderActionTargets(targets, actionType) {
+      const list = document.getElementById('action-targets-list');
+      const isVote = actionType === 'day_vote';
+      
+      let html = targets.map(t => `
+        <button type="button" class="btn-target ${currentSelectedTargetId === t.id ? 'selected' : ''}" data-id="${t.id}" data-action="${actionType}" style="padding:14px 16px; border-radius:14px; font-size:1rem; border:2px solid ${currentSelectedTargetId === t.id ? 'var(--vampire)' : 'rgba(255,255,255,0.15)'}; background:${currentSelectedTargetId === t.id ? 'rgba(255,46,147,0.25)' : 'rgba(255,255,255,0.06)'}; margin-bottom:8px;">
+          <span style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:1.6rem;">${t.avatar}</span>
+            <strong style="color:#FFF;">${t.name}</strong>
+          </span>
+          <span style="font-size:0.85rem; font-weight:900; color:${currentSelectedTargetId === t.id ? '#FF8E53' : 'var(--primary)'};">
+            ${currentSelectedTargetId === t.id ? 'OYUN KAYDEDİLDİ ✓' : (isVote ? 'OY VER ☠️' : 'SEÇ ➔')}
+          </span>
+        </button>
+      `).join('');
+
+      if (isVote) {
+        html += `
+          <button type="button" class="btn-target ${currentSelectedTargetId === 'none' ? 'selected' : ''}" data-id="none" data-action="${actionType}" style="padding:12px 16px; border-radius:14px; border:2px dashed rgba(255,255,255,0.25); background:${currentSelectedTargetId === 'none' ? 'rgba(0,245,212,0.2)' : 'rgba(255,255,255,0.04)'}; margin-top:4px;">
+            <span>🤝 Kimse Asılmasın (Eşitlik / Pas)</span>
+            <span style="font-size:0.82rem; font-weight:800; color:${currentSelectedTargetId === 'none' ? 'var(--primary)' : 'var(--text-muted)'};">
+              ${currentSelectedTargetId === 'none' ? 'PAS SEÇİLDİ ✓' : 'PAS GEÇ ➔'}
+            </span>
+          </button>
+        `;
+      }
+
+      list.innerHTML = html;
+
+      list.querySelectorAll('.btn-target').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const targetId = btn.dataset.id;
+          const aType = btn.dataset.action;
+          currentSelectedTargetId = targetId;
+
+          list.querySelectorAll('.btn-target').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+
+          try {
+            await fetch('/api/vampire/action', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                roomId: currentRoomId,
+                playerId: myPlayerId,
+                actionType: aType,
+                targetId: targetId
+              })
+            });
+            if (navigator.vibrate) navigator.vibrate(60);
+          } catch (e) {}
+        });
+      });
+    }
+  </script>
+</body>
+</html>

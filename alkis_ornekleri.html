@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kafana Tak! - 5 Yeni Net, Sade ve Neşeli Alkış Sesi</title>
+  <style>
+    :root {
+      --bg: #0B0E14;
+      --card-bg: rgba(22, 27, 46, 0.9);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --primary: #00F5D4;
+      --secondary: #FF2E93;
+      --accent: #FEE440;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    body {
+      background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, var(--bg) 75%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 28px 16px 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      max-width: 720px;
+      width: 100%;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .crown {
+      font-size: 2.8rem;
+      animation: float 2.5s ease-in-out infinite;
+      display: inline-block;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #FFF, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-top: 6px;
+    }
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+    .badge-clear {
+      display: inline-block;
+      margin-top: 8px;
+      background: rgba(0, 245, 212, 0.15);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      padding: 4px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+    .master-toolbar {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin: 22px 0;
+      flex-wrap: wrap;
+    }
+    .btn-toolbar {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      color: #FFF;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    .btn-toolbar:hover {
+      background: rgba(0, 245, 212, 0.18);
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0, 245, 212, 0.3);
+    }
+    .btn-toolbar.stop-all:hover {
+      background: rgba(255, 46, 147, 0.18);
+      border-color: var(--secondary);
+      box-shadow: 0 4px 15px rgba(255, 46, 147, 0.3);
+    }
+
+    .samples-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .sample-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 20px;
+      padding: 18px 20px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(12px);
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .sample-card:hover {
+      border-color: rgba(0, 245, 212, 0.45);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(0, 245, 212, 0.15);
+    }
+    .sample-card.is-playing {
+      border-color: var(--primary);
+      box-shadow: 0 0 25px rgba(0, 245, 212, 0.45);
+      background: linear-gradient(135deg, rgba(22, 27, 46, 0.95), rgba(0, 245, 212, 0.1));
+    }
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .sample-number-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(0, 245, 212, 0.2), rgba(121, 40, 202, 0.3));
+      border: 1.5px solid var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+    .sample-title-group h2 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tag-tone {
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(255, 46, 147, 0.15);
+      border: 1px solid rgba(255, 46, 147, 0.35);
+      color: #FF8E53;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .sample-desc {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+    .sample-desc strong {
+      color: #FFF;
+    }
+    .player-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 14px;
+      padding: 10px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .btn-play-pause {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), #00ba9f);
+      border: none;
+      color: #0B0E14;
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 245, 212, 0.4);
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .btn-play-pause:hover {
+      transform: scale(1.08);
+      box-shadow: 0 6px 20px rgba(0, 245, 212, 0.6);
+    }
+    .sample-card.is-playing .btn-play-pause {
+      background: linear-gradient(135deg, var(--secondary), #D6006D);
+      color: #FFF;
+      box-shadow: 0 4px 15px rgba(255, 46, 147, 0.5);
+    }
+    .progress-track {
+      flex: 1;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      border-radius: 999px;
+      transition: width 0.05s linear;
+    }
+    .time-label {
+      font-size: 0.78rem;
+      font-family: monospace;
+      color: var(--text-muted);
+      min-width: 42px;
+      text-align: right;
+    }
+
+    .recommendation-box {
+      margin-top: 30px;
+      background: linear-gradient(135deg, rgba(121, 40, 202, 0.2), rgba(0, 245, 212, 0.1));
+      border: 1.5px solid rgba(0, 245, 212, 0.3);
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+    }
+    .recommendation-box h3 {
+      font-size: 1.1rem;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+    .recommendation-box p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="crown">👑</div>
+      <h1>KAFANA TAK! YENİ NET ALKIŞLAR</h1>
+      <p class="subtitle">
+        Boğuk oda yankılarından tamamen arındırılmış, <strong>cam gibi net, sade ve neşeli 5 stüdyo alkış tarzı</strong>.<br>
+      </p>
+      <span class="badge-clear">✨ %100 YANKISIZ • YÜKSEK ÇÖZÜNÜRLÜK • DİNAMİK VE NEŞELİ</span>
+    </header>
+
+    <div class="master-toolbar">
+      <button type="button" class="btn-toolbar" id="btn-play-all">
+        <span>▶️ Tümünü Sırayla Çal</span>
+      </button>
+      <button type="button" class="btn-toolbar stop-all" id="btn-stop-all">
+        <span>⏹️ Hepsini Sustur</span>
+      </button>
+    </div>
+
+    <div class="samples-list" id="samples-container">
+      <!-- Örnek 1 -->
+      <div class="sample-card" id="card-1">
+        <div class="card-top">
+          <div class="card-meta">
+            <div class="sample-number-badge">👏</div>
+            <div class="sample-title-group">
+              <h2>1. Örnek: Temiz & Hızlı Stüdyo Alkışı <span class="tag-tone">En Sade & Net</span></h2>
+            </div>
+          </div>
+        </div>
+        <p class="sample-desc">
+          <strong>Havası:</strong> Tamamen stüdyo ortamı, sıfır oda yankısı. El şaklamaları tane tane, hızlı, son derece net ve pürüzsüz ("şak! şak! şak!"). Hiç kafa yormaz.
+        </p>
+        <div class="player-row">
+          <button type="button" class="btn-play-pause" data-id="1">▶</button>
+          <div class="progress-track" data-id="1"><div class="progress-bar" id="bar-1"></div></div>
+          <span class="time-label" id="time-1">0:00</span>
+          <audio id="audio-1" preload="auto" src="assets/sounds/samples/ornek1_net_hizli_studyo.wav"></audio>
+        </div>
+      </div>
+
+      <!-- Örnek 2 -->
+      <div class="sample-card" id="card-2">
+        <div class="card-top">
+          <div class="card-meta">
+            <div class="sample-number-badge">🎈</div>
+            <div class="sample-title-group">
+              <h2>2. Örnek: Neşeli Küçük Grup Kutlaması <span class="tag-tone">Sevimli & Neşeli</span></h2>
+            </div>
+          </div>
+        </div>
+        <p class="sample-desc">
+          <strong>Havası:</strong> Başında tatlı ve neşeli bir sevinç nidası ("Woo/Yay!") ile başlayan, çok sıcak, pozitif ve net el çırpışı. Parti oyununa tam uyar.
+        </p>
+        <div class="player-row">
+          <button type="button" class="btn-play-pause" data-id="2">▶</button>
+          <div class="progress-track" data-id="2"><div class="progress-bar" id="bar-2"></div></div>
+          <span class="time-label" id="time-2">0:00</span>
+          <audio id="audio-2" preload="auto" src="assets/sounds/samples/ornek2_neseli_kucuk_grup.wav"></audio>
+        </div>
+      </div>
+
+      <!-- Örnek 3 -->
+      <div class="sample-card" id="card-3">
+        <div class="card-top">
+          <div class="card-meta">
+            <div class="sample-number-badge">🎉</div>
+            <div class="sample-title-group">
+              <h2>3. Örnek: Kıpır Kıpır Hareketli Parti <span class="tag-tone">Canlı & Dinamik</span></h2>
+            </div>
+          </div>
+        </div>
+        <p class="sample-desc">
+          <strong>Havası:</strong> Hızlı, dinamik ve neşeli küçük bir grubun enerjik alkışı. Gürültüden ve uğultudan uzak, sade ama oldukça coşkulu.
+        </p>
+        <div class="player-row">
+          <button type="button" class="btn-play-pause" data-id="3">▶</button>
+          <div class="progress-track" data-id="3"><div class="progress-bar" id="bar-3"></div></div>
+          <span class="time-label" id="time-3">0:00</span>
+          <audio id="audio-3" preload="auto" src="assets/sounds/samples/ornek3_kipir_kipir_parti.wav"></audio>
+        </div>
+      </div>
+
+      <!-- Örnek 4 -->
+      <div class="sample-card" id="card-4">
+        <div class="card-top">
+          <div class="card-meta">
+            <div class="sample-number-badge">🥁</div>
+            <div class="sample-title-group">
+              <h2>4. Örnek: Ritmik Parti Temposu <span class="tag-tone">Ritmik & Eğlenceli</span></h2>
+            </div>
+          </div>
+        </div>
+        <p class="sample-desc">
+          <strong>Havası:</strong> Kutlama temposunda ("ta - ta - ta-ta-ta!") ritmik el çırpan stüdyo alkışı. Tane tane duyulur ve oyuncuyu anında alkış ritmine sokar.
+        </p>
+        <div class="player-row">
+          <button type="button" class="btn-play-pause" data-id="4">▶</button>
+          <div class="progress-track" data-id="4"><div class="progress-bar" id="bar-4"></div></div>
+          <span class="time-label" id="time-4">0:00</span>
+          <audio id="audio-4" preload="auto" src="assets/sounds/samples/ornek4_ritmik_tempo.wav"></audio>
+        </div>
+      </div>
+
+      <!-- Örnek 5 -->
+      <div class="sample-card" id="card-5">
+        <div class="card-top">
+          <div class="card-meta">
+            <div class="sample-number-badge">✨</div>
+            <div class="sample-title-group">
+              <h2>5. Örnek: Genç & Aydınlık Kutlama <span class="tag-tone">Ferah & Berrak</span></h2>
+            </div>
+          </div>
+        </div>
+        <p class="sample-desc">
+          <strong>Havası:</strong> Genç, aydınlık ve pırıl pırıl bir alkış. Tizler canlı, orta frekanslar berrak; kalabalık gürültüsü ve uğultu olmadan çok tatlı bir kutlama.
+        </p>
+        <div class="player-row">
+          <button type="button" class="btn-play-pause" data-id="5">▶</button>
+          <div class="progress-track" data-id="5"><div class="progress-bar" id="bar-5"></div></div>
+          <span class="time-label" id="time-5">0:00</span>
+          <audio id="audio-5" preload="auto" src="assets/sounds/samples/ornek5_genc_aydinlik.wav"></audio>
+        </div>
+      </div>
+    </div>
+
+    <div class="recommendation-box">
+      <h3>💡 Hangisi Sana En Uygun Geldi?</h3>
+      <p>
+        Bu 5 net seçenekten hangisini beğendiysen numarasını söylemen (örn: <strong>1, 2 veya 4</strong>) yeterli; oyunun ana alkışı olarak kalıcı hale getirelim!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const audios = [1, 2, 3, 4, 5].map(id => ({
+      id,
+      el: document.getElementById('audio-' + id),
+      card: document.getElementById('card-' + id),
+      bar: document.getElementById('bar-' + id),
+      time: document.getElementById('time-' + id),
+      btn: document.querySelector('.btn-play-pause[data-id="' + id + '"]')
+    }));
+
+    function stopAll() {
+      audios.forEach(a => {
+        a.el.pause();
+        a.el.currentTime = 0;
+        a.card.classList.remove('is-playing');
+        a.btn.textContent = '▶';
+        a.bar.style.width = '0%';
+        a.time.textContent = '0:00';
+      });
+    }
+
+    audios.forEach(item => {
+      item.btn.addEventListener('click', () => {
+        if (!item.el.paused) {
+          item.el.pause();
+          item.card.classList.remove('is-playing');
+          item.btn.textContent = '▶';
+        } else {
+          stopAll();
+          item.el.play();
+          item.card.classList.add('is-playing');
+          item.btn.textContent = '⏸';
+        }
+      });
+
+      item.el.addEventListener('timeupdate', () => {
+        if (item.el.duration) {
+          const pct = (item.el.currentTime / item.el.duration) * 100;
+          item.bar.style.width = pct + '%';
+          const sec = Math.floor(item.el.currentTime);
+          const ms = Math.floor((item.el.currentTime % 1) * 10);
+          item.time.textContent = '0:0' + sec + '.' + ms;
+        }
+      });
+
+      item.el.addEventListener('ended', () => {
+        item.card.classList.remove('is-playing');
+        item.btn.textContent = '▶';
+        item.bar.style.width = '0%';
+        item.time.textContent = '0:00';
+      });
+    });
+
+    document.getElementById('btn-stop-all').addEventListener('click', stopAll);
+
+    // Play all sequentially
+    document.getElementById('btn-play-all').addEventListener('click', () => {
+      stopAll();
+      let cur = 0;
+      function playNext() {
+        if (cur >= audios.length) return;
+        const item = audios[cur];
+        item.el.play();
+        item.card.classList.add('is-playing');
+        item.btn.textContent = '⏸';
+        item.el.onended = () => {
+          item.card.classList.remove('is-playing');
+          item.btn.textContent = '▶';
+          item.bar.style.width = '0%';
+          cur++;
+          playNext();
+        };
+      }
+      playNext();
+    });
+  </script>
+</body>
+</html>
