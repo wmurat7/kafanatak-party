@@ -25,7 +25,7 @@ function copyRecursive(src, dest) {
 }
 
 // 1. Ana dosyaları kopyala
-['index.html', 'spectator.html', 'koy.html', 'isim-sehir.html', 'passaparola.html', 'carkifelek.html', 'sarki-duello.html', 'manifest.json'].forEach(f => {
+['index.html', 'spectator.html', 'koy.html', 'isim-sehir.html', 'passaparola.html', 'carkifelek.html', 'sarki-duello.html', 'kelime-islem.html', 'aileler-yarisiyor.html', 'manifest.json'].forEach(f => {
   const src = path.join(rootDir, f);
   if (fs.existsSync(src)) {
     fs.copyFileSync(src, path.join(outDir, f));

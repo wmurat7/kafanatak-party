@@ -2665,10 +2665,19 @@ class GameApp {
     }
     const btnBackKelimeIslem = document.getElementById('btn-back-from-kelime-islem');
     if (btnBackKelimeIslem) {
-      btnBackKelimeIslem.addEventListener('click', () => {
+      btnBackKelimeIslem.addEventListener('click', (e) => {
+        e.preventDefault();
         sounds.playClick();
-        if (this.kelimeIslemEngine && this.kelimeIslemEngine.timerInterval) {
-          clearInterval(this.kelimeIslemEngine.timerInterval);
+        if (this.kelimeIslemEngine) {
+          if (this.kelimeIslemEngine.timerInterval) clearInterval(this.kelimeIslemEngine.timerInterval);
+          if (this.kelimeIslemEngine.unsubscribeRoom) {
+            try { this.kelimeIslemEngine.unsubscribeRoom(); } catch (err) {}
+          }
+          if (this.kelimeIslemEngine.stage !== 'setup') {
+            this.kelimeIslemEngine.init();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+          }
         }
         this.showScreen('partyGames');
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2690,8 +2699,19 @@ class GameApp {
     }
     const btnBackAY = document.getElementById('btn-back-from-aileler-yarisiyor');
     if (btnBackAY) {
-      btnBackAY.addEventListener('click', () => {
+      btnBackAY.addEventListener('click', (e) => {
+        e.preventDefault();
         sounds.playClick();
+        if (this.ailelerYarisiyorEngine) {
+          if (this.ailelerYarisiyorEngine.unsubscribeRoom) {
+            try { this.ailelerYarisiyorEngine.unsubscribeRoom(); } catch (err) {}
+          }
+          if (this.ailelerYarisiyorEngine.stage !== 'setup') {
+            this.ailelerYarisiyorEngine.init();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+          }
+        }
         this.showScreen('partyGames');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
@@ -3911,6 +3931,51 @@ class GameApp {
       if (this.screens.bottle && this.screens.bottle.classList.contains('active')) {
         sounds.playClick();
         this.showScreen('partyGames');
+        return;
+      }
+
+      // 4.11 Bir Kelime Bir İşlem
+      if (
+        (this.screens.kelimeIslem && this.screens.kelimeIslem.classList.contains('active')) ||
+        (this.screens['kelime-islem'] && this.screens['kelime-islem'].classList.contains('active'))
+      ) {
+        if (this.kelimeIslemEngine) {
+          if (this.kelimeIslemEngine.timerInterval) clearInterval(this.kelimeIslemEngine.timerInterval);
+          if (this.kelimeIslemEngine.unsubscribeRoom) {
+            try { this.kelimeIslemEngine.unsubscribeRoom(); } catch (e) {}
+          }
+          if (this.kelimeIslemEngine.stage !== 'setup') {
+            this.kelimeIslemEngine.init();
+            sounds.playClick();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+          }
+        }
+        sounds.playClick();
+        this.showScreen('partyGames');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      // 4.12 Aileler Yarışıyor
+      if (
+        (this.screens.ailelerYarisiyor && this.screens.ailelerYarisiyor.classList.contains('active')) ||
+        (this.screens['aileler-yarisiyor'] && this.screens['aileler-yarisiyor'].classList.contains('active'))
+      ) {
+        if (this.ailelerYarisiyorEngine) {
+          if (this.ailelerYarisiyorEngine.unsubscribeRoom) {
+            try { this.ailelerYarisiyorEngine.unsubscribeRoom(); } catch (e) {}
+          }
+          if (this.ailelerYarisiyorEngine.stage !== 'setup') {
+            this.ailelerYarisiyorEngine.init();
+            sounds.playClick();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+          }
+        }
+        sounds.playClick();
+        this.showScreen('partyGames');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 

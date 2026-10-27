@@ -2,6 +2,8 @@
 // Kafana Tak! - Aileler Yarışıyor (100 Kişiye Sorduk!) Efsane TV Stüdyo Motoru
 
 import { sounds } from './audio.js';
+import QRCode from './qrcode.esm.js';
+import { firebaseNetwork } from './firebase-network.js';
 import {
   AILELER_YARISIYOR_QUESTIONS,
   AILELER_YARISIYOR_KIDS_QUESTIONS,
@@ -33,13 +35,41 @@ export class AilelerYarisiyorEngine {
     this.questionDeck = [];
     this.usedQuestions = new Set();
 
+    // Çoklu Telefon (Zil & Pano)
+    this.roomId = null;
+    this.isMultiDevice = false;
+    this.connectedPlayers = [];
+    this.lastBuzzer = null;
+    this.unsubscribeRoom = null;
+
     window.__ailelerYarisiyor = this;
   }
 
   init() {
     this.stage = 'setup';
     this.resetTournament();
+    this.ensureBackButton();
     this.renderScreen();
+  }
+
+  ensureBackButton() {
+    const btnBack = document.getElementById('btn-back-from-aileler-yarisiyor');
+    if (btnBack) {
+      btnBack.onclick = (e) => {
+        if (e) e.preventDefault();
+        sounds.playClick();
+        if (this.unsubscribeRoom) {
+          try { this.unsubscribeRoom(); } catch (err) {}
+        }
+        if (this.stage !== 'setup') {
+          this.init();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+        this.game.showScreen('partyGames');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+    }
   }
 
   resetTournament() {
@@ -99,6 +129,7 @@ export class AilelerYarisiyorEngine {
     // Açılış Aşaması: Kapışma / Face-off
     this.stage = 'faceoff';
     sounds.playBell();
+    this.syncRoomState();
     this.renderScreen();
   }
 
@@ -111,6 +142,7 @@ export class AilelerYarisiyorEngine {
       this.activeTeam = (team === 'red') ? 'blue' : 'red';
     }
     this.stage = 'playing';
+    this.syncRoomState();
     this.renderScreen();
   }
 
@@ -160,6 +192,7 @@ export class AilelerYarisiyorEngine {
       return;
     }
 
+    this.syncRoomState();
     this.renderScreen();
   }
 
@@ -176,12 +209,14 @@ export class AilelerYarisiyorEngine {
     }
 
     this.strikes++;
+    this.syncRoomState();
 
     // 3 Çarpı olduysa ÇALMA (STEAL) aşamasına geç
     if (this.strikes >= 3) {
       setTimeout(() => {
         this.stage = 'steal';
         sounds.playBell();
+        this.syncRoomState();
         this.renderScreen();
       }, 700);
     } else {
@@ -300,13 +335,43 @@ export class AilelerYarisiyorEngine {
 
         <!-- Kategori Seçici: Klasik vs Çocuk -->
         <div style="font-size:0.78rem; font-weight:800; color:var(--gold); text-align:left; margin-bottom:6px;">SORU KATEGORİSİ:</div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:18px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;">
           <button type="button" id="btn-ay-mode-adult" class="rule-chip ${this.categoryMode === 'adult' ? 'active' : ''}" style="padding:10px; font-size:0.82rem; font-weight:900; justify-content:center; border-radius:12px; cursor:pointer;">
             🌟 Klasik / Aile Modu
           </button>
           <button type="button" id="btn-ay-mode-kids" class="rule-chip ${this.categoryMode === 'kids' ? 'active' : ''}" style="padding:10px; font-size:0.82rem; font-weight:900; justify-content:center; border-radius:12px; cursor:pointer;">
             🧒 Çocuk & Okul Modu
           </button>
+        </div>
+
+        <!-- Çoklu Telefon (Zil & Pano) Entegrasyonu -->
+        <div style="background:rgba(0,0,0,0.35); border:1.5px solid ${this.isMultiDevice ? 'var(--gold)' : 'rgba(255,255,255,0.12)'}; border-radius:16px; padding:12px; margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="text-align:left;">
+              <span style="font-size:0.85rem; font-weight:900; color:#FFF; display:block;">📱 Çoklu Telefon (Zil & Pano)</span>
+              <span style="font-size:0.75rem; color:var(--text-muted);">Oyuncular telefonlarını masabaşı zili yapsın</span>
+            </div>
+            <button type="button" id="btn-toggle-ay-multi" style="background:${this.isMultiDevice ? 'var(--gold)' : 'rgba(255,255,255,0.1)'}; color:${this.isMultiDevice ? '#0B0E14' : '#FFF'}; border:none; padding:6px 14px; border-radius:999px; font-size:0.8rem; font-weight:900; cursor:pointer;">
+              ${this.isMultiDevice ? 'AÇIK ✓' : 'AÇ +'}
+            </button>
+          </div>
+
+          ${this.isMultiDevice ? `
+            <div id="ay-multi-details" style="margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.1);">
+              <div style="display:inline-block; background:rgba(251,191,36,0.18); border:1.5px solid var(--gold); padding:4px 16px; border-radius:999px; color:var(--gold); font-size:1rem; font-weight:900; letter-spacing:2px; margin-bottom:10px;">
+                ODA: ${this.roomId || '----'}
+              </div>
+              <div id="ay-qr-canvas-box" style="margin:0 auto 10px; display:inline-block; background:#FFF; padding:6px; border-radius:12px;"></div>
+              <div style="display:flex; justify-content:center; gap:8px;">
+                <button type="button" id="btn-ay-copy-link" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#FFF; font-size:0.78rem; font-weight:800; padding:6px 12px; border-radius:10px; cursor:pointer;">
+                  📋 Zil Bağlantısını Kopyala
+                </button>
+              </div>
+              <div id="ay-connected-players-text" style="font-size:0.78rem; color:var(--gold); margin-top:8px; font-weight:800;">
+                👥 Bağlı Yarışmacılar: ${this.connectedPlayers.length > 0 ? this.connectedPlayers.map(p => p.name).join(', ') : 'Bekleniyor...'}
+              </div>
+            </div>
+          ` : ''}
         </div>
 
         <button type="button" id="btn-start-ay-game" class="btn-main btn-action-gold" style="background:linear-gradient(135deg, #FBBF24, #D97706) !important; color:#0B0E14 !important; font-size:1.15rem; font-weight:900; padding:15px; border-radius:999px; width:100%; box-shadow:0 6px 25px rgba(251,191,36,0.4); border:none; cursor:pointer;">
@@ -320,6 +385,148 @@ export class AilelerYarisiyorEngine {
     document.getElementById('btn-ay-mode-adult')?.addEventListener('click', () => this.setCategoryMode('adult'));
     document.getElementById('btn-ay-mode-kids')?.addEventListener('click', () => this.setCategoryMode('kids'));
     document.getElementById('btn-start-ay-game')?.addEventListener('click', () => this.startNewGame());
+
+    document.getElementById('btn-toggle-ay-multi')?.addEventListener('click', () => this.toggleMultiDevice());
+    document.getElementById('btn-ay-copy-link')?.addEventListener('click', () => {
+      if (!this.roomId) return;
+      const url = firebaseNetwork.getAilelerYarisiyorUrl(this.roomId);
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(url);
+        this.game.showToast('📋 Zil bağlantısı kopyalandı!');
+      } else {
+        prompt('Bağlantı:', url);
+      }
+    });
+
+    if (this.isMultiDevice) {
+      this.renderQrCode();
+    }
+  }
+
+  async toggleMultiDevice() {
+    sounds.playClick();
+    this.isMultiDevice = !this.isMultiDevice;
+    if (this.isMultiDevice) {
+      if (!this.roomId) {
+        this.roomId = firebaseNetwork.generateRoomCode();
+      }
+      await this.initMultiRoom();
+    } else {
+      if (this.unsubscribeRoom) {
+        try { this.unsubscribeRoom(); } catch (e) {}
+      }
+    }
+    this.renderScreen();
+  }
+
+  async initMultiRoom() {
+    const initialData = {
+      roomId: this.roomId,
+      namespace: 'aileler_yarisiyor',
+      stage: this.stage,
+      round: this.round,
+      roundMultiplier: this.roundMultiplier,
+      activeTeam: this.activeTeam,
+      bankPoints: this.bankPoints,
+      strikes: this.strikes,
+      question: this.currentQuestion ? this.currentQuestion.question : '',
+      scores: this.scores,
+      lastBuzzer: null
+    };
+    await firebaseNetwork.createRoom('aileler_yarisiyor', initialData);
+
+    if (this.unsubscribeRoom) {
+      try { this.unsubscribeRoom(); } catch (e) {}
+    }
+
+    this.unsubscribeRoom = firebaseNetwork.listenRoom('aileler_yarisiyor', this.roomId, (room) => {
+      if (!room) return;
+      if (room.players) {
+        this.connectedPlayers = Object.values(room.players);
+        const pText = document.getElementById('ay-connected-players-text');
+        if (pText) {
+          pText.textContent = `👥 Bağlı Yarışmacılar (${this.connectedPlayers.length}): ` + this.connectedPlayers.map(p => p.name).join(', ');
+        }
+      }
+      if (room.actions) {
+        const actionList = Object.values(room.actions);
+        const lastAction = actionList[actionList.length - 1];
+        if (lastAction && (!this._lastHandledActionId || this._lastHandledActionId !== lastAction.id)) {
+          this._lastHandledActionId = lastAction.id;
+          this.handleIncomingAction(lastAction);
+        }
+      }
+    });
+  }
+
+  handleIncomingAction(action) {
+    if (!action) return;
+    if (action.type === 'buzzer' && this.stage === 'faceoff') {
+      sounds.playBell();
+      this.lastBuzzer = action;
+      const teamLabel = action.team === 'red' ? this.team1Name : this.team2Name;
+      this.game.showToast(`🔔 [${action.playerName} (${teamLabel})] ZİLE İLK BASTI!`);
+      this.winFaceoff(action.team, true);
+    } else if (action.type === 'submit_answer') {
+      this.game.showToast(`📱 [${action.playerName}]: "${action.answer}" cevabını verdi!`);
+      this.handleUserAnswer(action.answer);
+    } else if (action.type === 'reaction') {
+      sounds.playPop();
+      this.game.showToast(`💬 ${action.playerName}: ${action.text}`);
+    }
+  }
+
+  renderQrCode() {
+    const box = document.getElementById('ay-qr-canvas-box');
+    if (!box || !this.roomId) return;
+    box.innerHTML = '';
+
+    const joinUrl = firebaseNetwork.getAilelerYarisiyorUrl(this.roomId);
+    const cvs = document.createElement('canvas');
+    cvs.style.display = 'block';
+    cvs.style.borderRadius = '8px';
+    box.appendChild(cvs);
+
+    const fallbackImg = () => {
+      box.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=${encodeURIComponent(joinUrl)}" width="170" height="170" style="display:block; border-radius:8px;" />`;
+    };
+
+    try {
+      const qrEngine = (typeof QRCode !== 'undefined' && QRCode) || (typeof window !== 'undefined' && window.QRCode);
+      if (qrEngine && qrEngine.toCanvas) {
+        const res = qrEngine.toCanvas(cvs, joinUrl, {
+          width: 170,
+          margin: 1,
+          color: { dark: '#000000', light: '#FFFFFF' }
+        }, (err) => {
+          if (err) fallbackImg();
+        });
+        if (res && typeof res.catch === 'function') {
+          res.catch(fallbackImg);
+        }
+      } else {
+        fallbackImg();
+      }
+    } catch (err) {
+      fallbackImg();
+    }
+  }
+
+  async syncRoomState() {
+    if (!this.isMultiDevice || !this.roomId) return;
+    try {
+      await firebaseNetwork.updateRoom('aileler_yarisiyor', this.roomId, {
+        stage: this.stage,
+        round: this.round,
+        roundMultiplier: this.roundMultiplier,
+        activeTeam: this.activeTeam,
+        bankPoints: this.bankPoints,
+        strikes: this.strikes,
+        question: this.currentQuestion ? this.currentQuestion.question : '',
+        scores: this.scores,
+        lastBuzzer: this.lastBuzzer
+      });
+    } catch (e) {}
   }
 
   // --- 3.2. FACEOFF (KAPIŞMA) VIEW ---

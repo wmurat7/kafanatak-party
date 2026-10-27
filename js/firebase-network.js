@@ -360,6 +360,22 @@ class FirebaseNetworkManager {
     const webBase = this.getWebAppUrl();
     return `${webBase}/sarki-duello.html?room=${encodeURIComponent(roomId)}&cloud=1`;
   }
+
+  /**
+   * İkinci telefonların açabileceği Bir Kelime Bir İşlem Oyuncu/Seyirci URL'sini üretir
+   */
+  getKelimeIslemUrl(roomId) {
+    const webBase = this.getWebAppUrl();
+    return `${webBase}/kelime-islem.html?room=${encodeURIComponent(roomId)}&cloud=1`;
+  }
+
+  /**
+   * İkinci telefonların açabileceği Aileler Yarışıyor (Buzzer & Pano) URL'sini üretir
+   */
+  getAilelerYarisiyorUrl(roomId) {
+    const webBase = this.getWebAppUrl();
+    return `${webBase}/aileler-yarisiyor.html?room=${encodeURIComponent(roomId)}&cloud=1`;
+  }
 }
 
 export const firebaseNetwork = new FirebaseNetworkManager();

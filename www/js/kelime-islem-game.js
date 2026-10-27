@@ -2,6 +2,8 @@
 // Kafana Tak! - Bir Kelime Bir İşlem Efsane Yarışma Motoru
 
 import { sounds } from './audio.js';
+import QRCode from './qrcode.esm.js';
+import { firebaseNetwork } from './firebase-network.js';
 import {
   TURKISH_VOWELS,
   TURKISH_CONSONANTS,
@@ -53,12 +55,42 @@ export class KelimeIslemEngine {
     this.playerNumberPoints = 0;
     this.computerSolution = null;
 
+    // Çoklu Cihaz (Firebase RTDB)
+    this.roomId = null;
+    this.isMultiDevice = false;
+    this.connectedPlayers = [];
+    this.playerSubmissions = [];
+    this.unsubscribeRoom = null;
+
     window.__kelimeIslem = this;
   }
 
   init() {
     this.stage = 'setup';
+    if (this.timerInterval) clearInterval(this.timerInterval);
+    this.ensureBackButton();
     this.renderScreen();
+  }
+
+  ensureBackButton() {
+    const btnBack = document.getElementById('btn-back-from-kelime-islem');
+    if (btnBack) {
+      btnBack.onclick = (e) => {
+        if (e) e.preventDefault();
+        sounds.playClick();
+        if (this.timerInterval) clearInterval(this.timerInterval);
+        if (this.unsubscribeRoom) {
+          try { this.unsubscribeRoom(); } catch (err) {}
+        }
+        if (this.stage !== 'setup') {
+          this.init();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
+        this.game.showScreen('partyGames');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+    }
   }
 
   setMode(mode) {
@@ -155,6 +187,7 @@ export class KelimeIslemEngine {
     this.computerBestWord = bestWords[0] || { word: 'YOK', length: 0, points: 0 };
 
     this.renderScreen();
+    this.syncRoomState();
     sounds.playCountdown();
 
     if (this.timerInterval) clearInterval(this.timerInterval);
@@ -291,6 +324,7 @@ export class KelimeIslemEngine {
     this.computerSolution = solveCountdownNumbers(this.initialNumbers, this.targetNumber);
 
     this.renderScreen();
+    this.syncRoomState();
     sounds.playCountdown();
 
     if (this.timerInterval) clearInterval(this.timerInterval);
@@ -596,13 +630,43 @@ export class KelimeIslemEngine {
 
         <!-- Oyuncu Modu -->
         <div style="font-size:0.78rem; font-weight:800; color:var(--primary); text-align:left; margin-bottom:6px;">YARIŞMA TÜRÜ:</div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:20px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;">
           <button type="button" id="btn-pmode-duel" class="btn-main ${this.playerMode === 'duel' ? 'active' : ''}" style="padding:10px; border-radius:14px; font-size:0.85rem; font-weight:900; background:${this.playerMode === 'duel' ? 'rgba(0,245,212,0.2)' : 'rgba(255,255,255,0.06)'}; border:1.5px solid ${this.playerMode === 'duel' ? 'var(--primary)' : 'rgba(255,255,255,0.15)'}; color:#FFF; cursor:pointer;">
             ⚔️ Takım Düellosu (Kırmızı vs Mavi)
           </button>
           <button type="button" id="btn-pmode-solo" class="btn-main ${this.playerMode === 'solo' ? 'active' : ''}" style="padding:10px; border-radius:14px; font-size:0.85rem; font-weight:900; background:${this.playerMode === 'solo' ? 'rgba(0,245,212,0.2)' : 'rgba(255,255,255,0.06)'}; border:1.5px solid ${this.playerMode === 'solo' ? 'var(--primary)' : 'rgba(255,255,255,0.15)'}; color:#FFF; cursor:pointer;">
             👤 Bireysel Rekor Pratiği
           </button>
+        </div>
+
+        <!-- Çoklu Telefon (QR Kod) Entegrasyonu -->
+        <div style="background:rgba(0,0,0,0.35); border:1.5px solid ${this.isMultiDevice ? 'var(--primary)' : 'rgba(255,255,255,0.12)'}; border-radius:16px; padding:12px; margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="text-align:left;">
+              <span style="font-size:0.85rem; font-weight:900; color:#FFF; display:block;">📱 Çoklu Telefon Modu</span>
+              <span style="font-size:0.75rem; color:var(--text-muted);">Oyuncular kendi telefonundan harfleri seçsin</span>
+            </div>
+            <button type="button" id="btn-toggle-ki-multi" style="background:${this.isMultiDevice ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}; color:${this.isMultiDevice ? '#0B0E14' : '#FFF'}; border:none; padding:6px 14px; border-radius:999px; font-size:0.8rem; font-weight:900; cursor:pointer;">
+              ${this.isMultiDevice ? 'AÇIK ✓' : 'AÇ +'}
+            </button>
+          </div>
+
+          ${this.isMultiDevice ? `
+            <div id="ki-multi-details" style="margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.1);">
+              <div style="display:inline-block; background:rgba(0,245,212,0.15); border:1.5px solid var(--primary); padding:4px 16px; border-radius:999px; color:var(--primary); font-size:1rem; font-weight:900; letter-spacing:2px; margin-bottom:10px;">
+                ODA: ${this.roomId || '----'}
+              </div>
+              <div id="ki-qr-canvas-box" style="margin:0 auto 10px; display:inline-block; background:#FFF; padding:6px; border-radius:12px;"></div>
+              <div style="display:flex; justify-content:center; gap:8px;">
+                <button type="button" id="btn-ki-copy-link" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#FFF; font-size:0.78rem; font-weight:800; padding:6px 12px; border-radius:10px; cursor:pointer;">
+                  📋 Bağlantıyı Kopyala
+                </button>
+              </div>
+              <div id="ki-connected-players-text" style="font-size:0.78rem; color:var(--gold); margin-top:8px; font-weight:800;">
+                👥 Bağlı Oyuncular: ${this.connectedPlayers.length > 0 ? this.connectedPlayers.map(p => p.name).join(', ') : 'Bekleniyor...'}
+              </div>
+            </div>
+          ` : ''}
         </div>
 
         <button type="button" id="btn-start-kelime-islem" class="btn-main primary" style="font-size:1.15rem; font-weight:900; padding:15px; border-radius:999px; width:100%; box-shadow:0 6px 25px rgba(0,245,212,0.4); cursor:pointer;">
@@ -621,6 +685,146 @@ export class KelimeIslemEngine {
     document.getElementById('btn-pmode-solo')?.addEventListener('click', () => this.setPlayerMode('solo'));
 
     document.getElementById('btn-start-kelime-islem')?.addEventListener('click', () => this.startNewGame());
+
+    document.getElementById('btn-toggle-ki-multi')?.addEventListener('click', () => this.toggleMultiDevice());
+    document.getElementById('btn-ki-copy-link')?.addEventListener('click', () => {
+      if (!this.roomId) return;
+      const url = firebaseNetwork.getKelimeIslemUrl(this.roomId);
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(url);
+        this.game.showToast('📋 Çoklu telefon bağlantısı kopyalandı!');
+      } else {
+        prompt('Bağlantı:', url);
+      }
+    });
+
+    if (this.isMultiDevice) {
+      this.renderQrCode();
+    }
+  }
+
+  async toggleMultiDevice() {
+    sounds.playClick();
+    this.isMultiDevice = !this.isMultiDevice;
+    if (this.isMultiDevice) {
+      if (!this.roomId) {
+        this.roomId = firebaseNetwork.generateRoomCode();
+      }
+      await this.initMultiRoom();
+    } else {
+      if (this.unsubscribeRoom) {
+        try { this.unsubscribeRoom(); } catch (e) {}
+      }
+    }
+    this.renderScreen();
+  }
+
+  async initMultiRoom() {
+    const initialData = {
+      roomId: this.roomId,
+      namespace: 'kelime_islem',
+      stage: this.stage,
+      mode: this.mode,
+      letters: this.letters,
+      targetNumber: this.targetNumber,
+      numbers: this.initialNumbers ? this.initialNumbers.map(n => n.value !== undefined ? n.value : n) : [],
+      currentSeconds: this.currentSeconds,
+      scores: this.scores
+    };
+    await firebaseNetwork.createRoom('kelime_islem', initialData);
+
+    if (this.unsubscribeRoom) {
+      try { this.unsubscribeRoom(); } catch (e) {}
+    }
+
+    this.unsubscribeRoom = firebaseNetwork.listenRoom('kelime_islem', this.roomId, (room) => {
+      if (!room) return;
+      if (room.players) {
+        this.connectedPlayers = Object.values(room.players);
+        const pText = document.getElementById('ki-connected-players-text');
+        if (pText) {
+          pText.textContent = `👥 Bağlı Oyuncular (${this.connectedPlayers.length}): ` + this.connectedPlayers.map(p => p.name).join(', ');
+        }
+      }
+      if (room.actions) {
+        const actionList = Object.values(room.actions);
+        const lastAction = actionList[actionList.length - 1];
+        if (lastAction && (!this._lastHandledActionId || this._lastHandledActionId !== lastAction.id)) {
+          this._lastHandledActionId = lastAction.id;
+          this.handleIncomingAction(lastAction);
+        }
+      }
+    });
+  }
+
+  handleIncomingAction(action) {
+    if (!action) return;
+    if (action.type === 'submit_word') {
+      sounds.playDing();
+      const teamBadge = action.team === 'red' ? '🔴' : '🔵';
+      this.game.showToast(`📱 [${action.playerName} (${teamBadge})]: "${action.word}" (${action.length} harf)`);
+      this.playerSubmissions.push(action);
+    } else if (action.type === 'submit_islem') {
+      sounds.playDing();
+      const teamBadge = action.team === 'red' ? '🔴' : '🔵';
+      this.game.showToast(`📱 [${action.playerName} (${teamBadge})]: ${action.value} buldu! (Fark: ${action.diff})`);
+      this.playerSubmissions.push(action);
+    } else if (action.type === 'reaction') {
+      sounds.playPop();
+      this.game.showToast(`💬 ${action.playerName}: ${action.text}`);
+    }
+  }
+
+  renderQrCode() {
+    const box = document.getElementById('ki-qr-canvas-box');
+    if (!box || !this.roomId) return;
+    box.innerHTML = '';
+
+    const joinUrl = firebaseNetwork.getKelimeIslemUrl(this.roomId);
+    const cvs = document.createElement('canvas');
+    cvs.style.display = 'block';
+    cvs.style.borderRadius = '8px';
+    box.appendChild(cvs);
+
+    const fallbackImg = () => {
+      box.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=${encodeURIComponent(joinUrl)}" width="170" height="170" style="display:block; border-radius:8px;" />`;
+    };
+
+    try {
+      const qrEngine = (typeof QRCode !== 'undefined' && QRCode) || (typeof window !== 'undefined' && window.QRCode);
+      if (qrEngine && qrEngine.toCanvas) {
+        const res = qrEngine.toCanvas(cvs, joinUrl, {
+          width: 170,
+          margin: 1,
+          color: { dark: '#000000', light: '#FFFFFF' }
+        }, (err) => {
+          if (err) fallbackImg();
+        });
+        if (res && typeof res.catch === 'function') {
+          res.catch(fallbackImg);
+        }
+      } else {
+        fallbackImg();
+      }
+    } catch (err) {
+      fallbackImg();
+    }
+  }
+
+  async syncRoomState() {
+    if (!this.isMultiDevice || !this.roomId) return;
+    try {
+      await firebaseNetwork.updateRoom('kelime_islem', this.roomId, {
+        stage: this.stage,
+        mode: this.mode,
+        letters: this.letters,
+        targetNumber: this.targetNumber,
+        numbers: this.initialNumbers ? this.initialNumbers.map(n => n.value !== undefined ? n.value : n) : [],
+        currentSeconds: this.currentSeconds,
+        scores: this.scores,
+        currentTurn: this.currentTurn
+      });
+    } catch (e) {}
   }
 
   // --- 3.2. KELİME HARF ÇEKİLİŞ VIEW ---
