@@ -18,6 +18,7 @@ import { GulmemeMeydaniEngine } from './gulmeme-meydani.js';
 import { PassaparolaEngine } from './passaparola-game.js';
 import { CarkifelekEngine } from './carkifelek-game.js';
 import { KelimeIslemEngine } from './kelime-islem-game.js';
+import { AilelerYarisiyorEngine } from './aileler-yarisiyor-game.js';
 import { initPartyGuides } from './party-guide.js';
 import { firebaseNetwork } from './firebase-network.js';
 
@@ -200,7 +201,9 @@ class GameApp {
       passaparola: document.getElementById('screen-passaparola'),
       carkifelek: document.getElementById('screen-carkifelek'),
       kelimeIslem: document.getElementById('screen-kelime-islem'),
-      'kelime-islem': document.getElementById('screen-kelime-islem')
+      'kelime-islem': document.getElementById('screen-kelime-islem'),
+      ailelerYarisiyor: document.getElementById('screen-aileler-yarisiyor'),
+      'aileler-yarisiyor': document.getElementById('screen-aileler-yarisiyor')
     };
 
     // Ayarlar & Modlar
@@ -2673,7 +2676,29 @@ class GameApp {
     }
 
     // =========================================
-    // 12. NASIL OYNANIR REHBER MODALI BAĞLANTILARI
+    // 12. AİLELER YARIŞIYOR
+    // =========================================
+    this.ailelerYarisiyorEngine = new AilelerYarisiyorEngine(this);
+    const btnOpenAY = document.getElementById('btn-open-aileler-yarisiyor-game');
+    if (btnOpenAY) {
+      btnOpenAY.addEventListener('click', () => {
+        sounds.playClick();
+        this.showScreen('ailelerYarisiyor');
+        this.ailelerYarisiyorEngine.init();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+    const btnBackAY = document.getElementById('btn-back-from-aileler-yarisiyor');
+    if (btnBackAY) {
+      btnBackAY.addEventListener('click', () => {
+        sounds.playClick();
+        this.showScreen('partyGames');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+
+    // =========================================
+    // 13. NASIL OYNANIR REHBER MODALI BAĞLANTILARI
     // =========================================
     initPartyGuides(this);
 
@@ -2865,7 +2890,7 @@ class GameApp {
       'screen-vampire', 'screen-spy', 'screen-bomb', 'screen-bottle',
       'screen-isim-sehir', 'screen-sarki-duello', 'screen-kelime-bombasi',
       'screen-gulmeme-meydani', 'screen-passaparola', 'screen-carkifelek',
-      'screen-kelime-islem'
+      'screen-kelime-islem', 'screen-aileler-yarisiyor'
     ];
     if (partyScreens.includes(screenId)) {
       if (this.gulmemeEngine) {

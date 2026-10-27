@@ -238,7 +238,7 @@
         <span>← Ana Menü</span>
       </button>
       <span style="font-size:0.75rem; font-weight:800; background:rgba(255,46,147,0.2); color:#FF2E93; border:1px solid rgba(255,46,147,0.4); padding:4px 12px; border-radius:999px;">
-        🎉 8 EĞLENCELİ PARTİ OYUNU
+        🎉 12 EĞLENCELİ PARTİ OYUNU
       </span>
     </div>
 
@@ -246,7 +246,7 @@
       <div style="font-size: 2.4rem; filter: drop-shadow(0 0 15px rgba(255, 46, 147, 0.6));">🎭</div>
       <div>
         <h2 style="font-size: 1.45rem; font-weight: 900; color: #FFF; margin: 0;">Parti Oyunları Arenası</h2>
-        <p style="font-size: 0.82rem; color: var(--text-dim); margin-top: 3px;">Arkadaş grubunuzla masada oynayabileceğiniz 8 süper parti oyunu! Her oyunun kurallarını inceleyin veya hemen başlatın.</p>
+        <p style="font-size: 0.82rem; color: var(--text-dim); margin-top: 3px;">Arkadaş grubunuzla masada oynayabileceğiniz 12 süper parti oyunu! Her oyunun kurallarını inceleyin veya hemen başlatın.</p>
       </div>
     </div>
 
@@ -511,6 +511,30 @@
           </button>
           <button type="button" id="btn-open-kelime-islem-game" class="btn-main primary" style="font-size:0.92rem; font-weight:900; padding:11px 14px; border-radius:12px; display:flex; justify-content:center; align-items:center; gap:6px;">
             <span>🧠 Yarışmayı Başlat</span> <span>➔</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 12. Aileler Yarışıyor -->
+      <div class="party-game-card" style="background:linear-gradient(135deg, rgba(69,26,3,0.85), rgba(15,23,42,0.95)); border:2px solid rgba(251,191,36,0.5); border-radius:20px; padding:18px; box-shadow:0 10px 30px rgba(251,191,36,0.2);">
+        <div class="party-card-header">
+          <div class="party-card-tags">
+            <span class="party-tag party-tag-gold">📺 Efsane Yarışma</span>
+            <span class="party-tag party-tag-pink">👥 100 Kişiye Sorduk</span>
+            <span class="party-tag party-tag-cyan">🔥 Puan Çalma</span>
+          </div>
+          <div class="party-card-icon-wrap" style="background:rgba(251,191,36,0.2); border:1.5px solid rgba(251,191,36,0.5); box-shadow:0 0 15px rgba(251,191,36,0.35);">
+            <span class="party-card-icon">👨‍👩‍👧‍👦</span>
+          </div>
+        </div>
+        <h3 style="font-size:1.35rem; font-weight:900; color:#FFF; margin-bottom:4px;">Aileler Yarışıyor</h3>
+        <p style="font-size:0.84rem; color:#CBD5E1; line-height:1.4; margin-bottom:14px;">100 kişiye sorduk, en popüler cevapları arıyoruz! Masadaki takımlar kapışsın, panodaki cevapları açtırın, 3 çarpıya düşmeden puanları cebe indirin!</p>
+        <div style="display:grid; grid-template-columns:1fr 1.3fr; gap:8px;">
+          <button type="button" class="btn-party-guide" data-game-guide="aileler-yarisiyor" style="background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.2); border-radius:12px; color:#FFF; font-size:0.85rem; font-weight:800; padding:11px; cursor:pointer;">
+            📖 Nasıl Oynanır?
+          </button>
+          <button type="button" id="btn-open-aileler-yarisiyor-game" class="btn-main btn-action-gold" style="background:linear-gradient(135deg, #FBBF24, #D97706) !important; color:#0B0E14 !important; font-size:0.92rem; font-weight:900; padding:11px 14px; border-radius:12px; border:none; display:flex; justify-content:center; align-items:center; gap:6px;">
+            <span>👨‍👩‍👧‍👦 Yarışmayı Başlat</span> <span>➔</span>
           </button>
         </div>
       </div>
@@ -1893,6 +1917,23 @@
 
     <!-- Dinamik Oyun İçerik Alanı -->
     <div id="screen-kelime-islem-content"></div>
+  </section>
+
+  <!-- =========================================
+       5.12. AİLELER YARIŞIYOR OYUN ALANI
+       ========================================= -->
+  <section id="screen-aileler-yarisiyor" class="screen aileler-yarisiyor-screen" style="padding: calc(env(safe-area-inset-top, 24px) + 20px) 16px 100px; max-width: 520px; margin: 0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <button type="button" id="btn-back-from-aileler-yarisiyor" class="btn-round-abort" style="margin:0; position:static;">
+        <span>← Parti Arenası</span>
+      </button>
+      <span style="font-size:0.8rem; font-weight:900; background:rgba(251,191,36,0.18); color:var(--gold); border:1px solid var(--gold); padding:4px 12px; border-radius:999px;">
+        👨‍👩‍👧‍👦 AİLELER YARIŞIYOR
+      </span>
+    </div>
+
+    <!-- Dinamik Oyun İçerik Alanı -->
+    <div id="screen-aileler-yarisiyor-content"></div>
   </section>
 
   <!-- =========================================

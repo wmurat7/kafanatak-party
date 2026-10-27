@@ -271,6 +271,19 @@ class SoundEngine {
   }
 
   // =========================================================================
+  // 2.1. YANLIŞ / BUZZER / ÇARPI SESİ
+  // =========================================================================
+  playWrong() {
+    if (this.muted) return;
+    this.unlockAudio();
+    this.vibrate([120, 60, 120]);
+
+    if (!this.playBuffer('clown_horn', 0.85) && !this.playBuffer('pass', 0.95)) {
+      this.fallbackBoing();
+    }
+  }
+
+  // =========================================================================
   // 3. SAYAC / TİK-TAK SESİ (Akustik Ahşap Blok Tıkı)
   // =========================================================================
   playTick(isUrgent = false) {

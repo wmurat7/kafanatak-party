@@ -1,0 +1,583 @@
+// js/aileler-yarisiyor-game.js
+// Kafana Tak! - Aileler Yarışıyor (100 Kişiye Sorduk!) Efsane TV Stüdyo Motoru
+
+import { sounds } from './audio.js';
+import {
+  AILELER_YARISIYOR_QUESTIONS,
+  AILELER_YARISIYOR_KIDS_QUESTIONS,
+  matchAnswerIndex
+} from './aileler-yarisiyor-data.js';
+
+export class AilelerYarisiyorEngine {
+  constructor(game) {
+    this.game = game;
+    this.categoryMode = 'adult'; // 'adult' (Klasik/Aile) or 'kids' (Çocuk Modu)
+    this.stage = 'setup'; // 'setup', 'faceoff', 'playing', 'steal', 'round_summary', 'game_over'
+
+    // Takımlar ve Skorlar
+    this.team1Name = '🔴 Kırmızı Aile';
+    this.team2Name = '🔵 Mavi Aile';
+    this.scores = { red: 0, blue: 0 };
+    this.round = 1;
+    this.maxRounds = 4;
+
+    // Aktif Tur Durumu
+    this.activeTeam = 'red'; // 'red' or 'blue'
+    this.currentQuestion = null;
+    this.bankPoints = 0;
+    this.strikes = 0; // 0, 1, 2, 3
+    this.revealedAnswers = []; // boolean array [false, false, ...]
+    this.roundMultiplier = 1; // 1x, 2x, 3x
+
+    // Soru Havuzları (Tekrarsız Karıştırma)
+    this.questionDeck = [];
+    this.usedQuestions = new Set();
+
+    window.__ailelerYarisiyor = this;
+  }
+
+  init() {
+    this.stage = 'setup';
+    this.resetTournament();
+    this.renderScreen();
+  }
+
+  resetTournament() {
+    this.scores = { red: 0, blue: 0 };
+    this.round = 1;
+    this.activeTeam = 'red';
+    this.usedQuestions.clear();
+    this.prepareDeck();
+  }
+
+  setCategoryMode(cat) {
+    this.categoryMode = cat;
+    this.resetTournament();
+    this.renderScreen();
+  }
+
+  prepareDeck() {
+    const source = this.categoryMode === 'kids'
+      ? AILELER_YARISIYOR_KIDS_QUESTIONS
+      : AILELER_YARISIYOR_QUESTIONS;
+
+    this.questionDeck = [...source];
+    // Fisher-Yates shuffle
+    for (let i = this.questionDeck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this.questionDeck[i], this.questionDeck[j]] = [this.questionDeck[j], this.questionDeck[i]];
+    }
+  }
+
+  startNewGame() {
+    sounds.playClick();
+    this.resetTournament();
+    this.startRound(1);
+  }
+
+  startRound(roundNumber) {
+    this.round = roundNumber;
+    this.strikes = 0;
+    this.bankPoints = 0;
+
+    // Katsayı belirle: Tur 1-2: 1x, Tur 3: 2x, Tur 4: 3x
+    if (this.round >= 4) {
+      this.roundMultiplier = 3;
+    } else if (this.round === 3) {
+      this.roundMultiplier = 2;
+    } else {
+      this.roundMultiplier = 1;
+    }
+
+    // Sıradaki soruyu çek
+    if (this.questionDeck.length === 0) {
+      this.prepareDeck();
+    }
+    this.currentQuestion = this.questionDeck.pop();
+    this.revealedAnswers = new Array(this.currentQuestion.answers.length).fill(false);
+
+    // Açılış Aşaması: Kapışma / Face-off
+    this.stage = 'faceoff';
+    sounds.playBell();
+    this.renderScreen();
+  }
+
+  // --- 1. FACEOFF (KAPIŞMA) METOTLARI ---
+  winFaceoff(team, chooseToPlay = true) {
+    sounds.playCorrect();
+    if (chooseToPlay) {
+      this.activeTeam = team;
+    } else {
+      this.activeTeam = (team === 'red') ? 'blue' : 'red';
+    }
+    this.stage = 'playing';
+    this.renderScreen();
+  }
+
+  // --- 2. OYNAMA & CEVAP AÇMA METOTLARI ---
+  handleUserAnswer(input) {
+    if (this.stage !== 'playing' && this.stage !== 'steal') return;
+    if (!input || !input.trim()) return;
+
+    const matchedIdx = matchAnswerIndex(input, this.currentQuestion.answers);
+
+    if (matchedIdx !== -1 && !this.revealedAnswers[matchedIdx]) {
+      // Doğru cevap!
+      this.revealAnswer(matchedIdx);
+    } else {
+      // Yanlış cevap!
+      this.addStrike();
+    }
+  }
+
+  revealAnswer(idx) {
+    if (this.revealedAnswers[idx]) return;
+
+    this.revealedAnswers[idx] = true;
+    sounds.playCorrect();
+
+    const ans = this.currentQuestion.answers[idx];
+    const earnedPoints = ans.points * this.roundMultiplier;
+    this.bankPoints += earnedPoints;
+
+    // Eğer 'steal' aşamasındaysa ve bildilerse puanı çaldılar!
+    if (this.stage === 'steal') {
+      sounds.playApplause();
+      sounds.playCheer();
+      // Çalan takım puanları alır
+      const stealingTeam = (this.activeTeam === 'red') ? 'blue' : 'red';
+      this.scores[stealingTeam] += this.bankPoints;
+      this.finishRound(`🏆 ${stealingTeam === 'red' ? this.team1Name : this.team2Name} PUANLARI ÇALDI! (+${this.bankPoints} P)`);
+      return;
+    }
+
+    // Eğer panodaki TÜM cevaplar açıldıysa aktif takım kazanır
+    const allRevealed = this.revealedAnswers.every(r => r === true);
+    if (allRevealed) {
+      sounds.playApplause();
+      this.scores[this.activeTeam] += this.bankPoints;
+      this.finishRound(`🎉 TÜM PANO AÇILDI! ${this.activeTeam === 'red' ? this.team1Name : this.team2Name} KAZANDI! (+${this.bankPoints} P)`);
+      return;
+    }
+
+    this.renderScreen();
+  }
+
+  addStrike() {
+    if (sounds.playWrong) sounds.playWrong();
+    else if (sounds.playPass) sounds.playPass();
+
+    if (this.stage === 'steal') {
+      // Karşı takım çalmaya çalışırken bilemedi! Puanlar ilk takıma kalır
+      sounds.playApplause();
+      this.scores[this.activeTeam] += this.bankPoints;
+      this.finishRound(`❌ ÇALMA BAŞARISIZ! Puanlar ${this.activeTeam === 'red' ? this.team1Name : this.team2Name} takımına gitti! (+${this.bankPoints} P)`);
+      return;
+    }
+
+    this.strikes++;
+
+    // 3 Çarpı olduysa ÇALMA (STEAL) aşamasına geç
+    if (this.strikes >= 3) {
+      setTimeout(() => {
+        this.stage = 'steal';
+        sounds.playBell();
+        this.renderScreen();
+      }, 700);
+    } else {
+      this.renderScreen();
+      // Kırmızı çarpı popup animasyonu
+      this.triggerStrikeOverlay(this.strikes);
+    }
+  }
+
+  triggerStrikeOverlay(count) {
+    const overlay = document.getElementById('ay-strike-popup');
+    if (overlay) {
+      overlay.style.display = 'flex';
+      overlay.innerHTML = `
+        <div style="font-size:5rem; animation:popIn 0.25s ease; filter:drop-shadow(0 0 25px #EF4444); color:#EF4444; font-weight:900;">
+          ${'❌'.repeat(count)}
+        </div>
+      `;
+      setTimeout(() => {
+        overlay.style.display = 'none';
+      }, 900);
+    }
+  }
+
+  finishRound(summaryMessage) {
+    // Kalan kapalı cevapları göster
+    this.revealedAnswers = this.revealedAnswers.map(() => true);
+    this.stage = 'round_summary';
+    this.roundSummaryMessage = summaryMessage;
+    this.renderScreen();
+  }
+
+  nextRoundOrGameOver() {
+    sounds.playClick();
+    if (this.round >= this.maxRounds) {
+      this.stage = 'game_over';
+      sounds.playApplause();
+      this.renderScreen();
+    } else {
+      this.startRound(this.round + 1);
+    }
+  }
+
+  // --- 3. ARAYÜZ (RENDER) METOTLARI ---
+  renderScreen() {
+    const container = document.getElementById('screen-aileler-yarisiyor-content');
+    if (!container) return;
+
+    if (this.stage === 'setup') {
+      container.innerHTML = this.renderSetupView();
+      this.bindSetupEvents();
+    } else if (this.stage === 'faceoff') {
+      container.innerHTML = this.renderFaceoffView();
+      this.bindFaceoffEvents();
+    } else if (this.stage === 'playing' || this.stage === 'steal') {
+      container.innerHTML = this.renderBoardView();
+      this.bindBoardEvents();
+    } else if (this.stage === 'round_summary') {
+      container.innerHTML = this.renderRoundSummaryView();
+      this.bindRoundSummaryEvents();
+    } else if (this.stage === 'game_over') {
+      container.innerHTML = this.renderGameOverView();
+      this.bindGameOverEvents();
+    }
+  }
+
+  renderScoreHeader() {
+    const isRedTurn = this.activeTeam === 'red';
+    const isBlueTurn = this.activeTeam === 'blue';
+
+    return `
+      <!-- Takım Skorları ve Havuz -->
+      <div style="display:grid; grid-template-columns:1fr 1.1fr 1fr; gap:6px; margin-bottom:12px; align-items:stretch;">
+        <!-- Kırmızı Takım -->
+        <div style="background:rgba(239,68,68,0.18); border:2px solid ${isRedTurn ? '#EF4444' : 'rgba(239,68,68,0.35)'}; border-radius:14px; padding:8px; text-align:center; box-shadow:${isRedTurn ? '0 0 15px rgba(239,68,68,0.4)' : 'none'};">
+          <div style="font-size:0.75rem; font-weight:800; color:#EF4444; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${this.team1Name} ${isRedTurn ? '★' : ''}
+          </div>
+          <div style="font-size:1.4rem; font-weight:900; color:#FFF;">${this.scores.red} P</div>
+        </div>
+
+        <!-- Havuz (Bank) & Tur Çarpanı -->
+        <div style="background:linear-gradient(135deg, rgba(0,0,0,0.6), rgba(15,23,42,0.8)); border:2px solid var(--gold); border-radius:14px; padding:6px 8px; text-align:center; display:flex; flex-direction:column; justify-content:center;">
+          <div style="font-size:0.68rem; font-weight:900; color:var(--gold); letter-spacing:1px;">
+            ${this.round}. TUR (${this.roundMultiplier}X)
+          </div>
+          <div style="font-size:1.5rem; font-weight:900; color:#FFF; font-family:monospace; line-height:1.1;">
+            ${this.bankPoints} P
+          </div>
+          <div style="font-size:0.65rem; color:var(--primary); font-weight:800;">HAVUZDAKİ PUAN</div>
+        </div>
+
+        <!-- Mavi Takım -->
+        <div style="background:rgba(59,130,246,0.18); border:2px solid ${isBlueTurn ? '#3B82F6' : 'rgba(59,130,246,0.35)'}; border-radius:14px; padding:8px; text-align:center; box-shadow:${isBlueTurn ? '0 0 15px rgba(59,130,246,0.4)' : 'none'};">
+          <div style="font-size:0.75rem; font-weight:800; color:#3B82F6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${this.team2Name} ${isBlueTurn ? '★' : ''}
+          </div>
+          <div style="font-size:1.4rem; font-weight:900; color:#FFF;">${this.scores.blue} P</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // --- 3.1. SETUP VIEW ---
+  renderSetupView() {
+    return `
+      <div class="card" style="text-align:center; padding:22px; max-width:480px; margin:0 auto; background:linear-gradient(135deg, rgba(30,27,75,0.9), rgba(15,23,42,0.95)); border:2px solid rgba(251,191,36,0.4); border-radius:20px;">
+        <div style="font-size:3.2rem; margin-bottom:8px;">👨‍👩‍👧‍👦</div>
+        <h2 style="font-size:1.6rem; font-weight:900; color:#FFF; margin-bottom:6px;">AİLELER YARIŞIYOR</h2>
+        <div style="display:inline-block; background:rgba(251,191,36,0.18); border:1px solid var(--gold); color:var(--gold); font-size:0.8rem; font-weight:900; padding:4px 14px; border-radius:999px; margin-bottom:14px;">
+          👥 100 KİŞİYE SORDUK!
+        </div>
+        <p style="font-size:0.85rem; color:#CBD5E1; line-height:1.45; margin-bottom:18px;">
+          Efsane televizyon yarışması! 100 kişiye sorduk, en popüler cevapları arıyoruz. Masadaki takımlar kapışsın, panodaki cevapları açtırıp 3 çarpıya düşmeden puanları cebe indirin!
+        </p>
+
+        <!-- Kategori Seçici: Klasik vs Çocuk -->
+        <div style="font-size:0.78rem; font-weight:800; color:var(--gold); text-align:left; margin-bottom:6px;">SORU KATEGORİSİ:</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:18px;">
+          <button type="button" id="btn-ay-mode-adult" class="rule-chip ${this.categoryMode === 'adult' ? 'active' : ''}" style="padding:10px; font-size:0.82rem; font-weight:900; justify-content:center; border-radius:12px; cursor:pointer;">
+            🌟 Klasik / Aile Modu
+          </button>
+          <button type="button" id="btn-ay-mode-kids" class="rule-chip ${this.categoryMode === 'kids' ? 'active' : ''}" style="padding:10px; font-size:0.82rem; font-weight:900; justify-content:center; border-radius:12px; cursor:pointer;">
+            🧒 Çocuk & Okul Modu
+          </button>
+        </div>
+
+        <button type="button" id="btn-start-ay-game" class="btn-main btn-action-gold" style="background:linear-gradient(135deg, #FBBF24, #D97706) !important; color:#0B0E14 !important; font-size:1.15rem; font-weight:900; padding:15px; border-radius:999px; width:100%; box-shadow:0 6px 25px rgba(251,191,36,0.4); border:none; cursor:pointer;">
+          🚀 YARIŞMAYI BAŞLAT!
+        </button>
+      </div>
+    `;
+  }
+
+  bindSetupEvents() {
+    document.getElementById('btn-ay-mode-adult')?.addEventListener('click', () => this.setCategoryMode('adult'));
+    document.getElementById('btn-ay-mode-kids')?.addEventListener('click', () => this.setCategoryMode('kids'));
+    document.getElementById('btn-start-ay-game')?.addEventListener('click', () => this.startNewGame());
+  }
+
+  // --- 3.2. FACEOFF (KAPIŞMA) VIEW ---
+  renderFaceoffView() {
+    const q = this.currentQuestion;
+    return `
+      <div class="card" style="text-align:center; padding:18px; max-width:480px; margin:0 auto; background:linear-gradient(135deg, rgba(30,27,75,0.9), rgba(15,23,42,0.95)); border-radius:20px;">
+        ${this.renderScoreHeader()}
+
+        <div style="background:rgba(251,191,36,0.15); border:1px solid var(--gold); border-radius:12px; padding:6px 12px; margin-bottom:12px; font-size:0.85rem; font-weight:900; color:var(--gold);">
+          🔔 1. AŞAMA: MASABAŞI KAPIŞMA (FACEOFF)
+        </div>
+
+        <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:12px;">
+          İki takımdan birer yarışmacı öne çıksın! Zile ilk basan takım cevabını söyler.
+        </p>
+
+        <!-- Soru Kartı -->
+        <div style="background:rgba(0,0,0,0.5); border:2px solid var(--primary); border-radius:16px; padding:16px; margin-bottom:18px; box-shadow:0 0 20px rgba(0,245,212,0.25);">
+          <div style="font-size:0.75rem; font-weight:800; color:var(--primary); margin-bottom:4px;">100 KİŞİYE SORDUK:</div>
+          <div style="font-size:1.25rem; font-weight:900; color:#FFF; line-height:1.45;">
+            "${q.question.replace(/^100 kişiye sorduk:\s*/i, '')}"
+          </div>
+        </div>
+
+        <!-- Hangi Takım Kazandı? -->
+        <div style="font-size:0.85rem; font-weight:900; color:#FFF; margin-bottom:10px;">
+          Zile ilk basıp en iyi cevabı kim verdi?
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+          <button type="button" id="btn-win-faceoff-red" class="btn-main" style="background:linear-gradient(135deg, #EF4444, #B91C1C); color:#FFF; font-size:0.95rem; font-weight:900; padding:14px 8px; border-radius:14px; cursor:pointer;">
+            🔴 Kırmızı Takım Kazandı
+          </button>
+          <button type="button" id="btn-win-faceoff-blue" class="btn-main" style="background:linear-gradient(135deg, #3B82F6, #1D4ED8); color:#FFF; font-size:0.95rem; font-weight:900; padding:14px 8px; border-radius:14px; cursor:pointer;">
+            🔵 Mavi Takım Kazandı
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  bindFaceoffEvents() {
+    document.getElementById('btn-win-faceoff-red')?.addEventListener('click', () => this.winFaceoff('red'));
+    document.getElementById('btn-win-faceoff-blue')?.addEventListener('click', () => this.winFaceoff('blue'));
+  }
+
+  // --- 3.3. BOARD (PANO & OYNAMA) VIEW ---
+  renderBoardView() {
+    const q = this.currentQuestion;
+    const isSteal = this.stage === 'steal';
+    const stealingTeam = (this.activeTeam === 'red') ? 'blue' : 'red';
+    const currentTeamLabel = isSteal
+      ? `🔥 PUAN ÇALMA SIRASI: ${stealingTeam === 'red' ? this.team1Name : this.team2Name}`
+      : `🎯 SIRADAKİ TAKIM: ${this.activeTeam === 'red' ? this.team1Name : this.team2Name}`;
+
+    // Panodaki cevap kutuları
+    const boardTiles = q.answers.map((ans, idx) => {
+      const isRevealed = this.revealedAnswers[idx];
+      return `
+        <div class="ay-board-tile" data-idx="${idx}" style="background:${isRevealed ? 'linear-gradient(135deg, #064E3B, #0F172A)' : 'linear-gradient(135deg, #1E1B4B, #0F172A)'}; border:2px solid ${isRevealed ? '#10B981' : 'rgba(255,255,255,0.2)'}; border-radius:12px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; min-height:50px; transition:all 0.25s ease; box-shadow:${isRevealed ? '0 0 15px rgba(16,185,129,0.3)' : 'none'};">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="width:26px; height:26px; border-radius:50%; background:${isRevealed ? '#10B981' : 'rgba(255,255,255,0.1)'}; color:#FFF; font-weight:900; font-size:0.85rem; display:flex; align-items:center; justify-content:center;">
+              ${idx + 1}
+            </span>
+            <span style="font-size:0.95rem; font-weight:900; color:${isRevealed ? '#FFF' : 'rgba(255,255,255,0.3)'};">
+              ${isRevealed ? ans.text : '••••••••••••••••'}
+            </span>
+          </div>
+          <div style="background:${isRevealed ? 'var(--gold)' : 'rgba(255,255,255,0.08)'}; color:${isRevealed ? '#0B0E14' : 'rgba(255,255,255,0.3)'}; font-weight:900; font-size:1.1rem; padding:4px 10px; border-radius:8px; font-family:monospace; min-width:38px; text-align:center;">
+            ${isRevealed ? ans.points : '--'}
+          </div>
+        </div>
+      `;
+    });
+
+    // Çarpı (Strike) Göstergesi
+    const strikeIcons = [];
+    for (let i = 0; i < 3; i++) {
+      const active = i < this.strikes;
+      strikeIcons.push(`
+        <div style="width:38px; height:38px; border-radius:10px; background:${active ? 'rgba(239,68,68,0.3)' : 'rgba(0,0,0,0.4)'}; border:2px solid ${active ? '#EF4444' : 'rgba(255,255,255,0.15)'}; display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:900; color:${active ? '#EF4444' : 'rgba(255,255,255,0.2)'}; filter:${active ? 'drop-shadow(0 0 8px #EF4444)' : 'none'};">
+          ${active ? '❌' : ''}
+        </div>
+      `);
+    }
+
+    return `
+      <div class="card" style="text-align:center; padding:16px; max-width:480px; margin:0 auto; background:linear-gradient(135deg, rgba(30,27,75,0.95), rgba(15,23,42,0.98)); border-radius:20px; position:relative;">
+        ${this.renderScoreHeader()}
+
+        <!-- Sıradaki Takım & Durum Rozeti -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <span style="font-size:0.8rem; font-weight:900; background:${isSteal ? 'rgba(255,46,147,0.25)' : 'rgba(0,245,212,0.2)'}; color:${isSteal ? '#FF2E93' : '#00F5D4'}; padding:4px 12px; border-radius:999px; border:1px solid ${isSteal ? '#FF2E93' : '#00F5D4'};">
+            ${currentTeamLabel}
+          </span>
+          <div style="display:flex; gap:6px;">
+            ${strikeIcons.join('')}
+          </div>
+        </div>
+
+        <!-- Soru Başlığı -->
+        <div style="background:rgba(0,0,0,0.4); border-radius:12px; padding:10px 14px; margin-bottom:12px; text-align:left;">
+          <span style="font-size:0.75rem; font-weight:800; color:var(--gold);">SORU:</span>
+          <div style="font-size:1.05rem; font-weight:900; color:#FFF; line-height:1.35;">
+            "${q.question.replace(/^100 kişiye sorduk:\s*/i, '')}"
+          </div>
+        </div>
+
+        <!-- STÜDYO PANOSU (Cevap Kutuları) -->
+        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
+          ${boardTiles.join('')}
+        </div>
+
+        <!-- Cevap Girişi ve Kontroller -->
+        <div style="background:rgba(0,0,0,0.3); border-radius:14px; padding:12px; margin-bottom:12px;">
+          <div style="display:flex; gap:6px; margin-bottom:8px;">
+            <input type="text" id="input-ay-answer" placeholder="Takımın cevabını yazın veya kutuya tıklayın..." style="flex:1; background:#0F172A; border:1.5px solid rgba(255,255,255,0.25); color:#FFF; font-size:0.92rem; font-weight:800; padding:11px 14px; border-radius:12px; outline:none;" />
+            <button type="button" id="btn-submit-ay-answer" class="btn-main primary" style="padding:11px 16px; font-weight:900; font-size:0.95rem; border-radius:12px; cursor:pointer;">
+              ✅ Dene
+            </button>
+          </div>
+
+          <!-- Moderatör / Hakem Hızlı Çarpı Butonu -->
+          <button type="button" id="btn-add-ay-strike" class="btn-secondary" style="width:100%; padding:10px; font-weight:900; font-size:0.85rem; border-radius:10px; background:rgba(239,68,68,0.15); border:1.5px solid #EF4444; color:#EF4444; cursor:pointer;">
+            ❌ Yanlış Cevap Verildi (+1 Çarpı Ekle)
+          </button>
+        </div>
+
+        <div style="font-size:0.72rem; color:var(--text-muted);">
+          💡 İpucu: Yarışmacı doğru cevabı söylediğinde listedeki kapalı kutuya doğrudan dokunarak da açabilirsiniz!
+        </div>
+
+        <!-- Çarpı Tam Ekran Popup Alanı -->
+        <div id="ay-strike-popup" style="display:none; position:absolute; inset:0; background:rgba(0,0,0,0.85); z-index:100; align-items:center; justify-content:center; border-radius:20px;"></div>
+      </div>
+    `;
+  }
+
+  bindBoardEvents() {
+    // Panodaki kutulara tıklayarak doğrudan açma (Jüri / Host Mode)
+    document.querySelectorAll('.ay-board-tile').forEach(tile => {
+      tile.addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.getAttribute('data-idx'), 10);
+        this.revealAnswer(idx);
+      });
+    });
+
+    const submitBtn = document.getElementById('btn-submit-ay-answer');
+    const inputEl = document.getElementById('input-ay-answer');
+
+    const doSubmit = () => {
+      if (inputEl && inputEl.value) {
+        this.handleUserAnswer(inputEl.value);
+        inputEl.value = '';
+      }
+    };
+
+    submitBtn?.addEventListener('click', doSubmit);
+    inputEl?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') doSubmit();
+    });
+
+    document.getElementById('btn-add-ay-strike')?.addEventListener('click', () => {
+      this.addStrike();
+    });
+  }
+
+  // --- 3.4. ROUND SUMMARY VIEW ---
+  renderRoundSummaryView() {
+    const q = this.currentQuestion;
+
+    const boardTiles = q.answers.map((ans, idx) => `
+      <div style="background:linear-gradient(135deg, #064E3B, #0F172A); border:1.5px solid #10B981; border-radius:10px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.9rem; font-weight:800; color:#FFF;">
+          ${idx + 1}. ${ans.text}
+        </span>
+        <span style="background:var(--gold); color:#0B0E14; font-weight:900; font-size:0.95rem; padding:3px 8px; border-radius:6px; font-family:monospace;">
+          ${ans.points}
+        </span>
+      </div>
+    `);
+
+    return `
+      <div class="card" style="text-align:center; padding:20px; max-width:480px; margin:0 auto; background:linear-gradient(135deg, rgba(30,27,75,0.95), rgba(15,23,42,0.98)); border-radius:20px;">
+        ${this.renderScoreHeader()}
+
+        <div style="font-size:2.8rem; margin-bottom:6px;">🎉</div>
+        <h3 style="font-size:1.35rem; font-weight:900; color:var(--gold); margin-bottom:8px;">
+          ${this.roundSummaryMessage}
+        </h3>
+
+        <!-- Tüm Panonun Açık Hali -->
+        <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); margin-bottom:8px; text-align:left;">
+          TÜM ANKET CEVAPLARI:
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:18px;">
+          ${boardTiles.join('')}
+        </div>
+
+        <button type="button" id="btn-ay-next-round" class="btn-main primary" style="font-size:1.05rem; font-weight:900; padding:14px; border-radius:999px; width:100%; box-shadow:0 6px 20px rgba(0,245,212,0.4); cursor:pointer;">
+          ${this.round >= this.maxRounds ? '🏆 Büyük Şampiyonluk Sonucuna Geç ➔' : `➡️ ${this.round + 1}. Tura Geç (${this.round + 1 >= 4 ? '3X' : (this.round + 1 === 3 ? '2X' : '1X')}) ➔`}
+        </button>
+      </div>
+    `;
+  }
+
+  bindRoundSummaryEvents() {
+    document.getElementById('btn-ay-next-round')?.addEventListener('click', () => {
+      this.nextRoundOrGameOver();
+    });
+  }
+
+  // --- 3.5. GAME OVER VIEW ---
+  renderGameOverView() {
+    let winnerText = '';
+    if (this.scores.red > this.scores.blue) {
+      winnerText = `🏆 ${this.team1Name.toUpperCase()} ŞAMPİYON!`;
+    } else if (this.scores.blue > this.scores.red) {
+      winnerText = `🏆 ${this.team2Name.toUpperCase()} ŞAMPİYON!`;
+    } else {
+      winnerText = '🤝 DOSTLUK KAZANDI! BERABERE!';
+    }
+
+    return `
+      <div class="card" style="text-align:center; padding:24px; max-width:480px; margin:0 auto; background:linear-gradient(135deg, rgba(30,27,75,0.95), rgba(15,23,42,0.98)); border:2px solid var(--gold); border-radius:24px; box-shadow:0 0 35px rgba(251,191,36,0.3);">
+        <div style="font-size:4rem; margin-bottom:8px;">🏆</div>
+        <h2 style="font-size:1.6rem; font-weight:900; color:var(--gold); margin-bottom:16px;">
+          ${winnerText}
+        </h2>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:22px;">
+          <div style="background:rgba(239,68,68,0.2); border:2px solid #EF4444; border-radius:16px; padding:16px;">
+            <div style="font-size:0.85rem; font-weight:800; color:#EF4444;">${this.team1Name}</div>
+            <div style="font-size:2.2rem; font-weight:900; color:#FFF;">${this.scores.red} P</div>
+          </div>
+          <div style="background:rgba(59,130,246,0.2); border:2px solid #3B82F6; border-radius:16px; padding:16px;">
+            <div style="font-size:0.85rem; font-weight:800; color:#3B82F6;">${this.team2Name}</div>
+            <div style="font-size:2.2rem; font-weight:900; color:#FFF;">${this.scores.blue} P</div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <button type="button" id="btn-ay-restart" class="btn-main primary" style="font-size:1rem; font-weight:900; padding:14px; border-radius:14px; cursor:pointer;">
+            🔄 Yeni Turnuva
+          </button>
+          <button type="button" id="btn-ay-back-arena" class="btn-secondary" style="font-size:1rem; font-weight:800; padding:14px; border-radius:14px; cursor:pointer;">
+            ← Parti Arenası
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  bindGameOverEvents() {
+    document.getElementById('btn-ay-restart')?.addEventListener('click', () => this.startNewGame());
+    document.getElementById('btn-ay-back-arena')?.addEventListener('click', () => {
+      this.game.showScreen('partyGames');
+    });
+  }
+}

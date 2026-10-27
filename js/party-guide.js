@@ -314,6 +314,32 @@ export const PARTY_GUIDES = {
       '💡 İşlem etabında büyük sayı ile küçük sayıları çarparak hedefin civarına yaklaşın, kalan farkı küçük sayılarla kapatın.'
     ],
     launchAction: 'kelime-islem'
+  },
+
+  'aileler-yarisiyor': {
+    id: 'aileler-yarisiyor',
+    title: 'Aileler Yarışıyor',
+    badge: '📺 EFSANE YARIŞMA • 👥 100 KİŞİYE SORDUK • 🔥 PUAN ÇALMA',
+    icon: '👨‍👩‍👧‍👦',
+    players: '2-16 Kişi (Takımlar Halinde)',
+    duration: '10 - 20 Dakika / Turnuva',
+    objective: '100 kişiye sorulan anketin en popüler cevaplarını tahmin ederek panoyu açmak ve 3 çarpıya düşmeden puanları toplamak!',
+    howToPlay: [
+      '1. 1. Aşama (Kapışma): Masadan iki takımdan birer kişi öne çıkar, zile ilk basıp en iyi cevabı veren takım oyunu başlatır.',
+      '2. Takım üyeleri sırayla tahmin yapar. Doğru cevaplar panoda açılır ve puanlar ortak havuzda (Bank) birikir.',
+      '3. Yanlış cevapta takım bir ❌ (Çarpı) alır. 3 Çarpı alan takımın sırası biter!',
+      '4. Çalma (Steal) Aşaması: 3 çarpı olunca karşı takım bir araya gelip tek bir ortak cevap söyler. Açılmamış bir cevabı bilirlerse havuzdaki TÜM puanları çalarlar!',
+      '5. 1. ve 2. Turlar 1X, 3. Tur 2X (Çift Puan), 4. Tur 3X (Üç Kat Puan) değerindedir.'
+    ],
+    scoring: [
+      '🎯 Panodaki her cevabın 100 kişi arasındaki popülerlik yüzdesi kadar puanı vardır.',
+      '🔥 Çalma (Steal): Karşı takım tek doğru cevapla havuzdaki tüm puanları kendi hanesine yazdırır.'
+    ],
+    tips: [
+      '💡 Kendi fikrinizi değil, "Sokaktaki 100 kişi ilk ne demiştir?" sorusunu düşünerek en klişe cevapları verin!',
+      '💡 Çalma aşamasında takım kaptanı herkesi dinleyip en garanti cevabı seçmelidir.'
+    ],
+    launchAction: 'aileler-yarisiyor'
   }
 };
 
@@ -386,6 +412,9 @@ export function triggerGameLaunch(action, appInstance) {
   } else if (action === 'kelime-islem') {
     appInstance.showScreen('kelimeIslem');
     if (appInstance.kelimeIslemEngine) appInstance.kelimeIslemEngine.init();
+  } else if (action === 'aileler-yarisiyor') {
+    appInstance.showScreen('ailelerYarisiyor');
+    if (appInstance.ailelerYarisiyorEngine) appInstance.ailelerYarisiyorEngine.init();
   }
 }
 
