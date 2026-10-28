@@ -376,9 +376,9 @@ export class IsimSehirGameEngine {
       categories: this.categories,
       phase: 'setup',
       currentLetter: '',
-      players: [
-        { id: this.hostId, name: 'Masa Ekranı', avatar: '👑', isHost: true, totalScore: 0, roundScore: 0, answers: {} }
-      ],
+      players: {
+        [this.hostId]: { id: this.hostId, name: 'Masa Ekranı', avatar: '👑', isHost: true, totalScore: 0, roundScore: 0, answers: {} }
+      },
       updatedAt: Date.now()
     };
 
@@ -400,7 +400,7 @@ export class IsimSehirGameEngine {
       }).catch(() => {});
     } catch (e) {}
 
-    this.players = initialRoom.players;
+    this.players = Object.values(initialRoom.players);
     this.renderQrCode();
     this.renderCategoriesPreview();
     this.startPolling();
@@ -441,9 +441,13 @@ export class IsimSehirGameEngine {
       }, (err) => {
         if (!err && cvs) {
           qrContainer.appendChild(cvs);
+        } else {
+          qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=${encodeURIComponent(joinUrl)}" width="170" height="170" style="display:block; border-radius:12px; margin:0 auto;" />`;
         }
       });
-    } catch (err) {}
+    } catch (err) {
+      qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=${encodeURIComponent(joinUrl)}" width="170" height="170" style="display:block; border-radius:12px; margin:0 auto;" />`;
+    }
   }
 
   startPolling() {

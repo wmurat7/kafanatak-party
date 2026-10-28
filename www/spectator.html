@@ -1244,7 +1244,6 @@
     </div>
   </div>
 
-  <script src="js/firebase-network.js"></script>
   <script>
     // URL Parametreleri
     const urlParams = new URLSearchParams(window.location.search);
@@ -1442,34 +1441,42 @@
         const checkRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/spectator/${encodeURIComponent(cleanCode)}.json`);
         if (checkRes.ok) {
           const roomCheck = await checkRes.json();
-          if (roomCheck) {
-            if (roomCheck.isClosed) {
-              showToast('🛑 Bu oda kapatılmıştır!');
-              isConnecting = false;
-              if (btnSubmitConnect) {
-                btnSubmitConnect.disabled = false;
-                btnSubmitConnect.innerHTML = '<span>🚀 Odaya Canlı Bağlan</span>';
-              }
-              return;
+          if (!roomCheck) {
+            showToast('❌ Oda bulunamadı veya henüz başlatılmadı! Lütfen oda kodunu kontrol edin.');
+            isConnecting = false;
+            if (btnSubmitConnect) {
+              btnSubmitConnect.disabled = false;
+              btnSubmitConnect.innerHTML = '<span>🚀 Odaya Canlı Bağlan</span>';
             }
-            if (roomCheck.isLocked) {
-              showToast('🔒 Bu oda yeni girişlere kilitlenmiştir!');
-              isConnecting = false;
-              if (btnSubmitConnect) {
-                btnSubmitConnect.disabled = false;
-                btnSubmitConnect.innerHTML = '<span>🚀 Odaya Canlı Bağlan</span>';
-              }
-              return;
+            return;
+          }
+
+          if (roomCheck.isClosed) {
+            showToast('🛑 Bu oda kapatılmıştır!');
+            isConnecting = false;
+            if (btnSubmitConnect) {
+              btnSubmitConnect.disabled = false;
+              btnSubmitConnect.innerHTML = '<span>🚀 Odaya Canlı Bağlan</span>';
             }
-            if ((roomCheck.kicked && roomCheck.kicked[spectatorId]) || (roomCheck.kickedPlayers && roomCheck.kickedPlayers[spectatorId])) {
-              showToast('🚫 Bu odadan çıkarıldınız, tekrar katılamazsınız!');
-              isConnecting = false;
-              if (btnSubmitConnect) {
-                btnSubmitConnect.disabled = false;
-                btnSubmitConnect.innerHTML = '<span>🚀 Odaya Canlı Bağlan</span>';
-              }
-              return;
+            return;
+          }
+          if (roomCheck.isLocked) {
+            showToast('🔒 Bu oda yeni girişlere kilitlenmiştir!');
+            isConnecting = false;
+            if (btnSubmitConnect) {
+              btnSubmitConnect.disabled = false;
+              btnSubmitConnect.innerHTML = '<span>🚀 Odaya Canlı Bağlan</span>';
             }
+            return;
+          }
+          if ((roomCheck.kicked && roomCheck.kicked[spectatorId]) || (roomCheck.kickedPlayers && roomCheck.kickedPlayers[spectatorId])) {
+            showToast('🚫 Bu odadan çıkarıldınız, tekrar katılamazsınız!');
+            isConnecting = false;
+            if (btnSubmitConnect) {
+              btnSubmitConnect.disabled = false;
+              btnSubmitConnect.innerHTML = '<span>🚀 Odaya Canlı Bağlan</span>';
+            }
+            return;
           }
         }
       } catch (err) {}

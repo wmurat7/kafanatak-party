@@ -665,7 +665,6 @@
     </div>
   </div>
 
-  <script src="js/firebase-network.js"></script>
   <script>
     // URL Parametrelerinden Oda Kodunu Al
     const urlParams = new URLSearchParams(window.location.search);
@@ -1143,22 +1142,31 @@
         const fbRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${room}.json`);
         if (fbRes.ok) {
           const roomData = await fbRes.json();
-            if (roomData.isClosed) {
-              errBox.textContent = '🛑 Bu oda yönetici tarafından kapatılmıştır!';
-              errBox.style.display = 'block';
-              btnJoin.disabled = false;
-              btnJoin.textContent = '🚀 OYUNA KATIL';
-              isJoining = false;
-              return;
-            }
-            if (roomData.isLocked) {
-              errBox.textContent = '🔒 Bu oda yeni katılımcılara kilitlenmiştir!';
-              errBox.style.display = 'block';
-              btnJoin.disabled = false;
-              btnJoin.textContent = '🚀 OYUNA KATIL';
-              isJoining = false;
-              return;
-            }
+          if (!roomData || !roomData.roomId) {
+            errBox.textContent = '❌ Oda bulunamadı! Lütfen oda kodunu kontrol edin veya yöneticinin odayı açtığından emin olun.';
+            errBox.style.display = 'block';
+            btnJoin.disabled = false;
+            btnJoin.textContent = '🚀 OYUNA KATIL';
+            isJoining = false;
+            return;
+          }
+
+          if (roomData.isClosed) {
+            errBox.textContent = '🛑 Bu oda yönetici tarafından kapatılmıştır!';
+            errBox.style.display = 'block';
+            btnJoin.disabled = false;
+            btnJoin.textContent = '🚀 OYUNA KATIL';
+            isJoining = false;
+            return;
+          }
+          if (roomData.isLocked) {
+            errBox.textContent = '🔒 Bu oda yeni katılımcılara kilitlenmiştir!';
+            errBox.style.display = 'block';
+            btnJoin.disabled = false;
+            btnJoin.textContent = '🚀 OYUNA KATIL';
+            isJoining = false;
+            return;
+          }
 
             const cleanName = name.trim().toLowerCase().replace(/[^a-z0-9]/gi, '');
             let existingId = localStorage.getItem(`kafanatak_pid_isim_sehir_${room}_${cleanName}`) || localStorage.getItem(`kafanatak_pid_isim_sehir_${room}`);

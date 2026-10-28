@@ -201,6 +201,11 @@
       <h2 style="font-size: 1.25rem; font-weight: 900; color: var(--gold); margin-bottom: 4px;">Yarışmaya Katılın</h2>
       <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">Sıranız geldiğinde çarkı çevirip sessiz harf seçeceksiniz!</p>
 
+      <div style="margin-bottom:12px; text-align:left;">
+        <label style="font-size:0.8rem; font-weight:800; color:var(--text-muted); display:block; margin-bottom:4px;">🔑 Çarkıfelek Oda Kodu:</label>
+        <input type="text" id="inp-room-code" placeholder="Örn: CARK" maxlength="6" style="width:100%; background:rgba(0,0,0,0.5); border:1.5px solid rgba(255,255,255,0.2); border-radius:12px; padding:12px 14px; color:#FFF; font-size:1.1rem; font-weight:900; text-align:center; letter-spacing:2px; text-transform:uppercase; outline:none;" />
+      </div>
+
       <input type="text" id="inp-player-name" placeholder="Adınızı veya Takımınızı Yazın..." maxlength="16"
         style="width:100%; background:rgba(0,0,0,0.5); border:1.5px solid rgba(255,255,255,0.2); border-radius:12px; padding:12px 14px; color:#FFF; font-size:1rem; font-weight:800; text-align:center; outline:none; margin-bottom:12px;" />
 
@@ -337,14 +342,17 @@
     </div>
   </div>
 
-  <script src="js/firebase-network.js"></script>
   <script>
     const TURKISH_CONSONANTS = ['B', 'C', 'Ç', 'D', 'F', 'G', 'Ğ', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'R', 'S', 'Ş', 'T', 'V', 'Y', 'Z'];
     const TURKISH_VOWELS = ['A', 'E', 'I', 'İ', 'O', 'Ö', 'U', 'Ü'];
 
     const urlParams = new URLSearchParams(window.location.search);
-    const roomId = (urlParams.get('room') || 'CARK').trim().toUpperCase();
-    document.getElementById('lbl-room-code').textContent = roomId;
+    let roomId = (urlParams.get('room') || '').trim().toUpperCase();
+    if (roomId) {
+      const inpCode = document.getElementById('inp-room-code');
+      if (inpCode) inpCode.value = roomId;
+      document.getElementById('lbl-room-code').textContent = roomId;
+    }
 
     const dbUrl = 'https://kafanatak-party-default-rtdb.europe-west1.firebasedatabase.app';
 
@@ -374,6 +382,15 @@
     const btnJoinCark = document.getElementById('btn-join-room');
     btnJoinCark.onclick = async () => {
       if (isJoining || btnJoinCark.disabled) return;
+
+      const roomInp = (document.getElementById('inp-room-code')?.value || roomId || '').trim().toUpperCase();
+      if (!roomInp || roomInp.length < 3) {
+        alert('Lütfen geçerli bir 4 haneli stüdyo oda kodu girin!');
+        return;
+      }
+      roomId = roomInp;
+      document.getElementById('lbl-room-code').textContent = roomId;
+
       const name = document.getElementById('inp-player-name').value.trim();
       if (!name) {
         alert('Lütfen adınızı girin!');
@@ -393,7 +410,11 @@
 
       try {
         const res = await fetch(`${dbUrl}/kafanatak/carkifelek/${roomId}.json`);
-        const room = await res.json() || {};
+        const room = await res.json();
+        if (!room || !room.roomId) {
+          alert('❌ Çarkıfelek stüdyosu bulunamadı! Lütfen oda kodunu kontrol edin veya sunucunun oyunu başlattığından emin olun.');
+          return;
+        }
         if (room.isClosed) {
           alert('🛑 Bu stüdyo kapatılmıştır!');
           return;

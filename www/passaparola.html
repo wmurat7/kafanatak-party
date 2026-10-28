@@ -155,6 +155,11 @@
       <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">Sunucu soruyu okuyacak, cevabı sesli söyleyeceksin!</p>
       
       <div style="margin-bottom:12px; text-align:left;">
+        <label style="font-size:0.8rem; font-weight:800; color:var(--text-muted); display:block; margin-bottom:4px;">🔑 Parti Oda Kodu:</label>
+        <input type="text" id="inp-room-code" placeholder="Örn: 8XFE" maxlength="6" style="width:100%; background:rgba(0,0,0,0.5); border:1.5px solid rgba(255,255,255,0.15); border-radius:12px; padding:12px; color:#FFF; font-weight:900; font-size:1.1rem; text-align:center; letter-spacing:2px; text-transform:uppercase; outline:none;" />
+      </div>
+
+      <div style="margin-bottom:12px; text-align:left;">
         <label style="font-size:0.8rem; font-weight:800; color:var(--text-muted); display:block; margin-bottom:4px;">İsminiz:</label>
         <input type="text" id="inp-player-name" placeholder="Adınızı yazın..." style="width:100%; background:rgba(0,0,0,0.5); border:1.5px solid rgba(255,255,255,0.15); border-radius:12px; padding:12px; color:#FFF; font-weight:800; font-size:1rem; outline:none;" />
       </div>
@@ -263,7 +268,6 @@
     </div>
   </div>
 
-  <script src="js/firebase-network.js"></script>
   <script type="module">
     const PASSAPAROLA_LETTERS = [
       'A', 'B', 'C', 'Ç', 'D', 'E', 'F', 'G', 
@@ -274,9 +278,13 @@
     const AVATARS = ['🦁', '🦊', '🐼', '🐯', '🦄', '🐸', '🐶', '🐱'];
     let selectedAvatar = '🦁';
     let myPlayerId = 'p_' + Math.random().toString(36).substr(2, 6);
-    let roomId = new URLSearchParams(window.location.search).get('room') || 'PASS';
+    let roomId = (new URLSearchParams(window.location.search).get('room') || '').trim().toUpperCase();
 
-    document.getElementById('lbl-room-id').textContent = roomId;
+    if (roomId) {
+      const inpCode = document.getElementById('inp-room-code');
+      if (inpCode) inpCode.value = roomId;
+      document.getElementById('lbl-room-id').textContent = roomId;
+    }
 
     // Avatar Seçimi
     const avContainer = document.getElementById('avatar-grid');
@@ -336,6 +344,17 @@
         btn.textContent = 'Bağlanılıyor...';
       }
       isRegistering = true;
+
+      const roomInp = (document.getElementById('inp-room-code')?.value || roomId || '').trim().toUpperCase();
+      if (!roomInp || roomInp.length < 3) {
+        alert('Lütfen geçerli bir 4 haneli oda kodu girin!');
+        if (btn) { btn.disabled = false; btn.textContent = '🚀 Odaya Katıl'; }
+        isRegistering = false;
+        return;
+      }
+      roomId = roomInp;
+      document.getElementById('lbl-room-id').textContent = roomId;
+
       const name = (document.getElementById('inp-player-name').value || '').trim() || 'Yarışmacı';
       const cleanName = name.trim().toLowerCase().replace(/[^a-z0-9]/gi, '');
       myPlayerId = localStorage.getItem(`kafanatak_pid_passa_${roomId}_${cleanName}`) || localStorage.getItem(`kafanatak_pid_passa_${roomId}`) || myPlayerId;
@@ -344,7 +363,13 @@
 
       try {
         const checkRes = await fetch(`${dbUrl}/kafanatak/passaparola/${roomId}.json`);
-        const room = await checkRes.json() || {};
+        const room = await checkRes.json();
+        if (!room || !room.roomId) {
+          alert('❌ Yarışma odası bulunamadı! Lütfen oda kodunu kontrol edin veya sunucunun oyunu başlattığından emin olun.');
+          if (btn) { btn.disabled = false; btn.textContent = '🚀 Odaya Katıl'; }
+          isRegistering = false;
+          return;
+        }
         if (room.isClosed) {
           alert('🛑 Bu yarışma odası kapatılmıştır!');
           if (btn) { btn.disabled = false; btn.textContent = '🚀 Odaya Katıl'; }

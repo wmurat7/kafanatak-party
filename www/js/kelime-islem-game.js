@@ -703,6 +703,29 @@ export class KelimeIslemEngine {
     }
   }
 
+  renderQrCode() {
+    const qrContainer = document.getElementById('ki-qr-canvas-box');
+    if (!qrContainer || !this.roomId) return;
+    qrContainer.innerHTML = '';
+
+    const joinUrl = firebaseNetwork.getKelimeIslemUrl(this.roomId);
+    try {
+      const cvs = document.createElement('canvas');
+      qrContainer.appendChild(cvs);
+      QRCode.toCanvas(cvs, joinUrl, {
+        width: 150,
+        margin: 1,
+        color: { dark: '#00F5D4', light: '#FFFFFF' }
+      }, (err) => {
+        if (err) {
+          qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(joinUrl)}" width="150" height="150" style="display:block; border-radius:8px;" />`;
+        }
+      });
+    } catch (err) {
+      qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(joinUrl)}" width="150" height="150" style="display:block; border-radius:8px;" />`;
+    }
+  }
+
   renderConnectedPlayersUI() {
     const pContainer = document.getElementById('ki-connected-players-box');
     if (!pContainer) return;

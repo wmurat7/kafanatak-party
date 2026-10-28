@@ -318,7 +318,6 @@
     </div>
   </div>
 
-  <script src="js/firebase-network.js"></script>
   <script>
     const FIREBASE_DB_URL = 'https://kafanatak-party-default-rtdb.europe-west1.firebasedatabase.app';
     let networkMode = 'firebase'; // 'firebase' | 'local'
@@ -380,21 +379,28 @@
         const fbRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/vampire/${roomCode}.json`);
         if (fbRes.ok) {
           const roomData = await fbRes.json();
-          if (roomData && (roomData.roomId || roomData.phase)) {
-            if (roomData.isClosed) {
-              alert('🛑 Bu köy odası kapatılmıştır!');
-              btnJoinRoom.disabled = false;
-              btnJoinRoom.textContent = 'Köy Halkına Katıl ➔';
-              isJoining = false;
-              return;
-            }
-            if (roomData.isLocked) {
-              alert('🔒 Bu köy yeni katılımcılara kilitlenmiştir!');
-              btnJoinRoom.disabled = false;
-              btnJoinRoom.textContent = 'Köy Halkına Katıl ➔';
-              isJoining = false;
-              return;
-            }
+          if (!roomData || (!roomData.roomId && !roomData.phase)) {
+            alert('❌ Köy odası bulunamadı! Lütfen oda kodunu kontrol ediniz veya Köy Muhtarının (Host) oyunu başlattığından emin olunuz.');
+            btnJoinRoom.disabled = false;
+            btnJoinRoom.textContent = 'Köy Halkına Katıl ➔';
+            isJoining = false;
+            return;
+          }
+
+          if (roomData.isClosed) {
+            alert('🛑 Bu köy odası kapatılmıştır!');
+            btnJoinRoom.disabled = false;
+            btnJoinRoom.textContent = 'Köy Halkına Katıl ➔';
+            isJoining = false;
+            return;
+          }
+          if (roomData.isLocked) {
+            alert('🔒 Bu köy yeni katılımcılara kilitlenmiştir!');
+            btnJoinRoom.disabled = false;
+            btnJoinRoom.textContent = 'Köy Halkına Katıl ➔';
+            isJoining = false;
+            return;
+          }
 
             networkMode = 'firebase';
             currentRoomId = roomCode;

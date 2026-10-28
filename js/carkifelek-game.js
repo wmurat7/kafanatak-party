@@ -332,11 +332,12 @@ export class CarkifelekEngine {
 
   handleRemoteRoomUpdate(room) {
     // 1. Oyuncu Listesini Senkronize Et
-    if (room.players && Array.isArray(room.players)) {
-      if (room.players.length !== this.wifiPlayers.length) {
+    if (room.players) {
+      const pList = Array.isArray(room.players) ? room.players : Object.values(room.players);
+      if (pList.length !== this.wifiPlayers.length) {
         // Yeni oyuncu bağlandı
         const oldLength = this.wifiPlayers.length;
-        this.wifiPlayers = room.players;
+        this.wifiPlayers = pList;
         this.teams = this.wifiPlayers;
         if (this.wifiPlayers.length > oldLength) {
           sounds.playChime();

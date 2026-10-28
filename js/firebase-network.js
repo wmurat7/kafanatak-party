@@ -35,7 +35,13 @@ class FirebaseNetworkManager {
   }
 
   getDbUrl() {
-    let url = localStorage.getItem(this.storageKeyDb) || DEFAULT_FIREBASE_CONFIG.dbUrl;
+    let url = null;
+    try {
+      url = localStorage.getItem(this.storageKeyDb);
+    } catch (e) {}
+    if (!url || !url.startsWith('https://') || !url.includes('firebasedatabase.app')) {
+      url = DEFAULT_FIREBASE_CONFIG.dbUrl;
+    }
     if (url.endsWith('/')) url = url.slice(0, -1);
     return url;
   }
@@ -103,9 +109,10 @@ class FirebaseNetworkManager {
    */
   buildPath(namespace, roomId, subPath = '') {
     const base = this.getDbUrl();
-    const cleanRoom = encodeURIComponent(String(roomId).trim().toUpperCase());
+    const cleanNs = String(namespace || '').trim().toLowerCase();
+    const cleanRoom = encodeURIComponent(String(roomId || '').trim().toUpperCase());
     const sub = subPath ? `/${subPath}` : '';
-    return `${base}/kafanatak/${namespace}/${cleanRoom}${sub}.json`;
+    return `${base}/kafanatak/${cleanNs}/${cleanRoom}${sub}.json`;
   }
 
   /**
@@ -176,7 +183,7 @@ class FirebaseNetworkManager {
     try {
       const url = this.buildPath(namespace, roomId);
       const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-      const timeoutId = controller ? setTimeout(() => controller.abort(), 4500) : null;
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 8000) : null;
 
       const res = await fetch(url, {
         signal: controller ? controller.signal : undefined

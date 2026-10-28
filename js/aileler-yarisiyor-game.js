@@ -404,6 +404,29 @@ export class AilelerYarisiyorEngine {
     }
   }
 
+  renderQrCode() {
+    const qrContainer = document.getElementById('ay-qr-canvas-box');
+    if (!qrContainer || !this.roomId) return;
+    qrContainer.innerHTML = '';
+
+    const joinUrl = firebaseNetwork.getAilelerYarisiyorUrl(this.roomId);
+    try {
+      const cvs = document.createElement('canvas');
+      qrContainer.appendChild(cvs);
+      QRCode.toCanvas(cvs, joinUrl, {
+        width: 150,
+        margin: 1,
+        color: { dark: '#D97706', light: '#FFFFFF' }
+      }, (err) => {
+        if (err) {
+          qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(joinUrl)}" width="150" height="150" style="display:block; border-radius:8px;" />`;
+        }
+      });
+    } catch (err) {
+      qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(joinUrl)}" width="150" height="150" style="display:block; border-radius:8px;" />`;
+    }
+  }
+
   async toggleMultiDevice() {
     sounds.playClick();
     this.isMultiDevice = !this.isMultiDevice;
