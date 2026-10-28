@@ -40,5 +40,19 @@ Bu dosya **Kafana Tak! (`guess-up-party`)** projesine özel çalışma alanıdı
 7. **📣 Canlandırıcı Tezahürat, Gaz Verme Sesleri & Test Paneli:**
    - Oyun esnasında ve serilerde devreye giren havalı korna (airhorn), vuvuzela, stadyum alkışı, parti düdüğü gibi canlandırıcı tezahürat sesleri zenginleştirilecek; Ayarlar içine bu seslerin tek tek dinlenebildiği "Tezahürat Test Paneli" eklenecek.
 
+---
+
+## 📌 Sonraki Seans Notları ve Öncelikli Geliştirme Görevleri (Kullanıcı Talepleri)
+
+1. **⏱️ İkaz & Bildirim Süreleri, Oyuncu Ekranları Ufak Hataları & Hotspot Altyapısı:**
+   - **Kısa Süreli Bildirimler:** İkaz uyarıları (`player_warning`), yönetici duyuruları ve toast bildirimleri ekranda daha kısa süre görünüp otomatik kaybolacak, oyuncuyu oyundan alıkoymayacak.
+   - **Oyuncu Ekranları İnceleme & Düzeltme:** İstemci ekranlarındaki (`spectator.html`, `isim-sehir.html`, `aileler-yarisiyor.html`, `kelime-islem.html`, `sarki-duello.html`, `passaparola.html`, `carkifelek.html`, `koy.html`) minik görsel/arayüz hataları, özellikle modal "X" kapatma tuşları, dokunma alanları ve taşmalar tek tek incelenip parlatılacak.
+   - **İnternetsiz Hotspot (Yerel Ağ) Oynama Altyapısı:** İnternet bağlantısının (Firebase RTDB) çekmediği ortamlarda, ana telefonun Hotspot (Kişisel Erişim Noktası) veya yerel Wi-Fi ağı üzerinden yerel HTTP/WebSocket sunucusuyla (`server.js`) tüm oyunların kesintisiz oynanabilmesini sağlayacak hibrit/yerel bağlantı mimarisi tamamlanacak.
+2. **🎨 Logo & Görsel Kimlik Düzenlemesi:**
+   - "Kafana Tak!" logosu, taç ikonu ve görsel kimliği yeniden tasarlanıp modernize edilecek.
+3. **🎬 Açılış (Splash / Intro) Ekranı:**
+   - Uygulama ilk başlatıldığında oynatılacak sinematik kısa bir açılış videosu veya animasyonlu logo introlu şık bir karşılama sahnesi eklenecek.
+
+
 
 
