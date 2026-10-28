@@ -18,6 +18,37 @@ Bu dosya **Kafana Tak! (`guess-up-party`)** projesine özel çalışma alanıdı
 8. **🪄 AI Deste Sihirbazı (Gemini + Ollama):** Tek bir temayla saniyeler içinde 20-40 kartlık otomatik deste türetme (Normal & Tabu modu) - *Tamamlandı*.
 9. **📱 Native Android APK Paketleme:** Capacitor entegrasyonu, tam donanım izinleri, `apk-uret.bat` ve `KafanaTak-v1.0.apk` hazır - *Tamamlandı*.
 
+## 📱 Derleme & Telefona Kurulum Prosedürü
+
+Kaynak dosyalarda (`js/*.js`, `css/*.css`, HTML'ler) değişiklik yapıldığında güncel APK'yı telefona yüklemek için:
+
+```powershell
+# Yöntem 1: Tek komutla — Derle + Yükle + Aç (ÖNERİLEN)
+cd "c:\Users\murat\OneDrive\Belgeler\New OpenCode Project\guess-up-party"
+.\telefona-kur.bat
+```
+
+Bu script sırasıyla:
+1. `node tools/bundle-mobile.cjs` → Tüm HTML/JS/CSS/assets dosyalarını `www/` klasörüne kopyalar.
+2. `npx cap sync android` → Capacitor Android platformunu senkronize eder.
+3. `android\gradlew.bat assembleDebug` → APK derler (`app-debug.apk`).
+4. `adb install -r KafanaTak-v1.0.apk` → Bağlı Android telefona (USB, Hata Ayıklama açık) yükler.
+5. `adb shell am start -n com.kafanatak.party/.MainActivity` → Uygulamayı telefonda otomatik açar.
+
+### Ön Koşullar
+- **ADB yolu:** `C:\Users\murat\AppData\Local\Android\Sdk\platform-tools\adb.exe`
+- **Java (Gradle için):** `C:\Program Files\Android\Android Studio\jbr`
+- **Telefon:** USB ile bağlı, USB Hata Ayıklama (Developer Options → USB Debugging) AÇIK
+- **Uygulama Paketi:** `com.kafanatak.party` (MainActivity)
+
+### Sadece APK üretmek (yüklemeden)
+```bat
+.\apk-uret.bat
+```
+Çıktı: `KafanaTak-v1.0.apk` proje kökünde oluşur.
+
+---
+
 ## 🚀 Aktif Geliştirme Yol Haritası & Yapılacaklar Listesi
 
 ### 🎨 Tasarım & Düzen İyileştirmeleri (Sıradaki Aşama)
@@ -44,14 +75,26 @@ Bu dosya **Kafana Tak! (`guess-up-party`)** projesine özel çalışma alanıdı
 
 ## 📌 Sonraki Seans Notları ve Öncelikli Geliştirme Görevleri (Kullanıcı Talepleri)
 
-1. **⏱️ İkaz & Bildirim Süreleri, Oyuncu Ekranları Ufak Hataları & Hotspot Altyapısı:**
-   - **Kısa Süreli Bildirimler:** İkaz uyarıları (`player_warning`), yönetici duyuruları ve toast bildirimleri ekranda daha kısa süre görünüp otomatik kaybolacak, oyuncuyu oyundan alıkoymayacak.
-   - **Oyuncu Ekranları İnceleme & Düzeltme:** İstemci ekranlarındaki (`spectator.html`, `isim-sehir.html`, `aileler-yarisiyor.html`, `kelime-islem.html`, `sarki-duello.html`, `passaparola.html`, `carkifelek.html`, `koy.html`) minik görsel/arayüz hataları, özellikle modal "X" kapatma tuşları, dokunma alanları ve taşmalar tek tek incelenip parlatılacak.
-   - **İnternetsiz Hotspot (Yerel Ağ) Oynama Altyapısı:** İnternet bağlantısının (Firebase RTDB) çekmediği ortamlarda, ana telefonun Hotspot (Kişisel Erişim Noktası) veya yerel Wi-Fi ağı üzerinden yerel HTTP/WebSocket sunucusuyla (`server.js`) tüm oyunların kesintisiz oynanabilmesini sağlayacak hibrit/yerel bağlantı mimarisi tamamlanacak.
-2. **🎨 Logo & Görsel Kimlik Düzenlemesi:**
-   - "Kafana Tak!" logosu, taç ikonu ve görsel kimliği yeniden tasarlanıp modernize edilecek.
-3. **🎬 Açılış (Splash / Intro) Ekranı:**
-   - Uygulama ilk başlatıldığında oynatılacak sinematik kısa bir açılış videosu veya animasyonlu logo introlu şık bir karşılama sahnesi eklenecek.
+### 📋 Dışarıda Yapılan Canlı Test Sonrası 15 Maddelik Revizyon Listesi (28 Ekim 2026 - 22:16)
+> *Kullanıcı Prensibi: "Bunları tek tek, acele etmeden ve sistemi bozmadan yapacağız. Adım adım komutla ilerlenecek."*
+
+1. **🔴 QR & Çok Oyunculu Giriş / Host Yönetim Paneli:**
+   - QR takılıyor, eklenen kullanıcılar giriş yapamıyor, avatar seçimini yapamıyor.
+   - Sistemi tek bir merkezden (Host ekranı) yönetmeli; oyuncu giriş/çıkışları anlık kontrol edilmeli ve tek tıkla "Sistemi Yeniden Başlat / Odayı Sıfırla" yeteneği olmalı.
+2. **🗑️ Oyun Kaldırma:** "Şarkıyı Devam Ettir" oyunu tamamen kaldırılacak.
+3. **🗑️ Oyun Kaldırma:** "Gülmeme Meydan Okuma" oyunu tamamen kaldırılacak.
+4. **🗑️ Oyun Kaldırma:** "Casus Kim?" oyunu tamamen kaldırılacak.
+5. **🗑️ Seyirci Ekranı Temizliği:** Seyirci Ekranı ve İkinci Telefon Butonu bulunduğu yerden kaldırılacak (Seyirci ekranı özelliği tamamen iptal).
+6. **🔊 Genel Ses Revizyonu:** Oyun içindeki tüm ses efektleri baştan aşağı yenilenecek.
+7. **💣 Saatli Bomba Butonu:** "Söyledim! Pasla!" butonu ekranda oldukça büyük, belirgin ve çok rahat basılabilir hale getirilecek.
+8. **🔊 Temel Ses Efektleri Değişimi:** Oyun içi temel seslerdeki "Geri Sayım", "Bomba" ve "Palyaço" sesleri kalitesiz/itici bulundu; daha kaliteli ve eğlenceli seslerle değiştirilecek.
+9. **🍾 Şişe Çevirme -> Çark & İsim Çevirme:** Şişe çevirme animasyonu yerine oyuncuların isimlerinin girildiği ve çarkın döndüğü Doğruluk / Cesaret formatına geçilecek.
+10. **🔤 Passaparola Dinamik & AI Soru Desteği:** Sorular sürekli değişmeli, her takıma farklı sorular gelmeli; gerekirse Yapay Zeka (AI) destekli dinamik soru havuzu entegre edilecek.
+11. **🎡 Çarkıfelek Ekran Optimizasyonu:** Aşağı kaydırmalı (scroll) ekran yerine yatay ve sonsuz ilerlemeli (infinite scroll/strip) görsel tasarımla optimize edilecek (klasik dairesel çark şart değil, akıcı ve ferah olacak).
+12. **🔢 Bir Kelime Bir İşlem İyileştirmeleri:** Takımların nasıl ayrıştığı netleştirilecek. Süre manuel ayarlanabilir olacak. Çalışmayan "Geri Al" butonu düzeltilecek.
+13. **👨‍👩‍👧‍👦 Aileler Yarışıyor Mantık Düzenlemesi:** "İpucu: Yarışmacı doğru cevabı söylediğinde listedeki kapalı kutuya dokunarak da açabilirsiniz" akışındaki mantık hatası giderilecek (Host kapalı kutuların altında ne olduğunu göremiyor; host için cevapları önceden gösteren yönetimli ekran tasarlanacak).
+14. **🗑️ Skor Panosu:** Takımlar Arası Skor Panosu kaldırılacak.
+15. **🗑️ Deste Yönetimi:** "Yeni Deste Paketi Ekle" bölümü kaldırılacak.
 
 
 

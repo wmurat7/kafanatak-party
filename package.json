@@ -5,7 +5,11 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "bundle": "node tools/bundle-mobile.cjs",
+    "sync": "npx cap sync android",
+    "apk": "node tools/bundle-mobile.cjs && npx cap sync android",
+    "telefona-kur": "telefona-kur.bat"
   },
   "keywords": [
     "game",
