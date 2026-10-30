@@ -163,8 +163,10 @@ export class BombGameEngine {
           </div>
         </div>
 
-        <button type="button" id="btn-bomb-pass" class="btn-main" style="width:100%; min-height:85px; background:linear-gradient(135deg, #FF2E93, #FF8C42); color:#FFFFFF; font-size:1.65rem; font-weight:900; padding:20px 24px; box-shadow:0 10px 40px rgba(255,46,147,0.6); border:2.5px solid rgba(255,255,255,0.85); border-radius:999px; letter-spacing:1.5px; display:flex; align-items:center; justify-content:center; gap:10px; cursor:pointer;">
-          <span>💥 SÖYLEDİM! PASLA!</span> <span>➔</span>
+        <!-- DEVA SAATLİ BOMBA PASLA BUTONU (Madde 7) -->
+        <button type="button" id="btn-bomb-pass" class="btn-main" style="width:100%; min-height:125px; background:linear-gradient(135deg, #FF0844, #FF4E50); color:#FFFFFF; font-size:1.85rem; font-weight:900; padding:20px 16px; box-shadow:0 0 35px rgba(255,8,68,0.7), inset 0 2px 10px rgba(255,255,255,0.5); border:3.5px solid #FFFFFF; border-radius:26px; letter-spacing:1px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer; touch-action:manipulation; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; transition:transform 0.1s, box-shadow 0.1s; margin-bottom:12px;">
+          <span style="font-size:2.2rem; line-height:1; filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4));">💥 SÖYLEDİM!</span>
+          <span style="font-size:1.3rem; color:#FFE4E6; font-weight:900; letter-spacing:2px;">👉 SIRADAKİNE PASLA! ➔</span>
         </button>
 
         <p style="font-size:0.78rem; color:var(--text-muted); margin-top:14px; line-height:1.4;">
@@ -173,9 +175,21 @@ export class BombGameEngine {
       </div>
     `;
 
-    document.getElementById('btn-bomb-pass').addEventListener('click', () => {
-      this.passTurn();
-    });
+    const btnPass = document.getElementById('btn-bomb-pass');
+    if (btnPass) {
+      let isPassing = false;
+      const doPass = (e) => {
+        if (e && e.cancelable && e.type === 'pointerdown') e.preventDefault();
+        if (isPassing) return;
+        isPassing = true;
+        try { navigator.vibrate?.([60, 40, 60]); } catch (err) {}
+        btnPass.style.transform = 'scale(0.93)';
+        setTimeout(() => { btnPass.style.transform = 'scale(1)'; isPassing = false; }, 140);
+        this.passTurn();
+      };
+      btnPass.addEventListener('pointerdown', doPass);
+      btnPass.addEventListener('click', doPass);
+    }
   }
 
   updateBombDisplay() {
