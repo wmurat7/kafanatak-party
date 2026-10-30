@@ -271,16 +271,35 @@ class SoundEngine {
   }
 
   // =========================================================================
-  // 2.1. YANLIŞ / BUZZER / ÇARPI SESİ
+  // 2.1. YANLIŞ SESİ (Modern & Tok Quiz Hata Tonu - Palyaço/Korna Yerine)
   // =========================================================================
   playWrong() {
     if (this.muted) return;
     this.unlockAudio();
     this.vibrate([120, 60, 120]);
 
-    if (!this.playBuffer('clown_horn', 0.85) && !this.playBuffer('pass', 0.95)) {
-      this.fallbackBoing();
+    if (!this.playBuffer('pass', 0.9)) {
+      this.synthModernWrong();
     }
+  }
+
+  synthModernWrong() {
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(180, now);
+      osc.frequency.exponentialRampToValueAtTime(80, now + 0.28);
+      gain.gain.setValueAtTime(0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
+      osc.connect(gain);
+      gain.connect(this.masterGain || this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.3);
+    } catch (e) {}
   }
 
   // =========================================================================
@@ -299,7 +318,7 @@ class SoundEngine {
   }
 
   // =========================================================================
-  // 4. GERİ SAYIM & BİP (Dijital Sayaç Vurgusu & Çan)
+  // 4. GERİ SAYIM & BİP (Modern Quiz Show Temiz Dijital Bip)
   // =========================================================================
   playCountdownBeep(isFinal = false) {
     if (this.muted) return;
@@ -307,15 +326,38 @@ class SoundEngine {
     this.vibrate(isFinal ? [80, 50, 140] : 40);
 
     if (isFinal) {
-      this.playBuffer('triangle', 1.0) || this.playBuffer('bell', 0.85);
+      if (!this.playBuffer('bell', 0.9) && !this.playBuffer('triangle', 0.9)) {
+        this.synthModernBeep(1200, 0.45, true);
+      }
     } else {
-      this.playBuffer('countdown', 0.95);
+      this.synthModernBeep(880, 0.18, false);
     }
   }
 
-  // =========================================================================
-  // 5. TUR BİTİŞİ & ŞAMPİYON KUTLAMASI (Kısa ve Orantılı Alkış & Davul)
-  // =========================================================================
+  synthModernBeep(freq = 880, duration = 0.2, isFinal = false) {
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = isFinal ? 'triangle' : 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+      if (isFinal) {
+        osc.frequency.exponentialRampToValueAtTime(freq * 1.5, now + duration);
+      }
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+      osc.connect(gain);
+      gain.connect(this.masterGain || this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + duration + 0.05);
+    } catch (e) {}
+  }
+
+// =========================================================================
+  // 5. TUR BİTİŞI & ŞAMPİYON KUTLAMASI (Kısa ve Orantılı Alkış & Davul)
+// =========================================================================
   playFinish() {
     if (this.muted) return;
     this.unlockAudio();
@@ -323,7 +365,7 @@ class SoundEngine {
 
     this.playBuffer('drumroll', 0.85);
     const t = setTimeout(() => {
-      // 1.8s sürer ve son 0.4 saniyede yumuşakça söner
+      // 1.8s sürer ve son 0.4 saniyede yumuşaca söner
       this.playBuffer('applause', 0.9, 1.05, 1.8);
     }, 250);
     this.pendingTimeouts.push(t);
@@ -372,8 +414,52 @@ class SoundEngine {
     this.unlockAudio();
     this.vibrate([150, 50, 200, 50, 400]);
 
-    this.playBuffer('drumroll', 1.0);
-    this.playBuffer('clown_horn', 0.9);
+    this.synthBombExplosion();
+  }
+
+  synthBombExplosion() {
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      // 1. Sub-bass sine drop (Darbeli sarsıntı)
+      const subOsc = this.ctx.createOscillator();
+      const subGain = this.ctx.createGain();
+      subOsc.type = 'sine';
+      subOsc.frequency.setValueAtTime(140, now);
+      subOsc.frequency.exponentialRampToValueAtTime(30, now + 0.8);
+      subGain.gain.setValueAtTime(0.8, now);
+      subGain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+      subOsc.connect(subGain);
+      subGain.connect(this.masterGain || this.ctx.destination);
+      subOsc.start(now);
+      subOsc.stop(now + 0.85);
+
+      // 2. White noise patlama & kırılma
+      const bufferSize = this.ctx.sampleRate * 1.2;
+      const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+      const whiteNoise = this.ctx.createBufferSource();
+      whiteNoise.buffer = noiseBuffer;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(1200, now);
+      filter.frequency.exponentialRampToValueAtTime(60, now + 1.1);
+
+      const noiseGain = this.ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.7, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 1.1);
+
+      whiteNoise.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(this.masterGain || this.ctx.destination);
+      whiteNoise.start(now);
+      whiteNoise.stop(now + 1.2);
+    } catch (e) {}
   }
 
   // =========================================================================

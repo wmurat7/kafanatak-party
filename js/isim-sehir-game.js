@@ -88,6 +88,7 @@ export class IsimSehirGameEngine {
       { id: 'p1', name: 'Oyuncu 1', avatar: '🦁', totalScore: 0, roundScore: 0, answers: {} },
       { id: 'p2', name: 'Oyuncu 2', avatar: '🦊', totalScore: 0, roundScore: 0, answers: {} }
     ];
+    this.remotePlayers = {};
     this.players = this.localPlayers;
 
     // Canvas Çarkı
@@ -150,10 +151,46 @@ export class IsimSehirGameEngine {
     this.bindEvents();
     this.initCategoryModalEvents();
     this.renderCategoriesPreview();
-    this.showSetup();
+
+    // URL'den oda kodunu kontrol et (QR kodu tarayarak gelen uzak oyuncular için)
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlRoomId = urlParams.get('room') || urlParams.get('roomId') || '';
+    const isWifiMode = this.mode === 'wifi';
+
+    if (isWifiMode && urlRoomId && urlRoomId !== this.roomId) {
+      // QR kodu tarayarak gelen uzak oyuncu - join ekranı göster
+      this.showJoinScreen(urlRoomId);
+    } else {
+      this.showSetup();
+    }
   }
 
   bindEvents() {
+    
+    // Kodu Kopyala
+    const btnCopy = document.getElementById('btn-isim-copy-code');
+    if (btnCopy) {
+      btnCopy.onclick = () => {
+        sounds.playClick();
+        if (this.roomId) {
+          navigator.clipboard?.writeText(this.roomId);
+          if (window.game && window.game.showToast) window.game.showToast(`📋 Oda kodu kopyalandı: ${this.roomId}`);
+        }
+      };
+    }
+
+    // Odayı ve Sistemi Sıfırla
+    const btnReset = document.getElementById('btn-isim-reset-room');
+    if (btnReset) {
+      btnReset.onclick = () => this.resetRoom();
+    }
+
+    // Katılıma Kilitle / Aç
+    const btnLock = document.getElementById('btn-isim-toggle-lock');
+    if (btnLock) {
+      btnLock.onclick = () => this.toggleRoomLock();
+    }
+
     // Mod Butonları
     const btnModeWifi = document.getElementById('btn-isim-mode-wifi');
     const btnModeLocal = document.getElementById('btn-isim-mode-local');
@@ -280,6 +317,128 @@ export class IsimSehirGameEngine {
     } else {
       this.setupLocalMode();
     }
+  }
+
+  showJoinScreen(roomId) {
+    this.roomId = roomId;
+    this.mode = 'wifi';
+
+    // Mevcut WiFi kutusunu gizle
+    const wifiBox = document.getElementById('isim-wifi-box');
+    const localBox = document.getElementById('isim-local-box');
+    if (wifiBox) wifiBox.style.display = 'none';
+    if (localBox) localBox.style.display = 'none';
+
+    // Join ekranı HTML'i
+    const joinScreen = document.createElement('div');
+    joinScreen.id = 'isim-join-screen';
+    joinScreen.style.cssText = `
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 3, 17, 0.92);
+      backdrop-filter: blur(12px);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    `;
+    joinScreen.innerHTML = `
+      <div style="background:linear-gradient(135deg, rgba(22,27,46,0.98), rgba(15,23,42,0.98)); border:2px solid rgba(0,245,212,0.4); border-radius:24px; padding:32px 24px; max-width:340px; width:100%; text-align:center;">
+        <div style="font-size:3rem; margin-bottom:12px;">📱</div>
+        <h2 style="font-size:1.35rem; font-weight:900; color:#FFF; margin-bottom:8px;">Odaya Katıl</h2>
+        <p style="font-size:0.88rem; color:#CBD5E1; margin-bottom:24px;">Masa ekranının QR kodunu okuttunuz. Lütfen bilgilerinizi girin.</p>
+
+        <div style="margin-bottom:16px;">
+          <label style="display:block; font-size:0.82rem; font-weight:800; color:#FFF; margin-bottom:6px;">İsim:</label>
+          <input type="text" id="inp-join-name" class="inp-isim-word" style="width:100%; background:rgba(0,0,0,0.4); border:1.5px solid rgba(255,255,255,0.15); border-radius:12px; padding:12px 14px; color:#FFF; font-weight:800; font-size:1rem; outline:none; margin-bottom:8px;" placeholder="Adınızı girin" required />
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label style="display:block; font-size:0.82rem; font-weight:800; color:#FFF; margin-bottom:6px;">Avatar:</label>
+          <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+            ${LOCAL_AVATARS.map((av, i) => `
+              <button type="button" class="join-avatar-btn ${i === 0 ? 'active' : ''}" data-avatar="${av}" style="background:${i === 0 ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}; color:#FFF; border:1.5px solid ${i === 0 ? 'var(--primary)' : 'rgba(255,255,255,0.3)'}; border-radius:50%; width:44px; height:44px; font-size:1.3rem; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s;">
+                ${av}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+
+        <div style="display:flex; gap:8px;">
+          <button type="button" id="btn-cancel-join" style="flex:1; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.2); color:#FFF; font-size:0.85rem; font-weight:800; border-radius:10px; padding:10px; cursor:pointer;">İptal</button>
+          <button type="button" id="btn-confirm-join" style="flex:1; background:linear-gradient(135deg, #00F5D4, #00BBF9); color:#0B0E14; border:none; border-radius:10px; font-size:0.85rem; font-weight:900; padding:10px; cursor:pointer;">Katıl</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(joinScreen);
+
+    // Avatar butonları dinleyici
+    joinScreen.querySelectorAll('.join-avatar-btn').forEach(btn => {
+      btn.onclick = () => {
+        joinScreen.querySelectorAll('.join-avatar-btn').forEach(b => {
+          b.classList.remove('active');
+          b.style.background = 'rgba(255,255,255,0.1)';
+          b.style.borderColor = 'rgba(255,255,255,0.3)';
+        });
+        btn.classList.add('active');
+        btn.style.background = 'var(--primary)';
+        btn.style.borderColor = 'var(--primary)';
+      };
+    });
+
+    // İptal butonu
+    document.getElementById('btn-cancel-join').onclick = () => {
+      document.body.removeChild(joinScreen);
+      this.showSetup();
+    };
+
+    // Katıl butonu
+    document.getElementById('btn-confirm-join').onclick = async () => {
+      const nameInput = document.getElementById('inp-join-name');
+      const name = nameInput ? nameInput.value.trim() : '';
+      const activeAvatarBtn = joinScreen.querySelector('.join-avatar-btn.active');
+      const avatar = activeAvatarBtn ? activeAvatarBtn.dataset.avatar : '👤';
+
+      if (!name) {
+        alert('Lütfen bir isim girin!');
+        return;
+      }
+
+      nameInput.disabled = true;
+      document.getElementById('btn-cancel-join').disabled = true;
+      document.getElementById('btn-confirm-join').disabled = true;
+
+      // Oyuncuya tekil ID ver ve odaya katıl
+      const playerId = firebaseNetwork.getOrCreatePlayerId('isim-sehir', roomId, name);
+      const playerData = {
+        id: playerId,
+        name: name,
+        avatar: avatar,
+        isHost: false,
+        totalScore: 0,
+        roundScore: 0,
+        answers: {}
+      };
+
+      try {
+        await firebaseNetwork.setPlayer('isim-sehir', roomId, playerData);
+        // Yerel engine'ya ekle
+        this.remotePlayers[playerId] = playerData;
+        this.players = [...this.localPlayers, ...Object.values(this.remotePlayers)];
+        this.renderPlayersList();
+        this.startPolling();
+        document.body.removeChild(joinScreen);
+        this.showSetup();
+      } catch (err) {
+        console.error('[IsimSehirGameEngine] Katılım hatası:', err);
+        alert('Odaya katılırken hata oluştu. Lütfen tekrar deneyin.');
+        document.body.removeChild(joinScreen);
+        this.showSetup();
+      }
+    };
   }
 
   setupLocalMode() {
@@ -416,7 +575,7 @@ export class IsimSehirGameEngine {
     console.info(msg);
   }
 
-  renderQrCode() {
+  async renderQrCode() {
     const wifiBox = document.getElementById('isim-wifi-box');
     const localBox = document.getElementById('isim-local-box');
     if (wifiBox) wifiBox.style.display = 'block';
@@ -429,24 +588,26 @@ export class IsimSehirGameEngine {
     if (!qrContainer) return;
     qrContainer.innerHTML = '';
 
-    // Firebase Bulut URL'si (Hotspot gerektirmez, doğrudan internet üzerinden çalışır)
+    // Firebase Bulut URL'si
     const joinUrl = firebaseNetwork.getIsimSehirUrl(this.roomId);
 
     try {
-      const cvs = document.createElement('canvas');
-      QRCode.toCanvas(cvs, joinUrl, {
-        width: 170,
+      const svg = await QRCode.toString(joinUrl, {
+        type: 'svg',
         margin: 1,
         color: { dark: '#00F5D4', light: '#0B0E14' }
-      }, (err) => {
-        if (!err && cvs) {
-          qrContainer.appendChild(cvs);
-        } else {
-          qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=${encodeURIComponent(joinUrl)}" width="170" height="170" style="display:block; border-radius:12px; margin:0 auto;" />`;
-        }
       });
+      qrContainer.innerHTML = svg;
+      const svgEl = qrContainer.querySelector('svg');
+      if (svgEl) {
+        svgEl.style.width = '170px';
+        svgEl.style.height = '170px';
+        svgEl.style.display = 'block';
+        svgEl.style.margin = '0 auto';
+        svgEl.style.borderRadius = '10px';
+      }
     } catch (err) {
-      qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=${encodeURIComponent(joinUrl)}" width="170" height="170" style="display:block; border-radius:12px; margin:0 auto;" />`;
+      console.warn('QR SVG üretilemedi:', err);
     }
   }
 
@@ -474,10 +635,53 @@ export class IsimSehirGameEngine {
   handleCloudRoomUpdate(room) {
     if (!room) return;
     
-    // Oyuncuları güncelle
+    // Oyuncuları güncelle - sadece Firebase'den gelen verileri işle
+    // Yerel oyuncular (host'tan farklı ID'ler) korunur, uzak oyuncılar güncellenir
     if (room.players) {
       const pList = Array.isArray(room.players) ? room.players : Object.values(room.players);
-      this.players = pList;
+      
+      // Mevcut remotePlayers'ları koru, sadece güncellenenleri ekle/yenile
+      const existingPlayerIds = new Set([...this.localPlayers.map(p => p.id), ...Object.keys(this.remotePlayers)]);
+      
+      pList.forEach(fp => {
+        if (fp.id === this.hostId) return; // Hostu güncelleme
+        
+        // Eğer ziyaretçi zaten localPlayers'da varsa onu remote'e taşı veya güncelle
+        const localIdx = this.localPlayers.findIndex(p => p.id === fp.id);
+        if (localIdx >= 0) {
+          // Local'tan remote'e taşı
+          this.remotePlayers[fp.id] = {
+            id: fp.id,
+            name: fp.name,
+            avatar: fp.avatar,
+            isHost: false,
+            totalScore: 0,
+            roundScore: 0,
+            answers: {}
+          };
+          this.localPlayers.splice(localIdx, 1);
+        } else {
+          // Zaten remote veya yeni gelen
+          if (!this.remotePlayers[fp.id]) {
+            this.remotePlayers[fp.id] = {
+              id: fp.id,
+              name: fp.name,
+              avatar: fp.avatar,
+              isHost: false,
+              totalScore: 0,
+              roundScore: 0,
+              answers: {}
+            };
+          } else {
+            // Var olanı güncelle
+            this.remotePlayers[fp.id].name = fp.name;
+            this.remotePlayers[fp.id].avatar = fp.avatar;
+          }
+        }
+      });
+      
+      // Odadaki oyuncuları yenile (local + remote)
+      this.players = [...this.localPlayers, ...Object.values(this.remotePlayers).filter(p => p)];
       this.renderPlayersList();
       const countEl = document.getElementById('isim-player-count-badge');
       if (countEl) countEl.textContent = `${this.players.length} Oyuncu Bağlı`;
@@ -523,6 +727,11 @@ export class IsimSehirGameEngine {
       `;
     }).join('');
 
+    // Uzak oyuncular için ek kartları ekle
+    const remotePlayers = Object.values(this.remotePlayers).filter(p => p);
+    const allPlayers = [...this.localPlayers, ...remotePlayers];
+    
+    // Buton dinleyiciler için güncellenmiş olaylar (remote players için de geçerlidir)
     list.querySelectorAll('.btn-pill-warn').forEach(btn => {
       btn.onclick = (e) => {
         e.stopPropagation();
@@ -543,7 +752,9 @@ export class IsimSehirGameEngine {
         const pName = btn.dataset.name;
         if (confirm(`🚫 ${pName} adlı oyuncuyu oyundan atmak istediğinize emin misiniz?`)) {
           firebaseNetwork.kickPlayer('isim-sehir', this.roomId, pId, 'Ana telefon (hakem) tarafından oyundan çıkarıldınız.');
+          // Oyuncu listesinden çıkar ve uzak oyuncularından sil
           this.players = this.players.filter(x => x.id !== pId);
+          this.remotePlayers[pId] = null;
           this.renderPlayersList();
           if (window.game && window.game.showToast) window.game.showToast(`🚫 ${pName} odadan atıldı.`);
         }
@@ -566,6 +777,60 @@ export class IsimSehirGameEngine {
           title: 'İsim Şehir Yarışmacı Masası'
         });
       });
+    }
+  }
+
+  
+  async resetRoom() {
+    if (!confirm('Oda ve tüm bağlantılar sıfırlanıp yeni bir oda başlatılsın mı?')) return;
+    sounds.playClick();
+    
+    // 1. Eski odaya reset sinyali gönder
+    if (this.roomId && this.mode === 'wifi') {
+      try {
+        await firebaseNetwork.sendAction('isim-sehir', this.roomId, 'room_reset', {
+          reason: 'Yönetici odayı ve sistemi sıfırladı.',
+          timestamp: Date.now()
+        });
+      } catch (e) {}
+    }
+
+    // 2. Durum sıfırla
+    this.remotePlayers = {};
+    this.phase = 'setup';
+    this.currentLetter = '';
+    this.startedAt = null;
+    this.endsAt = null;
+    this.firstFinisherId = null;
+    this.firstFinisherName = null;
+    this.firstFinisherPenalty = false;
+    this.firstFinisherPenaltyReason = '';
+
+    // 3. Yeni oda oluştur
+    await this.createWifiRoom();
+
+    if (window.game && window.game.showToast) {
+      window.game.showToast(`✅ Sistem sıfırlandı! Yeni Oda: ${this.roomId}`);
+    }
+  }
+
+  async toggleRoomLock() {
+    this.isLocked = !this.isLocked;
+    sounds.playClick();
+    if (this.roomId && this.mode === 'wifi') {
+      try {
+        await firebaseNetwork.setRoomLock('isim-sehir', this.roomId, this.isLocked);
+      } catch (e) {}
+    }
+    const btnLock = document.getElementById('btn-isim-toggle-lock');
+    if (btnLock) {
+      btnLock.innerHTML = this.isLocked ? '<span>🔒 Katılım Kilitli</span>' : '<span>🔓 Katılıma Açık</span>';
+      btnLock.style.background = this.isLocked ? 'rgba(239,68,68,0.25)' : 'rgba(0,245,212,0.15)';
+      btnLock.style.borderColor = this.isLocked ? '#EF4444' : 'var(--primary)';
+      btnLock.style.color = this.isLocked ? '#FCA5A5' : '#00F5D4';
+    }
+    if (window.game && window.game.showToast) {
+      window.game.showToast(this.isLocked ? '🔒 Oda yeni katılımlara kilitlendi.' : '🔓 Oda yeni katılımlara açıldı.');
     }
   }
 
@@ -1554,3 +1819,4 @@ export class IsimSehirGameEngine {
     }
   }
 }
+

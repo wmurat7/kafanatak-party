@@ -8,13 +8,10 @@ import { confetti } from './confetti.js';
 import QRCode from './qrcode.esm.js';
 import jsQR from './jsqr.esm.js';
 import { VampireGameEngine } from './vampire-game.js';
-import { SpyGameEngine } from './spy-game.js';
 import { BombGameEngine } from './bomb-game.js';
 import { BottleGameEngine } from './bottle-game.js';
 import { IsimSehirGameEngine } from './isim-sehir-game.js';
-import { SarkiDuelloEngine } from './sarki-duello.js';
 import { KelimeBombasiEngine } from './kelime-bombasi.js';
-import { GulmemeMeydaniEngine } from './gulmeme-meydani.js';
 import { PassaparolaEngine } from './passaparola-game.js';
 import { CarkifelekEngine } from './carkifelek-game.js';
 import { KelimeIslemEngine } from './kelime-islem-game.js';
@@ -192,13 +189,10 @@ class GameApp {
       summary: document.getElementById('screen-summary'),
       matchWinner: document.getElementById('screen-match-winner'),
       vampire: document.getElementById('screen-vampire'),
-      spy: document.getElementById('screen-spy'),
       bomb: document.getElementById('screen-bomb'),
       bottle: document.getElementById('screen-bottle'),
       'isim-sehir': document.getElementById('screen-isim-sehir'),
-      'sarki-duello': document.getElementById('screen-sarki-duello'),
       'kelime-bombasi': document.getElementById('screen-kelime-bombasi'),
-      'gulmeme-meydani': document.getElementById('screen-gulmeme-meydani'),
       passaparola: document.getElementById('screen-passaparola'),
       carkifelek: document.getElementById('screen-carkifelek'),
       kelimeIslem: document.getElementById('screen-kelime-islem'),
@@ -2335,156 +2329,8 @@ class GameApp {
   }
 
   initOtherPartyGames() {
-    this.spyEngine = new SpyGameEngine(this);
     this.bombEngine = new BombGameEngine(this);
     this.bottleEngine = new BottleGameEngine(this);
-
-    // =========================================
-    // 1. CASUS KİM? (SPYFALL)
-    // =========================================
-    const btnOpenSpy = document.getElementById('btn-open-spy-game');
-    const btnSpyBackHome = document.getElementById('btn-spy-back-home');
-    const btnStartSpyRound = document.getElementById('btn-start-spy-round');
-    const inputSpyPlayer = document.getElementById('input-spy-player-name');
-    const btnAddSpyPlayer = document.getElementById('btn-add-spy-player');
-    const spyPlayerList = document.getElementById('spy-players-list');
-
-    const renderSpyPlayers = () => {
-      if (!spyPlayerList) return;
-      spyPlayerList.innerHTML = this.spyEngine.players.map((name, i) => `
-        <div class="player-pill" style="display:inline-flex; align-items:center; gap:6px;">
-          <span>👤 ${name}</span>
-          <button type="button" data-idx="${i}" class="btn-remove-spy-player" style="background:none; border:none; color:#FF416C; cursor:pointer; font-weight:900; font-size:0.9rem; padding:0 4px;">✕</button>
-        </div>
-      `).join('');
-
-      spyPlayerList.querySelectorAll('.btn-remove-spy-player').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const idx = parseInt(btn.dataset.idx, 10);
-          this.spyEngine.players.splice(idx, 1);
-          renderSpyPlayers();
-        });
-      });
-    };
-
-    if (btnOpenSpy) {
-      btnOpenSpy.addEventListener('click', () => {
-        sounds.playClick();
-        this.showScreen('spy');
-        const setup = document.getElementById('spy-setup-screen');
-        const content = document.getElementById('spy-game-content');
-        if (setup) setup.style.display = 'block';
-        if (content) content.innerHTML = '';
-        renderSpyPlayers();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
-    }
-
-    if (btnSpyBackHome) {
-      btnSpyBackHome.addEventListener('click', () => {
-        sounds.playClick();
-        if (this.spyEngine && this.spyEngine.timerInterval) clearInterval(this.spyEngine.timerInterval);
-        try { sounds.stopPartyBeat(); } catch (e) {}
-        this.showScreen('partyGames');
-      });
-    }
-
-    const addSpyAction = () => {
-      if (!inputSpyPlayer) return;
-      const name = inputSpyPlayer.value.trim();
-      if (!name) return;
-      this.spyEngine.players.push(name);
-      inputSpyPlayer.value = '';
-      inputSpyPlayer.focus();
-      renderSpyPlayers();
-    };
-
-    if (btnAddSpyPlayer) btnAddSpyPlayer.addEventListener('click', addSpyAction);
-    if (inputSpyPlayer) {
-      inputSpyPlayer.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          addSpyAction();
-        }
-      });
-    }
-
-    document.getElementById('btn-spy-fill-4')?.addEventListener('click', () => {
-      this.spyEngine.players = ['Ahmet', 'Ayşe', 'Mehmet', 'Zeynep'];
-      renderSpyPlayers();
-    });
-    document.getElementById('btn-spy-fill-6')?.addEventListener('click', () => {
-      this.spyEngine.players = ['Ahmet', 'Ayşe', 'Mehmet', 'Zeynep', 'Burak', 'Elif'];
-      renderSpyPlayers();
-    });
-    document.getElementById('btn-spy-fill-8')?.addEventListener('click', () => {
-      this.spyEngine.players = ['Ahmet', 'Ayşe', 'Mehmet', 'Zeynep', 'Burak', 'Elif', 'Can', 'Selin'];
-      renderSpyPlayers();
-    });
-
-    // Casus Sayısı & Soru Sorma Süresi Seçim Hapları
-    document.querySelectorAll('.btn-spy-opt-count').forEach(btn => {
-      btn.addEventListener('click', () => {
-        sounds.playClick();
-        const val = btn.dataset.val;
-        document.querySelectorAll('.btn-spy-opt-count').forEach(b => {
-          b.classList.remove('active');
-          b.style.background = 'rgba(255,255,255,0.08)';
-          b.style.color = '#CBD5E1';
-          b.style.border = '1.5px solid rgba(255,255,255,0.2)';
-          b.style.boxShadow = 'none';
-        });
-        btn.classList.add('active');
-        btn.style.background = 'linear-gradient(135deg, #FBBF24, #D97706)';
-        btn.style.color = '#0B0E14';
-        btn.style.border = 'none';
-        btn.style.boxShadow = '0 0 16px rgba(251,191,36,0.45)';
-
-        const sel = document.getElementById('select-spy-count');
-        if (sel) sel.value = val;
-        const badge = document.getElementById('spy-count-badge');
-        if (badge) badge.textContent = `${val} Casus`;
-        if (this.spyEngine) this.spyEngine.spyCount = parseInt(val, 10);
-      });
-    });
-
-    document.querySelectorAll('.btn-spy-opt-dur').forEach(btn => {
-      btn.addEventListener('click', () => {
-        sounds.playClick();
-        const val = btn.dataset.val;
-        document.querySelectorAll('.btn-spy-opt-dur').forEach(b => {
-          b.classList.remove('active');
-          b.style.background = 'rgba(255,255,255,0.08)';
-          b.style.color = '#CBD5E1';
-          b.style.border = '1.5px solid rgba(255,255,255,0.2)';
-          b.style.boxShadow = 'none';
-        });
-        btn.classList.add('active');
-        btn.style.background = 'linear-gradient(135deg, #00F5D4, #00BBF9)';
-        btn.style.color = '#0B0E14';
-        btn.style.border = 'none';
-        btn.style.boxShadow = '0 0 16px rgba(0,245,212,0.45)';
-
-        const sel = document.getElementById('select-spy-duration');
-        if (sel) sel.value = val;
-        const badge = document.getElementById('spy-dur-badge');
-        const mins = Math.floor(parseInt(val, 10) / 60);
-        if (badge) badge.textContent = `${mins} Dakika`;
-        if (this.spyEngine) this.spyEngine.gameDuration = parseInt(val, 10);
-      });
-    });
-
-    if (btnStartSpyRound) {
-      btnStartSpyRound.addEventListener('click', () => {
-        sounds.playClick();
-        const spyCountSel = document.getElementById('select-spy-count');
-        const spyDurSel = document.getElementById('select-spy-duration');
-        if (spyCountSel) this.spyEngine.spyCount = parseInt(spyCountSel.value, 10);
-        if (spyDurSel) this.spyEngine.gameDuration = parseInt(spyDurSel.value, 10);
-        this.spyEngine.startNewGame();
-      });
-    }
 
     // =========================================
     // 2. SAATLİ BOMBA (TICK TACK BOOM)
@@ -2604,20 +2450,6 @@ class GameApp {
     }
 
     // =========================================
-    // 6. ŞARKIYI DEVAM ETTİR (MELODİ DÜELLOSU)
-    // =========================================
-    this.sarkiDuelloEngine = new SarkiDuelloEngine(this);
-    const btnOpenSarki = document.getElementById('btn-open-sarki-game');
-    if (btnOpenSarki) {
-      btnOpenSarki.addEventListener('click', () => {
-        sounds.playClick();
-        this.showScreen('sarki-duello');
-        this.sarkiDuelloEngine.init();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
-    }
-
-    // =========================================
     // 7. SON SÖZÜ KİM SÖYLER? (KELİME BOMBASI)
     // =========================================
     this.kelimeBombasiEngine = new KelimeBombasiEngine(this);
@@ -2627,20 +2459,6 @@ class GameApp {
         sounds.playClick();
         this.showScreen('kelime-bombasi');
         this.kelimeBombasiEngine.init();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
-    }
-
-    // =========================================
-    // 8. GÜLMEME MEYDAN OKUMASI (KAMERA DÜELLOSU)
-    // =========================================
-    this.gulmemeEngine = new GulmemeMeydaniEngine(this);
-    const btnOpenGulmeme = document.getElementById('btn-open-gulmeme-game');
-    if (btnOpenGulmeme) {
-      btnOpenGulmeme.addEventListener('click', () => {
-        sounds.playClick();
-        this.showScreen('gulmeme-meydani');
-        this.gulmemeEngine.init();
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
     }
@@ -2931,7 +2749,7 @@ class GameApp {
     // 3. Parti oyunlarının içindeyse -> party-games ekranına dön
     const partyScreens = [
       'screen-vampire', 'screen-spy', 'screen-bomb', 'screen-bottle',
-      'screen-isim-sehir', 'screen-sarki-duello', 'screen-kelime-bombasi',
+      'screen-isim-sehir', 'screen-kelime-bombasi',
       'screen-gulmeme-meydani', 'screen-passaparola', 'screen-carkifelek',
       'screen-kelime-islem', 'screen-aileler-yarisiyor'
     ];
@@ -3864,19 +3682,6 @@ class GameApp {
         if (this.passaparolaEngine) {
           if (this.passaparolaEngine.timerInterval) clearInterval(this.passaparolaEngine.timerInterval);
           this.passaparolaEngine.isPlaying = false;
-        }
-        sounds.playClick();
-        this.showScreen('partyGames');
-        return;
-      }
-
-      // 4.4 Şarkı Düellosu
-      if (this.screens['sarki-duello'] && this.screens['sarki-duello'].classList.contains('active')) {
-        if (this.sarkiDuelloEngine) {
-          if (this.sarkiDuelloEngine.timerInterval) clearInterval(this.sarkiDuelloEngine.timerInterval);
-          if (this.sarkiDuelloEngine.audioElement) {
-            try { this.sarkiDuelloEngine.audioElement.pause(); } catch (e) {}
-          }
         }
         sounds.playClick();
         this.showScreen('partyGames');

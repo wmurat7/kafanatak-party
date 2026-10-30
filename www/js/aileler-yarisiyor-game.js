@@ -289,25 +289,14 @@ export class AilelerYarisiyorEngine {
     const isBlueTurn = this.activeTeam === 'blue';
 
     return `
-      <!-- Takım Skorları ve Havuz -->
-      <div style="display:grid; grid-template-columns:1fr 1.1fr 1fr; gap:6px; margin-bottom:12px; align-items:stretch;">
+      <!-- Takım Skorları -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:12px; align-items:stretch;">
         <!-- Kırmızı Takım -->
         <div style="background:rgba(239,68,68,0.18); border:2px solid ${isRedTurn ? '#EF4444' : 'rgba(239,68,68,0.35)'}; border-radius:14px; padding:8px; text-align:center; box-shadow:${isRedTurn ? '0 0 15px rgba(239,68,68,0.4)' : 'none'};">
           <div style="font-size:0.75rem; font-weight:800; color:#EF4444; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
             ${this.team1Name} ${isRedTurn ? '★' : ''}
           </div>
           <div style="font-size:1.4rem; font-weight:900; color:#FFF;">${this.scores.red} P</div>
-        </div>
-
-        <!-- Havuz (Bank) & Tur Çarpanı -->
-        <div style="background:linear-gradient(135deg, rgba(0,0,0,0.6), rgba(15,23,42,0.8)); border:2px solid var(--gold); border-radius:14px; padding:6px 8px; text-align:center; display:flex; flex-direction:column; justify-content:center;">
-          <div style="font-size:0.68rem; font-weight:900; color:var(--gold); letter-spacing:1px;">
-            ${this.round}. TUR (${this.roundMultiplier}X)
-          </div>
-          <div style="font-size:1.5rem; font-weight:900; color:#FFF; font-family:monospace; line-height:1.1;">
-            ${this.bankPoints} P
-          </div>
-          <div style="font-size:0.65rem; color:var(--primary); font-weight:800;">HAVUZDAKİ PUAN</div>
         </div>
 
         <!-- Mavi Takım -->
@@ -343,6 +332,16 @@ export class AilelerYarisiyorEngine {
           <button type="button" id="btn-ay-mode-kids" class="rule-chip ${this.categoryMode === 'kids' ? 'active' : ''}" style="padding:10px; font-size:0.82rem; font-weight:900; justify-content:center; border-radius:12px; cursor:pointer;">
             🧒 Çocuk & Okul Modu
           </button>
+        </div>
+
+        <!-- Hakem Modu -->
+        <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:8px; margin-bottom:10px;">
+          <span style="font-size:0.75rem; color:var(--text-muted); margin-right:8px;">Host Modu:</span>
+          <span style="font-size:0.75rem; color:#10B981; font-weight:900;" id="ay-host-mode-status">KAPALI</span>
+          <div style="margin-top:4px; display:flex; gap:4px;">
+            <button type="button" id="ay-host-mode-toggle" style="background:rgba(16,185,129,0.2); border:1px solid #10B981; color:#10B981; font-size:0.7rem; font-weight:900; padding:3px 6px; border-radius:6px; cursor:pointer;">AÇ</button>
+            <button type="button" id="ay-host-mode-toggle-kapali" style="background:rgba(239,68,68,0.2); border:1px solid #EF4444; color:#EF4444; font-size:0.7rem; font-weight:900; padding:3px 6px; border-radius:6px; cursor:pointer;">KAPALI</button>
+          </div>
         </div>
 
         <!-- Çoklu Telefon (Zil & Pano) Entegrasyonu -->
@@ -386,6 +385,16 @@ export class AilelerYarisiyorEngine {
     document.getElementById('btn-ay-mode-adult')?.addEventListener('click', () => this.setCategoryMode('adult'));
     document.getElementById('btn-ay-mode-kids')?.addEventListener('click', () => this.setCategoryMode('kids'));
     document.getElementById('btn-start-ay-game')?.addEventListener('click', () => this.startNewGame());
+
+    document.getElementById('ay-host-mode-toggle')?.addEventListener('click', () => {
+      if (!this.game.hostMode) this.game.hostMode = 'aileler_yarisiyor';
+      this.game.hostMode = null;
+      this.renderScreen();
+    });
+    document.getElementById('ay-host-mode-toggle-kapali')?.addEventListener('click', () => {
+      this.game.hostMode = 'aileler_yarisiyor';
+      this.renderScreen();
+    });
 
     document.getElementById('btn-toggle-ay-multi')?.addEventListener('click', () => this.toggleMultiDevice());
     document.getElementById('btn-ay-copy-link')?.addEventListener('click', () => {
@@ -691,21 +700,27 @@ export class AilelerYarisiyorEngine {
       ? `🔥 PUAN ÇALMA SIRASI: ${stealingTeam === 'red' ? this.team1Name : this.team2Name}`
       : `🎯 SIRADAKİ TAKIM: ${this.activeTeam === 'red' ? this.team1Name : this.team2Name}`;
 
-    // Panodaki cevap kutuları
+    // Host modu: Tüm cevapları göster (kapalı kutuların altında ne var)
+    const hostShowAll = this.game && this.game.hostMode && this.game.hostMode === 'aileler_yarisiyor';
+
+    // Panodaki cevap kutuları (Moderatörün doğru cevabı yönetebilmesi için kapalı kutularda gizli ipucu gösterilir)
     const boardTiles = q.answers.map((ans, idx) => {
-      const isRevealed = this.revealedAnswers[idx];
+      const isRevealed = this.revealedAnswers[idx] || hostShowAll;
       return `
-        <div class="ay-board-tile" data-idx="${idx}" style="background:${isRevealed ? 'linear-gradient(135deg, #064E3B, #0F172A)' : 'linear-gradient(135deg, #1E1B4B, #0F172A)'}; border:2px solid ${isRevealed ? '#10B981' : 'rgba(255,255,255,0.2)'}; border-radius:12px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; min-height:50px; transition:all 0.25s ease; box-shadow:${isRevealed ? '0 0 15px rgba(16,185,129,0.3)' : 'none'};">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="width:26px; height:26px; border-radius:50%; background:${isRevealed ? '#10B981' : 'rgba(255,255,255,0.1)'}; color:#FFF; font-weight:900; font-size:0.85rem; display:flex; align-items:center; justify-content:center;">
+        <div class="ay-board-tile" data-idx="${idx}" style="background:${isRevealed ? 'linear-gradient(135deg, #064E3B, #0F172A)' : 'linear-gradient(135deg, rgba(30,27,75,0.7), rgba(15,23,42,0.9))'}; border:2px solid ${isRevealed ? '#10B981' : 'rgba(251,191,36,0.35)'}; border-radius:14px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; min-height:54px; transition:all 0.25s ease; box-shadow:${isRevealed ? '0 0 16px rgba(16,185,129,0.35)' : '0 4px 12px rgba(0,0,0,0.3)'};">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="width:28px; height:28px; border-radius:50%; background:${isRevealed ? '#10B981' : 'rgba(251,191,36,0.2)'}; color:${isRevealed ? '#FFF' : '#FBBF24'}; font-weight:900; font-size:0.88rem; display:flex; align-items:center; justify-content:center; border:1px solid ${isRevealed ? '#10B981' : 'rgba(251,191,36,0.5)'};">
               ${idx + 1}
             </span>
-            <span style="font-size:0.95rem; font-weight:900; color:${isRevealed ? '#FFF' : 'rgba(255,255,255,0.3)'};">
-              ${isRevealed ? ans.text : '••••••••••••••••'}
-            </span>
+            <div style="text-align:left;">
+              <span style="font-size:0.95rem; font-weight:900; color:${isRevealed ? '#FFF' : '#FBBF24'};">
+                ${isRevealed ? ans.text : `🔒 ${ans.text}`}
+              </span>
+              ${!isRevealed ? `<span style="display:block; font-size:0.68rem; color:#94A3B8; font-weight:700;">(Yarışmacı söylerse dokun ve aç)</span>` : ''}
+            </div>
           </div>
-          <div style="background:${isRevealed ? 'var(--gold)' : 'rgba(255,255,255,0.08)'}; color:${isRevealed ? '#0B0E14' : 'rgba(255,255,255,0.3)'}; font-weight:900; font-size:1.1rem; padding:4px 10px; border-radius:8px; font-family:monospace; min-width:38px; text-align:center;">
-            ${isRevealed ? ans.points : '--'}
+          <div style="background:${isRevealed ? 'var(--gold)' : 'rgba(255,255,255,0.08)'}; color:${isRevealed ? '#0B0E14' : '#CBD5E1'}; font-weight:900; font-size:1.1rem; padding:4px 12px; border-radius:10px; font-family:monospace; min-width:42px; text-align:center;">
+            ${isRevealed ? ans.points : `${ans.points}P`}
           </div>
         </div>
       `;
@@ -764,8 +779,15 @@ export class AilelerYarisiyorEngine {
           </button>
         </div>
 
-        <div style="font-size:0.72rem; color:var(--text-muted);">
-          💡 İpucu: Yarışmacı doğru cevabı söylediğinde listedeki kapalı kutuya doğrudan dokunarak da açabilirsiniz!
+        <!-- Host Modu: Tüm Cevapları Göster -->
+        ${hostShowAll ? `
+          <div style="background:rgba(0,0,0,0.3); border-radius:10px; padding:8px; margin-bottom:8px; font-size:0.75rem; font-weight:800; color:#10B981;">
+            🛡️ HOST MODU: Tüm cevaplar açık - Yarışmacılar kapalı kutulara bakmayacak
+          </div>
+        ` : ''}
+
+        <div style="background:rgba(0,245,212,0.08); border:1px solid rgba(0,245,212,0.3); border-radius:12px; padding:10px 14px; text-align:left; font-size:0.75rem; color:#E2E8F0; line-height:1.45;">
+          <strong style="color:var(--primary);">💡 Moderatör Rehberi:</strong> Yarışmacı yukarıdaki gizli cevaplardan birini bildiğinde o kutuya doğrudan dokunarak panoda açabilirsiniz. Eğer yanlış/alakasız cevap verdiyse kırmızı <strong>+1 Çarpı Ekle</strong> butonuna basın.
         </div>
 
         <!-- Çarpı Tam Ekran Popup Alanı -->

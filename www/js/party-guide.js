@@ -388,16 +388,10 @@ export function triggerGameLaunch(action, appInstance) {
   } else if (action === 'spy') {
     appInstance.showScreen('spy');
     if (appInstance.spyEngine) appInstance.spyEngine.init();
-  } else if (action === 'sarki-duello') {
-    appInstance.showScreen('sarki-duello');
-    if (appInstance.sarkiDuelloEngine) appInstance.sarkiDuelloEngine.init();
-  } else if (action === 'kelime-bombasi') {
+  } /* sarki-duello kaldırıldı */ else if (action === 'kelime-bombasi') {
     appInstance.showScreen('kelime-bombasi');
     if (appInstance.kelimeBombasiEngine) appInstance.kelimeBombasiEngine.init();
-  } else if (action === 'gulmeme-meydani') {
-    appInstance.showScreen('gulmeme-meydani');
-    if (appInstance.gulmemeEngine) appInstance.gulmemeEngine.init();
-  } else if (action === 'bomb') {
+  } /* gulmeme-meydani kaldırıldı */ else if (action === 'bomb') {
     appInstance.showScreen('bomb');
     if (appInstance.bombEngine) appInstance.bombEngine.init();
   } else if (action === 'bottle') {

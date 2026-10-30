@@ -30,10 +30,12 @@ export class KelimeIslemEngine {
       solo: 0
     };
     this.currentTurn = 'red'; // 'red' or 'blue'
+    this.currentTeam = 'red'; // 'red' or 'blue' - aktif takım
     this.round = 1;
 
     // Zamanlayıcı
     this.timerSeconds = 45;
+    this.maxTimerSeconds = 45; // Maksimum süre (ayarlar için)
     this.currentSeconds = 45;
     this.timerInterval = null;
 
@@ -472,17 +474,18 @@ export class KelimeIslemEngine {
   }
 
   updateBestPlayerValue() {
-    let closestVal = this.initialNumbers[0];
-    let closestDiff = Math.abs(closestVal - this.targetNumber);
+    let closestVal = null;
+    let closestDiff = Infinity;
 
     for (const card of this.availableNumbers) {
+      if (card.used) continue;
       const diff = Math.abs(card.value - this.targetNumber);
       if (diff < closestDiff) {
         closestDiff = diff;
         closestVal = card.value;
       }
     }
-    this.bestPlayerValue = closestVal;
+    this.bestPlayerValue = closestVal !== null ? closestVal : (this.initialNumbers ? this.initialNumbers[0] : 0);
   }
 
   finishIslemStage() {
@@ -640,6 +643,33 @@ export class KelimeIslemEngine {
           </button>
         </div>
 
+        <!-- Takım Seçimi (sadece duel modunda) -->
+        <div id="ki-team-selection" style="background:rgba(0,0,0,0.3); border-radius:10px; padding:10px; margin-bottom:10px; display:none;">
+          <span style="font-size:0.75rem; color:var(--text-muted); margin-right:8px;">Takım:</span>
+          <span style="font-size:0.75rem; color:#EF4444; font-weight:900; margin-right:12px;" id="ki-team-red">Kırmızı</span>
+          <span style="font-size:0.75rem; color:#3B82F6; font-weight:900;" id="ki-team-mavi">Mavi</span>
+          <div style="margin-top:6px; display:flex; gap:8px;">
+            <button type="button" id="ki-btn-team-red" style="background:rgba(239,68,68,0.2); border:1px solid #EF4444; color:#EF4444; font-size:0.7rem; font-weight:900; padding:4px 8px; border-radius:12px; cursor:pointer;">Kırmızı</button>
+            <button type="button" id="ki-btn-team-mavi" style="background:rgba(59,130,244,0.2); border:1px solid #3B82F4; color:#3B82F4; font-size:0.7rem; font-weight:900; padding:4px 8px; border-radius:12px; cursor:pointer;">Mavi</button>
+          </div>
+        </div>
+
+        <!-- Süre Ayarları (Hızlı Seçim Çipleri & Hassas Ayar) -->
+        <div style="background:rgba(0,0,0,0.35); border:1.5px solid rgba(255,255,255,0.12); border-radius:16px; padding:12px; margin-bottom:14px; text-align:left;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:0.8rem; font-weight:800; color:var(--gold);">⏱️ YARIŞMA SÜRESİ:</span>
+            <span style="font-size:1.1rem; font-weight:900; color:#00F5D4;" id="ki-timer-value">${this.timerSeconds} saniye</span>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(4, 1fr) auto auto; gap:6px;">
+            <button type="button" class="btn-ki-preset-time" data-sec="30" style="background:${this.timerSeconds === 30 ? 'var(--primary)' : 'rgba(255,255,255,0.08)'}; color:${this.timerSeconds === 30 ? '#0B0E14' : '#FFF'}; border:1px solid rgba(255,255,255,0.2); border-radius:10px; font-weight:800; padding:8px 0; font-size:0.8rem; cursor:pointer;">30s</button>
+            <button type="button" class="btn-ki-preset-time" data-sec="45" style="background:${this.timerSeconds === 45 ? 'var(--primary)' : 'rgba(255,255,255,0.08)'}; color:${this.timerSeconds === 45 ? '#0B0E14' : '#FFF'}; border:1px solid rgba(255,255,255,0.2); border-radius:10px; font-weight:800; padding:8px 0; font-size:0.8rem; cursor:pointer;">45s</button>
+            <button type="button" class="btn-ki-preset-time" data-sec="60" style="background:${this.timerSeconds === 60 ? 'var(--primary)' : 'rgba(255,255,255,0.08)'}; color:${this.timerSeconds === 60 ? '#0B0E14' : '#FFF'}; border:1px solid rgba(255,255,255,0.2); border-radius:10px; font-weight:800; padding:8px 0; font-size:0.8rem; cursor:pointer;">60s</button>
+            <button type="button" class="btn-ki-preset-time" data-sec="90" style="background:${this.timerSeconds === 90 ? 'var(--primary)' : 'rgba(255,255,255,0.08)'}; color:${this.timerSeconds === 90 ? '#0B0E14' : '#FFF'}; border:1px solid rgba(255,255,255,0.2); border-radius:10px; font-weight:800; padding:8px 0; font-size:0.8rem; cursor:pointer;">90s</button>
+            <button type="button" id="ki-btn-minus" style="background:rgba(239,68,68,0.2); border:1px solid #EF4444; color:#EF4444; font-size:0.9rem; font-weight:900; padding:0 12px; border-radius:10px; cursor:pointer;">-</button>
+            <button type="button" id="ki-btn-plus" style="background:rgba(34,197,94,0.2); border:1px solid #22C55E; color:#22C55E; font-size:0.9rem; font-weight:900; padding:0 12px; border-radius:10px; cursor:pointer;">+</button>
+          </div>
+        </div>
+
         <!-- Çoklu Telefon (QR Kod) Entegrasyonu -->
         <div style="background:rgba(0,0,0,0.35); border:1.5px solid ${this.isMultiDevice ? 'var(--primary)' : 'rgba(255,255,255,0.12)'}; border-radius:16px; padding:12px; margin-bottom:16px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -684,6 +714,38 @@ export class KelimeIslemEngine {
     document.getElementById('btn-pmode-solo')?.addEventListener('click', () => this.setPlayerMode('solo'));
 
     document.getElementById('btn-start-kelime-islem')?.addEventListener('click', () => this.startNewGame());
+
+    // Süre ayarları butonları
+    document.querySelectorAll('.btn-ki-preset-time').forEach(btn => {
+      btn.addEventListener('click', () => {
+        sounds.playClick();
+        this.timerSeconds = parseInt(btn.dataset.sec, 10);
+        this.renderScreen();
+      });
+    });
+
+    document.getElementById('ki-btn-plus')?.addEventListener('click', () => {
+      this.timerSeconds = Math.min(this.timerSeconds + 5, 120);
+      const el = document.getElementById('ki-timer-value');
+      if (el) el.textContent = `${this.timerSeconds} saniye`;
+    });
+    document.getElementById('ki-btn-minus')?.addEventListener('click', () => {
+      this.timerSeconds = Math.max(this.timerSeconds - 5, 15);
+      const el = document.getElementById('ki-timer-value');
+      if (el) el.textContent = `${this.timerSeconds} saniye`;
+    });
+
+    // Takım seçimi
+    document.getElementById('ki-btn-team-red')?.addEventListener('click', () => {
+      this.currentTeam = 'red';
+      document.getElementById('ki-team-red').style.color = '#F87171';
+      document.getElementById('ki-team-mavi').style.color = '#60A5FA';
+    });
+    document.getElementById('ki-btn-team-mavi')?.addEventListener('click', () => {
+      this.currentTeam = 'blue';
+      document.getElementById('ki-team-mavi').style.color = '#BFDBFE';
+      document.getElementById('ki-team-red').style.color = '#F87171';
+    });
 
     document.getElementById('btn-toggle-ki-multi')?.addEventListener('click', () => this.toggleMultiDevice());
     document.getElementById('btn-ki-copy-link')?.addEventListener('click', () => {

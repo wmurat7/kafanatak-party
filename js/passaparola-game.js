@@ -21,56 +21,133 @@ export const PASSAPAROLA_LETTERS = [
 export const PASSAPAROLA_QUESTIONS_DB = [
   { letter: 'A', question: 'Gök cisimlerinin hareketlerini ve evreni inceleyen bilim dalı', answer: 'ASTRONOMİ' },
   { letter: 'A', question: 'Türkiye\'nin güneyinde yer alan, kıyısında Antalya ve Mersin bulunan deniz', answer: 'AKDENİZ' },
+  { letter: 'A', question: 'Türkiye Cumhuriyeti\'nin başkenti ve Anıtkabir\'in bulunduğu ilimiz', answer: 'ANKARA' },
+  { letter: 'A', question: 'Haritaları ve coğrafi bilgileri bir arada toplayan ciltli kitap', answer: 'ATLAS' },
+
   { letter: 'B', question: 'Suda solungaçlarıyla nefes alan yüzgeçli omurgalı canlı', answer: 'BALIK' },
   { letter: 'B', question: 'İki tekerlekli, insan gücüyle pedalları çevrilerek sürülen binek araç', answer: 'BİSİKLET' },
+  { letter: 'B', question: 'Asya ile Avrupa kıtalarını birbirinden ayıran dünyaca ünlü deniz geçidi', answer: 'BOĞAZİÇİ' },
+  { letter: 'B', question: 'Gökyüzünde su buharının yoğunlaşmasıyla oluşan beyaz veya gri kütle', answer: 'BULUT' },
+
   { letter: 'C', question: 'Para, kimlik ve banka kartlarını taşımaya yarayan küçük deri cep cüzdanı', answer: 'CÜZDAN' },
   { letter: 'C', question: 'Sert kabuğu kırıldığında beyni andıran faydalı bir kuruyemiş türü', answer: 'CEVİZ' },
+  { letter: 'C', question: 'Yeryüzünü, iklimleri ve ülkeleri inceleyen temel bilim dalı', answer: 'COĞRAFYA' },
+  { letter: 'C', question: 'Müslümanların topluca ibadet ettiği minareli kubbeli kutsal mabet', answer: 'CAMİ' },
+
   { letter: 'Ç', question: 'Kakao çekirdeklerinden üretilen, sütlüsü ve bitteri olan tatlı yiyecek', answer: 'ÇİKOLATA' },
   { letter: 'Ç', question: 'İnce belli bardakta içilen, Karadeniz\'de yetişen milli sıcak içeceğimiz', answer: 'ÇAY' },
+  { letter: 'Ç', question: 'Yüzyıllarca yaşayabilen, heybetli ve geniş gövdeli ulu bir ağaç türü', answer: 'ÇINAR' },
+  { letter: 'Ç', question: 'Bitkilerin üreme organı olan, güzel kokulu ve rengarenk açan bölümü', answer: 'ÇİÇEK' },
+
   { letter: 'D', question: 'Tıp eğitimi almış, hastalıkları teşhis ve tedavi eden meslek insanı', answer: 'DOKTOR' },
   { letter: 'D', question: 'Okyanusla bağlantısı olan, tuzlu büyük su kütlesi', answer: 'DENİZ' },
+  { letter: 'D', question: 'Güneş sistemi içinde üzerinde hayat barındıran mavi gezegenimiz', answer: 'DÜNYA' },
+  { letter: 'D', question: 'Uzak mesafelerdeki nesneleri büyütüp yakından görmeyi sağlayan optik alet', answer: 'DÜRBÜN' },
+
   { letter: 'E', question: 'Fırınlarda un, su ve mayayla pişirilen temel sofralık gıda', answer: 'EKMEK' },
   { letter: 'E', question: 'Amasya ile özdeşleşen, kırmızı veya yeşil sulu meyve', answer: 'ELMA' },
+  { letter: 'E', question: 'Duygu, düşünce ve hayalleri dil aracılığıyla estetik biçimde anlatan sanat', answer: 'EDEBİYAT' },
+  { letter: 'E', question: 'Vücudu zinde ve sağlıklı tutmak için yapılan bedensel hareketler', answer: 'EGZERSİZ' },
+
   { letter: 'F', question: 'On birer kişilik iki takım arasında topla oynanan en popüler spor dalı', answer: 'FUTBOL' },
   { letter: 'F', question: 'Karadeniz bölgesinde fındık ocaklarında yetişen kabuklu meşhur kuruyemiş', answer: 'FINDIK' },
+  { letter: 'F', question: 'Varlık, bilgi ve ahlak üzerine derin akıl yürüten düşünce disiplini', answer: 'FELSEFE' },
+  { letter: 'F', question: 'Çok sert esen ve çevreye zarar verebilen şiddetli rüzgar', answer: 'FIRTINA' },
+
   { letter: 'G', question: 'Gündüz dünyamızı aydınlatan ve ısıtan en yakın yıldız', answer: 'GÜNEŞ' },
   { letter: 'G', question: 'Daha iyi görmek veya güneşten korunmak için gözün önüne takılan çerçeveli cam', answer: 'GÖZLÜK' },
+  { letter: 'G', question: 'Yağmurdan sonra güneş açınca gökyüzünde beliren 7 renkli yay', answer: 'GÖKKUŞAĞI' },
+  { letter: 'G', question: 'Denizlerde ve göllerde yolcu ya da yük taşıyan büyük yüzen taşıt', answer: 'GEMİ' },
+
   { letter: 'H', question: 'Hasta ve yaralıların tedavi edildiği yataklı büyük sağlık kuruluşu', answer: 'HASTANE' },
   { letter: 'H', question: 'Tavşanların çok sevdiği, turuncu renkli kök sebze', answer: 'HAVUÇ' },
+  { letter: 'H', question: 'Taş, kil, tunç veya ahşaptan yontularak yapılan üç boyutlu sanat eseri', answer: 'HEYKEL' },
+  { letter: 'H', question: 'Yeryüzünün tamamını veya bir parçasını ölçekli olarak gösteren çizim', answer: 'HARİTA' },
+
   { letter: 'I', question: 'Karanlığı aydınlatan ve nesneleri görmemizi sağlayan fiziksel enerji', answer: 'IŞIK' },
   { letter: 'I', question: 'Temel Reis\'in güçlenmek için yediği demir zengini yeşil yapraklı sebze', answer: 'ISPANAK' },
+  { letter: 'I', question: 'Genellikle göllere veya denizlere dökülen geniş ve uzun akarsu', answer: 'IRMAK' },
+  { letter: 'I', question: 'Kışın demlenerek içilen, güzel kokulu sarı çiçekleri olan şifalı ağaç', answer: 'IHLAMUR' },
+
   { letter: 'İ', question: 'Türkiye\'nin en kalabalık ve Boğaziçi ile iki kıtayı bağlayan megakenti', answer: 'İSTANBUL' },
   { letter: 'İ', question: 'Dikiş dikerken ipliğin geçirildiği delikli ince metal araç', answer: 'İĞNE' },
+  { letter: 'İ', question: 'Tüm dünyadaki bilgisayarları ve telefonları birbirine bağlayan dev ağ', answer: 'İNTERNET' },
+  { letter: 'İ', question: 'Kıyıya yanaşan vapur veya teknelerin yolcu indirip bindirdiği platform', answer: 'İSKELE' },
+
   { letter: 'K', question: 'Kış mevsiminde yağan beyaz renkli hafif buz kristalleri', answer: 'KAR' },
   { letter: 'K', question: 'Fincanda köpüklü pişirilen, 40 yıl hatırı olan geleneksel içeceğimiz', answer: 'KAHVE' },
+  { letter: 'K', question: 'Basılı ya da yazılı sayfaların ciltlenmesiyle oluşan okuma hazinesi', answer: 'KİTAP' },
+  { letter: 'K', question: 'Tarihi kentleri düşman saldırılarından korumak için yapılan taş burçlu hisar', answer: 'KALE' },
+
   { letter: 'L', question: 'Salata ve çorbalara sıkılan sarı renkli, C vitamini zengini ekşi narenciye', answer: 'LİMON' },
   { letter: 'L', question: 'Karanlıkta elektrikle aydınlatma sağlayan araç', answer: 'LAMBA' },
+  { letter: 'L', question: 'Gemilerin yanaştığı, yük alıp boşalttığı sığınaklı kıyı tesisi', answer: 'LİMAN' },
+  { letter: 'L', question: 'İçinden çıkılması güç, çok sayıda karmaşık geçidi olan yol şebekesi', answer: 'LABİRENT' },
+
   { letter: 'M', question: 'Üzerinde yemek yenilen veya çalışılan dört ayaklı yaygın mobilya', answer: 'MASA' },
   { letter: 'M', question: 'Nota ve seslerin ahenkli birleşimiyle kulağa hoş gelen sanat dalı', answer: 'MÜZİK' },
+  { letter: 'M', question: 'Yılın ilkbahar, yaz, sonbahar ve kış olarak dörde ayrılan dönemlerinden her biri', answer: 'MEVSİM' },
+  { letter: 'M', question: 'Demir, nikel gibi metalleri kendine çeken manyetik kutuplu madde', answer: 'MIKNATIS' },
+
   { letter: 'N', question: 'Yılın dördüncü ayı, ilkbaharın ortası', answer: 'NİSAN' },
   { letter: 'N', question: 'Kabuğu soyulduğunda içinden yüzlerce kırmızı tanecik çıkan bereket meyvesi', answer: 'NAR' },
+  { letter: 'N', question: 'Deniz, göl veya başka bir akarsuya dökülen büyük su yolu', answer: 'NEHİR' },
+  { letter: 'N', question: 'Müzikte seslerin perdesini ve süresini belirten evrensel işaretler', answer: 'NOTA' },
+
   { letter: 'O', question: 'Öğrencilerin eğitim gördüğü ve öğretmenlerin ders anlattığı bina', answer: 'OKUL' },
   { letter: 'O', question: 'Çok sayıda ağacın bir arada bulunduğu geniş yeşil doğal alan', answer: 'ORMAN' },
+  { letter: 'O', question: 'Kıtaları birbirinden ayıran uçsuz bucaksız engin su kütlesi', answer: 'OKYANUS' },
+  { letter: 'O', question: 'Şehir içi veya şehirler arası çok sayıda yolcu taşıyan büyük motorlu taşıt', answer: 'OTOBÜS' },
+
   { letter: 'Ö', question: 'Okullarda öğrencilere bilgi öğreten ve yol gösteren saygıdeğer eğitimci', answer: 'ÖĞRETMEN' },
   { letter: 'Ö', question: 'Suda yüzebilen, yassı gagalı ve "vak vak" diye ses çıkaran evcil kuş', answer: 'ÖRDEK' },
+  { letter: 'Ö', question: 'Hiçbir baskı veya zorlama altında kalmadan kendi iradesiyle karar verebilme', answer: 'ÖZGÜRLÜK' },
+  { letter: 'Ö', question: 'Bir başarı, yarışma veya üstün gayret karşılığında verilen kupa ya da plaket', answer: 'ÖDÜL' },
+
   { letter: 'P', question: 'Kızartması, püresi ve fırınlaması yapılan toprak altı yumru sebze', answer: 'PATATES' },
   { letter: 'P', question: 'Alışveriş yaparken veya borç öderken kullanılan resmi madeni ya da kağıt araç', answer: 'PARA' },
+  { letter: 'P', question: 'Tuşlarına basıldığında tellere çekiçlerin vurmasıyla ses çıkaran klavyeli çalgı', answer: 'PİYANO' },
+  { letter: 'P', question: 'Manyetik iğnesiyle yönleri (kuzey, güney) gösteren seyrüsefer aleti', answer: 'PUSULA' },
+
   { letter: 'R', question: 'Kırmızı, mavi, sarı gibi gözün ışık dalgalarıyla algıladığı tonlar', answer: 'RENK' },
   { letter: 'R', question: 'Havanın yüksek basınçtan alçak basınca doğru esmesiyle oluşan hava akımı', answer: 'RÜZGAR' },
+  { letter: 'R', question: 'Sesli yayınları elektromanyetik dalgalarla dinleyiciye ileten haberleşme aracı', answer: 'RADYO' },
+  { letter: 'R', question: 'Boya, kalem veya fırça kullanılarak yüzey üzerine yapılan görsel sanat çalışması', answer: 'RESİM' },
+
   { letter: 'S', question: 'Canlıların yaşaması için şart olan şeffaf, kokusuz temel sıvı', answer: 'SU' },
   { letter: 'S', question: 'Günün saat, dakika ve saniyesini gösteren mekanik ya da dijital alet', answer: 'SAAT' },
+  { letter: 'S', question: 'Filmlerin dev perdede topluca izlendiği salon ve seyir sanatı', answer: 'SİNEMA' },
+  { letter: 'S', question: 'Güneş sistemi ve milyarlarca yıldızın içinde bulunduğu sarmal galaksimiz', answer: 'SAMANYOLU' },
+
   { letter: 'Ş', question: 'Çay ve kahveleri tatlandırmak için kullanılan beyaz kristal madde', answer: 'ŞEKER' },
   { letter: 'Ş', question: 'Yağmurlu günlerde ıslanmamak için açılıp baş üstünde tutulan siperlik', answer: 'ŞEMSİYE' },
+  { letter: 'Ş', question: 'Yüksek bir kayalıktan coşkuyla ve köpürerek dökülen su çağlayanı', answer: 'ŞELALE' },
+  { letter: 'Ş', question: 'Dizeler, kafiyeler ve ahenk ile yazılan edebi sanat türü', answer: 'ŞİİR' },
+
   { letter: 'T', question: 'Görüntü ve ses yayınlarını ekrana taşıyan en yaygın ev cihazı', answer: 'TELEVİZYON' },
   { letter: 'T', question: 'Raylar üzerinde vagonları çekerek ilerleyen uzun demiryolu taşıtı', answer: 'TREN' },
+  { letter: 'T', question: 'Oyuncuların bir sahnede canlı seyirciler önünde sergilediği dramatik temsil', answer: 'TİYATRO' },
+  { letter: 'T', question: 'Geçmişte yaşamış toplumların olaylarını ve medeniyetlerini inceleyen bilim', answer: 'TARİH' },
+
   { letter: 'U', question: 'Kanatları ve jet motorlarıyla gökyüzünde hızla yolcu taşıyan hava aracı', answer: 'UÇAK' },
   { letter: 'U', question: 'Dünya atmosferinin ötesindeki gezegenler ve yıldızlarla dolu sonsuz boşluk', answer: 'UZAY' },
+  { letter: 'U', question: 'Gökyüzü ile deniz veya yer yüzeyinin birleşiyormuş gibi göründüğü çizgi', answer: 'UFUK' },
+  { letter: 'U', question: 'Gezegenlerin etrafında dönen veya haberleşme için yörüngeye fırlatılan cihaz', answer: 'UYDU' },
+
   { letter: 'V', question: 'Şehir hatlarında iskeleler arasında deniz yoluyla yolcu taşıyan gemi', answer: 'VAPUR' },
   { letter: 'V', question: 'İçine su konulup taze çiçeklerin yerleştirildiği süs eşyası', answer: 'VAZO' },
+  { letter: 'V', question: 'Yerin derinliklerinden lav ve kül püskürten yanardağ', answer: 'VOLKAN' },
+  { letter: 'V', question: 'İnsanın doğru ile yanlışı ayırt etmesini sağlayan iç ahlaki ses', answer: 'VİCDAN' },
+
   { letter: 'Y', question: 'Bulutlardan su damlacıkları halinde yeryüzüne inen bereketli yağış', answer: 'YAĞMUR' },
   { letter: 'Y', question: 'Uyurken başın altına konulan yumuşak dolgulu minder', answer: 'YASTIK' },
+  { letter: 'Y', question: 'Gece gökyüzünde ışıldayan uzaktaki gök cisimleri', answer: 'YILDIZ' },
+  { letter: 'Y', question: 'Rüzgar gücüyle hareket eden bez kanatlı deniz aracı', answer: 'YELKENLİ' },
+
   { letter: 'Z', question: 'Kahvaltı sofralarının vazgeçilmezi olan siyah veya yeşil taneli Akdeniz meyvesi', answer: 'ZEYTİN' },
-  { letter: 'Z', question: 'Okulda teneffüsü, kapıda misafiri haber veren çınlamalı ses aleti', answer: 'ZİL' }
+  { letter: 'Z', question: 'Okulda teneffüsü, kapıda misafiri haber veren çınlamalı ses aleti', answer: 'ZİL' },
+  { letter: 'Z', question: 'Upuzun boynu ve sarı-kahve desenleriyle tanınan dünyanın en uzun kara hayvanı', answer: 'ZÜRAFA' },
+  { letter: 'Z', question: 'Olayların geçmişten bugüne ve geleceğe aktığı süreklilik boyutu', answer: 'ZAMAN' }
 ];
 
 export const PASSAPAROLA_KIDS_QUESTIONS_DB = [
@@ -155,6 +232,9 @@ export class PassaparolaEngine {
     // Harf Durumları: 'pending', 'active', 'correct', 'wrong', 'passed'
     this.letterStates = {};
     this.currentQuestions = {};
+
+    // Dinamik Soru Motoru: AI destekli soru üretimi için temel
+    this.questionGenerator = new QuestionGenerator(PASSAPAROLA_QUESTIONS_DB, PASSAPAROLA_KIDS_QUESTIONS_DB);
 
     window.__passaparola = this;
   }
@@ -279,6 +359,19 @@ export class PassaparolaEngine {
     }
     if (btnCatKids) {
       btnCatKids.onclick = () => this.setCategoryMode('kids');
+    }
+
+    // Yeni Soru Butonu (Dinamik Soru Üretimi)
+    const btnNewQuestion = document.getElementById('btn-new-question');
+    if (btnNewQuestion) {
+      btnNewQuestion.onclick = () => {
+        sounds.playClick();
+        const currentLetter = PASSAPAROLA_LETTERS[this.currentIndex];
+        const newQ = this.questionGenerator.getDynamicQuestion(currentLetter, this.categoryMode);
+        this.currentQuestions[currentLetter] = newQ;
+        this.loadQuestionForCurrent();
+        this.game.showToast(`🔀 ${currentLetter} harfi için yeni soru yüklendi!`);
+      };
     }
 
     // Geri Dön
@@ -488,17 +581,8 @@ export class PassaparolaEngine {
 
     PASSAPAROLA_LETTERS.forEach(letter => {
       this.letterStates[letter] = 'pending';
-      const db = (this.categoryMode === 'kids') ? PASSAPAROLA_KIDS_QUESTIONS_DB : PASSAPAROLA_QUESTIONS_DB;
-      const pool = db.filter(q => q.letter === letter);
-      if (pool.length > 0) {
-        this.currentQuestions[letter] = pool[Math.floor(Math.random() * pool.length)];
-      } else {
-        this.currentQuestions[letter] = {
-          letter,
-          question: `${letter} harfi ile başlayan kelime`,
-          answer: letter
-        };
-      }
+      // Dinamik soru getir (AI destekli rotasyon)
+      this.currentQuestions[letter] = this.questionGenerator.getDynamicQuestion(letter, this.categoryMode);
     });
 
     this.letterStates[PASSAPAROLA_LETTERS[0]] = 'active';
@@ -520,20 +604,10 @@ export class PassaparolaEngine {
     this.currentIndex = 0;
     this.remainingSeconds = this.totalDuration;
 
-    // Harf durumlarını sıfırla
+    // Harf durumlarını sıfırla ve dinamik sorularla doldur
     PASSAPAROLA_LETTERS.forEach(letter => {
       this.letterStates[letter] = 'pending';
-      const db = (this.categoryMode === 'kids') ? PASSAPAROLA_KIDS_QUESTIONS_DB : PASSAPAROLA_QUESTIONS_DB;
-      const pool = db.filter(q => q.letter === letter);
-      if (pool.length > 0) {
-        this.currentQuestions[letter] = pool[Math.floor(Math.random() * pool.length)];
-      } else {
-        this.currentQuestions[letter] = {
-          letter,
-          question: `${letter} harfi ile başlayan kelime`,
-          answer: letter
-        };
-      }
+      this.currentQuestions[letter] = this.questionGenerator.getDynamicQuestion(letter, this.categoryMode);
     });
     this.letterStates[PASSAPAROLA_LETTERS[0]] = 'active';
 
@@ -589,6 +663,61 @@ export class PassaparolaEngine {
     const total = PASSAPAROLA_LETTERS.length;
     const angleStep = (2 * Math.PI) / total;
 
+    // Yatay strip öğeleri (çarkın altında harf listesi)
+    const stripContainer = document.getElementById('passa-strip-container');
+    if (!stripContainer) {
+      const newStrip = document.createElement('div');
+      newStrip.id = 'passa-strip-container';
+      newStrip.style.cssText = `
+        position: absolute;
+        bottom: -40px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 4px;
+        padding: 6px 12px;
+        background: rgba(0,0,0,0.5);
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        overflow-x: auto;
+        scroll-behavior: smooth;
+        white-space: nowrap;
+        z-index: 10;
+      `;
+      wheelContainer.parentElement.appendChild(newStrip);
+    }
+
+    // Strip'e harfleri ekle
+    const strip = document.getElementById('passa-strip-container');
+    strip.innerHTML = '';
+    PASSAPAROLA_LETTERS.forEach((letter, i) => {
+      const isActive = this.letterStates[letter] === 'active';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = letter;
+      btn.style.cssText = `
+        flex: 0 0 40px;
+        margin: 0 2px;
+        padding: 6px 8px;
+        border-radius: 20px;
+        background: ${isActive ? 'var(--primary)' : 'rgba(255,255,255,0.1)'};
+        color: ${isActive ? '#0B0E14' : '#FFF'};
+        border: 1.5px solid ${isActive ? 'var(--primary)' : 'rgba(255,255,255,0.3)'};
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.85rem;
+        font-weight: 800;
+        min-width: 40px;
+        text-align: center;
+      `;
+      btn.onclick = () => {
+        // Harf seçilene kadar etkileşim kapalı, döndürme ile seçilir
+      };
+      strip.appendChild(btn);
+    });
+
+    // Çark düğümlerini oluştur
     PASSAPAROLA_LETTERS.forEach((letter, i) => {
       const angle = -Math.PI / 2 + i * angleStep;
       const x = cx + radius * Math.cos(angle);
@@ -600,7 +729,14 @@ export class PassaparolaEngine {
       node.textContent = letter;
       node.style.left = `${x}px`;
       node.style.top = `${y}px`;
-
+      // Aktif harfi büyült ve parlat
+      if (this.letterStates[letter] === 'active') {
+        node.style.transform = 'scale(1.3)';
+        node.style.boxShadow = '0 0 25px var(--primary)';
+      } else {
+        node.style.transform = 'scale(1)';
+        node.style.boxShadow = 'none';
+      }
       wheelContainer.appendChild(node);
     });
   }
@@ -808,5 +944,97 @@ export class PassaparolaEngine {
     if (resRate) resRate.textContent = `%${successRate}`;
 
     this.syncRoomState('finished');
+  }
+}
+
+// =========================================================================
+// 10. DINAMİK SORU ÜRETİCİ & AI ENTEGRASYONU
+// =========================================================================
+// Soru havuzu yönetimi ve yapay zeka destekli dinamik soru üretimi
+// Kullanılabilir: Yerel DB'ler, externe API'lar veya AI modelleri
+
+class QuestionGenerator {
+  constructor(adultDB, kidsDB) {
+    this.adultDB = adultDB;
+    this.kidsDB = kidsDB;
+    this.usedQuestions = new Map(); // letter -> used question indices
+    this.maxUsesPerLetter = 5; // Aynı harften önce 5 soru sonra yenile
+  }
+
+  // Belirli harf için yeni bir soru getir (dinamik/rotasyon)
+  getDynamicQuestion(letter, categoryMode = 'adult') {
+    const db = categoryMode === 'kids' ? this.kidsDB : this.adultDB;
+    const pool = db.filter(q => q.letter === letter);
+
+    if (pool.length === 0) {
+      return {
+        letter,
+        question: `${letter} harfi ile başlayan kelime`,
+        answer: letter
+      };
+    }
+
+    // Önceki soruların indekslerini başlat
+    if (!this.usedQuestions.has(letter)) {
+      this.usedQuestions.set(letter, []);
+    }
+    const usedIndices = this.usedQuestions.get(letter);
+
+    // Havuzdaki kullanılmayan indeksleri bul
+    const availableIndices = pool
+      .map((q, idx) => idx)
+      .filter(idx => !usedIndices.includes(idx));
+
+    let questionData;
+    if (availableIndices.length > 0) {
+      // Kullanılmayan bir soru seç
+      const randomIdx = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+      questionData = { ...pool[randomIdx] };
+      usedIndices.push(randomIdx);
+    } else {
+      // Tüm sorular kullanıldı, listeyi sıfırla ve yeni soru seç
+      this.usedQuestions.set(letter, []);
+      const allIndices = pool.map((q, idx) => idx);
+      const randomIdx = allIndices[Math.floor(Math.random() * allIndices.length)];
+      questionData = { ...pool[randomIdx] };
+      usedIndices.push(randomIdx);
+    }
+
+    // Maksimum kullanım sayısını kontrol et (5 soru sonra yenile)
+    if (usedIndices.length >= this.maxUsesPerLetter && availableIndices.length === 0) {
+      this.usedQuestions.set(letter, []);
+    }
+
+    return {
+      letter,
+      question: questionData.question,
+      answer: questionData.answer
+    };
+  }
+
+  // AI destekli dinamik soru üretimi (gelecek için placeholder)
+  // Gerçek uygulamada buraya OpenAI, Gemini veya Ollama entegrasyonu eklenebilir
+  generateAIDynamicQuestion(letter, context = '') {
+    // Placeholder: Mevcut DB'den rastgele soru döndür
+    // Gelecekte: OpenAI GPT-4, Google Gemini veya Ollama SLM çağrısı
+    const db = this.getCurrentDB();
+    const pool = db.filter(q => q.letter === letter);
+    if (pool.length > 0) {
+      const randomIdx = Math.floor(Math.random() * pool.length);
+      return {
+        letter,
+        question: pool[randomIdx].question,
+        answer: pool[randomIdx].answer
+      };
+    }
+    return {
+      letter,
+      question: `${letter} harfi ile başlayan kelime`,
+      answer: letter
+    };
+  }
+
+  getCurrentDB() {
+    return 'adult'; // Varsayılan adult, setCategoryMode ile değiştirilebilir
   }
 }

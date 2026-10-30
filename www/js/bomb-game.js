@@ -163,8 +163,8 @@ export class BombGameEngine {
           </div>
         </div>
 
-        <button type="button" id="btn-bomb-pass" class="btn-main" style="background:linear-gradient(135deg, #00F5D4, #00ba9f); color:#0B0E14; font-size:1.25rem; font-weight:900; padding:18px; box-shadow:0 6px 25px rgba(0,245,212,0.4); border-radius:999px;">
-          SÖYLEDİM! PASLA! ➔
+        <button type="button" id="btn-bomb-pass" class="btn-main" style="width:100%; min-height:85px; background:linear-gradient(135deg, #FF2E93, #FF8C42); color:#FFFFFF; font-size:1.65rem; font-weight:900; padding:20px 24px; box-shadow:0 10px 40px rgba(255,46,147,0.6); border:2.5px solid rgba(255,255,255,0.85); border-radius:999px; letter-spacing:1.5px; display:flex; align-items:center; justify-content:center; gap:10px; cursor:pointer;">
+          <span>💥 SÖYLEDİM! PASLA!</span> <span>➔</span>
         </button>
 
         <p style="font-size:0.78rem; color:var(--text-muted); margin-top:14px; line-height:1.4;">

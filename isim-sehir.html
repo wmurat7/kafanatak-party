@@ -67,21 +67,31 @@
     .input-field:focus { border-color: var(--primary); box-shadow: 0 0 12px rgba(0, 245, 212, 0.3); }
 
     /* Avatar Grid */
-    .avatar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 14px; }
+    .avatar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
     .avatar-btn {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1.5px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      font-size: 1.4rem;
-      padding: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px solid rgba(255, 255, 255, 0.16);
+      border-radius: 14px;
+      font-size: 1.8rem;
+      padding: 10px 4px;
       cursor: pointer;
-      transition: all 0.2s;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+    .avatar-btn:active {
+      transform: scale(0.92);
     }
     .avatar-btn.selected {
-      border-color: var(--gold);
-      background: rgba(251, 191, 36, 0.2);
-      transform: scale(1.1);
-      box-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
+      border-color: var(--gold) !important;
+      background: rgba(251, 191, 36, 0.25) !important;
+      transform: scale(1.14);
+      box-shadow: 0 0 18px rgba(251, 191, 36, 0.6) !important;
     }
 
     /* Buttons */
@@ -759,13 +769,21 @@
       return clean.startsWith(target);
     }
 
-    // Avatar seçimi
+    // Avatar seçimi (Dokunmatik ekran dostu & anında tepki)
+    function selectAvatar(btn) {
+      if (!btn) return;
+      document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.playerAvatar = btn.getAttribute('data-av') || '🦁';
+      try { playBeep(520, 'sine', 0.04, 0.1); } catch (e) {}
+    }
+
     document.querySelectorAll('.avatar-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        state.playerAvatar = btn.getAttribute('data-av');
-        playBeep(440, 'sine', 0.08, 0.15);
+      btn.addEventListener('pointerdown', (e) => {
+        selectAvatar(btn);
+      });
+      btn.addEventListener('click', (e) => {
+        selectAvatar(btn);
       });
     });
 
@@ -1137,19 +1155,25 @@
       state.playerName = name;
       state.roomId = room;
 
-      // 1. Firebase Bulut Odayı Kontrol Et (Mükerrer bağlantı engellemeli)
+      // 1. Firebase Bulut Odayı Kontrol Et (Akıllı 3x Retry & Cache-Busting)
       try {
-        const fbRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${room}.json`);
-        if (fbRes.ok) {
-          const roomData = await fbRes.json();
-          if (!roomData || !roomData.roomId) {
-            errBox.textContent = '❌ Oda bulunamadı! Lütfen oda kodunu kontrol edin veya yöneticinin odayı açtığından emin olun.';
-            errBox.style.display = 'block';
-            btnJoin.disabled = false;
-            btnJoin.textContent = '🚀 OYUNA KATIL';
-            isJoining = false;
-            return;
-          }
+        let roomData = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          btnJoin.textContent = attempt > 1 ? `Oda Aranıyor (${attempt}/3)...` : 'Bağlanılıyor...';
+          try {
+            const fbRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${room}.json?t=${Date.now()}`);
+            if (fbRes.ok) {
+              const data = await fbRes.json();
+              if (data && data.roomId) {
+                roomData = data;
+                break;
+              }
+            }
+          } catch (netErr) {}
+          if (attempt < 3) await new Promise(r => setTimeout(r, 700));
+        }
+
+        if (roomData && roomData.roomId) {
 
           if (roomData.isClosed) {
             errBox.textContent = '🛑 Bu oda yönetici tarafından kapatılmıştır!';
@@ -1537,7 +1561,9 @@
             if (window.firebaseNetwork && firebaseNetwork.showAnnouncementToast) {
               firebaseNetwork.showAnnouncementToast(a.message || '');
             }
-          } else if (a.type === 'room_closed') {
+          } else if (a.type === 'room_reset') {
+              handleRoomResetByHost(a.reason || 'Yönetici odayı ve sistemi sıfırladı.');
+            } else if (a.type === 'room_closed') {
             handleRoomClosedByHost(a.reason || 'Oda yöneticisi tarafından oturum sonlandırıldı.');
           }
         });
@@ -1785,6 +1811,20 @@
       if (modal) modal.style.display = 'flex';
     }
 
+    
+    function handleRoomResetByHost(reason) {
+      try { playWarningSound(); } catch (e) {}
+      state.hasSubmitted = false;
+      state.isFirstFinisher = false;
+      state.startedAt = null;
+      state.endsAt = null;
+      state.currentLetter = '';
+      state.lastPhase = 'setup';
+      clearDraftAnswers();
+      showView('view-lobby');
+      alert(`🔄 ${reason}\n\nLobi temizlendi, yeni harf bekleniyor!`);
+    }
+  
     function handleRoomClosedByHost(reason) {
       playLockBuzzer();
       try { navigator.vibrate([300, 150, 300, 150, 500]); } catch (e) {}

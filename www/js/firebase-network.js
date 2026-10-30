@@ -61,15 +61,16 @@ class FirebaseNetworkManager {
       url = null;
     }
     if (!url) {
-      if (typeof window !== 'undefined' && window.location && window.location.origin && 
-          !window.location.origin.includes('localhost') && 
-          !window.location.origin.includes('127.0.0.1') &&
-          !window.location.origin.startsWith('capacitor:') &&
-          !window.location.origin.startsWith('file:')) {
-        url = window.location.origin;
-      } else {
-        url = DEFAULT_FIREBASE_CONFIG.webAppUrl;
+      if (typeof window !== 'undefined' && window.location && window.location.origin) {
+        const origin = window.location.origin.toLowerCase();
+        const isLocal = origin.includes('localhost') || origin.includes('127.0.0.1') || origin.startsWith('capacitor:') || origin.startsWith('file:');
+        if (!isLocal) {
+          url = window.location.origin;
+        }
       }
+    }
+    if (!url) {
+      url = DEFAULT_FIREBASE_CONFIG.webAppUrl;
     }
     if (url.endsWith('/')) url = url.slice(0, -1);
     return url;
