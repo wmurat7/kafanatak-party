@@ -826,86 +826,41 @@ export class PassaparolaEngine {
     if (!wheelContainer) return;
     wheelContainer.innerHTML = '';
 
-    const radius = 130;
-    const cx = 150;
-    const cy = 150;
+    // Eski strip varsa DOM'dan temizle
+    const existingStrip = document.getElementById('passa-strip-container');
+    if (existingStrip && existingStrip.parentNode) {
+      existingStrip.parentNode.removeChild(existingStrip);
+    } else if (existingStrip && existingStrip.remove) {
+      existingStrip.remove();
+    }
+
+    const radius = 125;
+    const cx = 145;
+    const cy = 145;
     const total = PASSAPAROLA_LETTERS.length;
     const angleStep = (2 * Math.PI) / total;
 
-    // Yatay strip öğeleri (çarkın altında harf listesi)
-    const stripContainer = document.getElementById('passa-strip-container');
-    if (!stripContainer) {
-      const newStrip = document.createElement('div');
-      newStrip.id = 'passa-strip-container';
-      newStrip.style.cssText = `
-        position: absolute;
-        bottom: -40px;
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        gap: 4px;
-        padding: 6px 12px;
-        background: rgba(0,0,0,0.5);
-        border-radius: 999px;
-        font-size: 0.7rem;
-        font-weight: 800;
-        overflow-x: auto;
-        scroll-behavior: smooth;
-        white-space: nowrap;
-        z-index: 10;
-      `;
-      wheelContainer.parentElement.appendChild(newStrip);
-    }
-
-    // Strip'e harfleri ekle
-    const strip = document.getElementById('passa-strip-container');
-    strip.innerHTML = '';
-    PASSAPAROLA_LETTERS.forEach((letter, i) => {
-      const isActive = this.letterStates[letter] === 'active';
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.textContent = letter;
-      btn.style.cssText = `
-        flex: 0 0 40px;
-        margin: 0 2px;
-        padding: 6px 8px;
-        border-radius: 20px;
-        background: ${isActive ? 'var(--primary)' : 'rgba(255,255,255,0.1)'};
-        color: ${isActive ? '#0B0E14' : '#FFF'};
-        border: 1.5px solid ${isActive ? 'var(--primary)' : 'rgba(255,255,255,0.3)'};
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-size: 0.85rem;
-        font-weight: 800;
-        min-width: 40px;
-        text-align: center;
-      `;
-      btn.onclick = () => {
-        // Harf seçilene kadar etkileşim kapalı, döndürme ile seçilir
-      };
-      strip.appendChild(btn);
-    });
-
-    // Çark düğümlerini oluştur
+    // 26 Harfli Kusursuz Dairesel Çark
     PASSAPAROLA_LETTERS.forEach((letter, i) => {
       const angle = -Math.PI / 2 + i * angleStep;
       const x = cx + radius * Math.cos(angle);
       const y = cy + radius * Math.sin(angle);
 
       const node = document.createElement('div');
-      node.className = `passa-node node-${this.letterStates[letter] || 'pending'}`;
+      const state = this.letterStates[letter] || 'pending';
+      node.className = `passa-node node-${state}`;
       node.id = `passa-node-${letter}`;
       node.textContent = letter;
       node.style.left = `${x}px`;
       node.style.top = `${y}px`;
-      // Aktif harfi büyült ve parlat
-      if (this.letterStates[letter] === 'active') {
-        node.style.transform = 'scale(1.3)';
-        node.style.boxShadow = '0 0 25px var(--primary)';
-      } else {
-        node.style.transform = 'scale(1)';
-        node.style.boxShadow = 'none';
-      }
+
+      // Harfe doğrudan dokunarak geçiş yapabilme
+      node.onclick = () => {
+        if (this.isPlaying && !this.isFinished) {
+          this.jumpToLetter(letter);
+        }
+      };
+
       wheelContainer.appendChild(node);
     });
   }
@@ -913,22 +868,44 @@ export class PassaparolaEngine {
   updateWheelNode(letter) {
     const node = document.getElementById(`passa-node-${letter}`);
     if (node) {
-      node.className = `passa-node node-${this.letterStates[letter] || 'pending'}`;
+      const state = this.letterStates[letter] || 'pending';
+      node.className = `passa-node node-${state}`;
     }
+  }
+
+  jumpToLetter(letter) {
+    if (!this.isPlaying || this.isFinished) return;
+    const targetIdx = PASSAPAROLA_LETTERS.indexOf(letter);
+    if (targetIdx === -1) return;
+    try { sounds.playClick(); } catch (e) {}
+
+    const prevLetter = PASSAPAROLA_LETTERS[this.currentIndex];
+    if (this.letterStates[prevLetter] === 'active') {
+      this.letterStates[prevLetter] = 'pending';
+      this.updateWheelNode(prevLetter);
+    }
+
+    this.currentIndex = targetIdx;
+    this.loadQuestionForCurrent();
+    this.syncRoomState('jump');
   }
 
   loadQuestionForCurrent() {
     const currentLetter = PASSAPAROLA_LETTERS[this.currentIndex];
     const qData = this.currentQuestions[currentLetter];
 
+    // Önceki aktif harfleri temizle
     PASSAPAROLA_LETTERS.forEach(l => {
-      if (this.letterStates[l] === 'active') {
+      if (l !== currentLetter && this.letterStates[l] === 'active') {
         this.letterStates[l] = 'pending';
         this.updateWheelNode(l);
       }
     });
 
-    this.letterStates[currentLetter] = 'active';
+    // Harf durumu bitmemişse active yap
+    if (this.letterStates[currentLetter] !== 'correct' && this.letterStates[currentLetter] !== 'wrong') {
+      this.letterStates[currentLetter] = 'active';
+    }
     this.updateWheelNode(currentLetter);
 
     // Aktif Yarışmacı
@@ -938,16 +915,21 @@ export class PassaparolaEngine {
       lblPlayer.textContent = `${activePlayer.avatar || '🦁'} ${activePlayer.name}`;
     }
 
-    // Soru ve Harf
+    // Çark Merkezi Harf
     const letterHero = document.getElementById('passa-center-letter');
     if (letterHero) letterHero.textContent = currentLetter;
 
+    // Soru Metni
     const qText = document.getElementById('passa-question-text');
-    if (qText && qData) qText.textContent = qData.question;
+    if (qText) {
+      qText.textContent = (qData && qData.question) ? qData.question : `${currentLetter} harfi ile başlayan soruyu yanıtlayınız.`;
+    }
 
-    // SUNUCU DOĞRU CEVAP KUTUSU (Sunucuya her zaman görünür)
+    // SUNUCU DOĞRU CEVAP KUTUSU (Sunucuya her zaman açık ve net görünür)
     const hostAns = document.getElementById('passa-answer-text');
-    if (hostAns && qData) hostAns.textContent = qData.answer;
+    if (hostAns) {
+      hostAns.textContent = (qData && qData.answer) ? qData.answer : currentLetter;
+    }
 
     this.updateStatsUI();
   }
@@ -1127,6 +1109,26 @@ class QuestionGenerator {
     this.adultDB = adultDB;
     this.kidsDB = kidsDB;
     this.usedGlobalQuestions = new Set();
+  }
+
+  // Tekil harf için senkron dinamik soru getir (resetGame vb. için)
+  getDynamicQuestion(letter, categoryMode = 'adult') {
+    const db = categoryMode === 'kids' ? this.kidsDB : this.adultDB;
+    const candidates = db.filter(q => q.letter === letter);
+    const available = candidates.filter(q => !this.usedGlobalQuestions.has(q.question));
+    const pool = available.length > 0 ? available : candidates;
+    
+    if (pool.length > 0) {
+      const chosen = pool[Math.floor(Math.random() * pool.length)];
+      this.usedGlobalQuestions.add(chosen.question);
+      return { ...chosen };
+    }
+
+    return {
+      letter,
+      question: `${letter} harfi ile başlayan kavram`,
+      answer: letter
+    };
   }
 
   // Takım için benzersiz 24 harflik soru destesi üret (Takımlar ASLA aynı soruyu görmez)

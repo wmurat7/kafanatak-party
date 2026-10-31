@@ -4308,8 +4308,8 @@ class GameApp {
         }
       }
     } else {
-      this.summaryTeamNotice.style.display = 'none';
-      this.summaryTeamScoreboard.style.display = 'none';
+      if (this.summaryTeamNotice) this.summaryTeamNotice.style.display = 'none';
+      if (this.summaryTeamScoreboard) this.summaryTeamScoreboard.style.display = 'none';
       this.btnPlayAgain.textContent = '🔄 Tekrar Oyna';
     }
 

@@ -262,3 +262,4 @@ if (initRegex.test(gameJsContent)) {
 }
 
 console.log('🎉 Logo animasyonu ve Ayarlar-İzinler tamamlandı!');
+
