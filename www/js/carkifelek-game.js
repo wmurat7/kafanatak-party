@@ -434,122 +434,134 @@ export class CarkifelekEngine {
     this.syncToFirebase();
   }
 
-  drawWheel() {
-    if (!this.canvas || !this.ctx) return;
-    const ctx = this.ctx;
-    const w = this.canvas.width;
-    const h = this.canvas.height;
-    const cx = w / 2;
-    const cy = h / 2;
-    const r = (w / 2) - 8;
-    const numSlices = CARKIFELEK_SLICES.length;
-    const sliceAngle = (2 * Math.PI) / numSlices;
+  
+  // =========================================================================
+  // YATAY SONSUZ MAKARALI ŞERİT MOTORU (Madde 11)
+  // =========================================================================
+  initHorizontalReel() {
+    this.stripTrack = document.getElementById('cark-strip-track');
+    this.reelContainer = document.getElementById('cark-horizontal-reel-container');
+    this.cardWidth = 80; // 76px kart + 4px boşluk
+    this.currentOffset = 0;
+    this.stripCards = [];
 
-    ctx.clearRect(0, 0, w, h);
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(this.wheelRotation);
+    if (!this.stripTrack) return;
+    this.stripTrack.innerHTML = '';
 
-    for (let i = 0; i < numSlices; i++) {
-      const slice = CARKIFELEK_SLICES[i];
-      const angle = i * sliceAngle;
+    // Sonsuz dönme hissi için 16 dilimi 15 kez ardışık olarak şeride ekle (240 kart)
+    const REPEAT_COUNT = 15;
+    for (let r = 0; r < REPEAT_COUNT; r++) {
+      CARKIFELEK_SLICES.forEach((slice, idx) => {
+        const card = document.createElement('div');
+        card.className = 'cark-strip-card';
+        card.style.cssText = `
+          width: 74px;
+          height: 60px;
+          margin: 0 3px;
+          flex-shrink: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          border-radius: 12px;
+          background: ${slice.color};
+          color: ${slice.type === 'points' && slice.value <= 500 ? '#0B0E14' : '#FFF'};
+          font-weight: 900;
+          font-size: ${slice.text.length > 5 ? '0.75rem' : '1.05rem'};
+          box-shadow: inset 0 2px 6px rgba(255,255,255,0.4), 0 3px 8px rgba(0,0,0,0.5);
+          border: 1.5px solid rgba(255,255,255,0.6);
+          text-shadow: ${slice.type === 'bankrupt' || slice.type === 'pass' ? '0 1px 3px rgba(0,0,0,0.8)' : 'none'};
+          transition: transform 0.2s, box-shadow 0.2s;
+        `;
 
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.arc(0, 0, r, angle, angle + sliceAngle);
-      ctx.closePath();
+        let icon = '';
+        if (slice.type === 'bankrupt') icon = '💀 ';
+        else if (slice.type === 'pass') icon = '⛔ ';
+        else if (slice.type === 'reward') icon = '🎁 ';
+        else if (slice.type === 'spin_again') icon = '🔄 ';
 
-      ctx.fillStyle = slice.color;
-      ctx.fill();
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = '#0B0E14';
-      ctx.stroke();
+        card.innerHTML = `
+          <span style="font-size:0.68rem; opacity:0.9; font-weight:800; line-height:1;">${icon}</span>
+          <span style="line-height:1.1; letter-spacing:0.5px;">${slice.text}</span>
+        `;
 
-      // Dilim Yazısı
-      ctx.save();
-      ctx.rotate(angle + sliceAngle / 2);
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = slice.type === 'bankrupt' ? '#FFFFFF' : '#0B0E14';
-      ctx.font = '900 13px -apple-system, Roboto, sans-serif';
-      ctx.fillText(slice.text, r - 12, 0);
-      ctx.restore();
+        this.stripTrack.appendChild(card);
+        this.stripCards.push({ element: card, slice, originalIndex: idx });
+      });
     }
 
-    // Merkez göbek
-    ctx.beginPath();
-    ctx.arc(0, 0, 24, 0, 2 * Math.PI);
-    ctx.fillStyle = '#0B0E14';
-    ctx.fill();
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = '#FBBF24';
-    ctx.stroke();
+    // İlk pozisyonu ortala
+    const containerW = this.reelContainer ? this.reelContainer.clientWidth : 400;
+    this.currentOffset = -(16 * 4 * this.cardWidth - (containerW / 2 - this.cardWidth / 2));
+    this.stripTrack.style.transform = `translateX(${this.currentOffset}px)`;
+  }
 
-    ctx.restore();
-
-    // Üstte neon ibre
-    ctx.beginPath();
-    ctx.moveTo(cx - 10, 2);
-    ctx.lineTo(cx + 10, 2);
-    ctx.lineTo(cx, 22);
-    ctx.closePath();
-    ctx.fillStyle = '#FBBF24';
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = '#FFFFFF';
-    ctx.stroke();
+  drawWheel() {
+    // Yatay makaralı motoru hazırla (Eski drawWheel yerine)
+    if (!this.stripTrack) {
+      this.initHorizontalReel();
+    }
   }
 
   spinWheel() {
     if (this.isSpinning || this.canPickLetter) return;
     this.isSpinning = true;
 
-    if (!this.canvas) {
-      this.canvas = document.getElementById('carkifelek-wheel-canvas');
-      if (this.canvas) this.ctx = this.canvas.getContext('2d');
+    if (!this.stripTrack) {
+      this.initHorizontalReel();
     }
 
     const btnSpin = document.getElementById('btn-cark-spin');
     if (btnSpin) {
       btnSpin.disabled = true;
-      btnSpin.innerHTML = '🎡 DÖNÜYOR...';
+      btnSpin.innerHTML = '🎡 MAKARA DÖNÜYOR...';
     }
 
     try { sounds.playSpin(); } catch (e) {}
 
-    const numSlices = CARKIFELEK_SLICES.length;
-    const sliceAngle = (2 * Math.PI) / numSlices;
-    const targetIndex = Math.floor(Math.random() * numSlices);
-    const chosenSlice = CARKIFELEK_SLICES[targetIndex];
-    this.currentSlice = chosenSlice;
+    // Rastgele kazanan dilim seç
+    const chosenIndex = Math.floor(Math.random() * CARKIFELEK_SLICES.length);
+    const chosenSlice = CARKIFELEK_SLICES[chosenIndex];
 
-    const fullSpins = 3 + Math.floor(Math.random() * 2);
-    const targetAngle = 1.5 * Math.PI - (targetIndex + 0.5) * sliceAngle;
-    const currentRot = this.wheelRotation % (2 * Math.PI);
-    let delta = (targetAngle - currentRot) % (2 * Math.PI);
-    if (delta < 0) delta += 2 * Math.PI;
-    const totalDelta = delta + (fullSpins * 2 * Math.PI);
+    const containerW = this.reelContainer ? this.reelContainer.clientWidth : 400;
+    const centerOffset = (containerW / 2) - (this.cardWidth / 2);
 
-    const startRot = this.wheelRotation;
+    // 40 ila 60 kart ileriye fırla
+    const cardsToSkip = 48 + chosenIndex;
+    const targetOffset = -(cardsToSkip * this.cardWidth - centerOffset);
+    const startOffset = this.currentOffset;
+    const distance = targetOffset - startOffset;
+
+    const duration = 3400; // 3.4 saniye gerçekçi slot makarası akışı
     const startTime = performance.now();
-    const duration = 2000;
-    let lastTickSlice = -1;
+    let lastTickCard = -1;
 
-    if (this.spinAnimId) cancelAnimationFrame(this.spinAnimId);
+    // Vurguları sıfırla
+    if (this.stripCards) {
+      this.stripCards.forEach(c => {
+        c.element.style.transform = 'scale(1)';
+        c.element.style.borderColor = 'rgba(255,255,255,0.6)';
+        c.element.style.boxShadow = 'inset 0 2px 6px rgba(255,255,255,0.4), 0 3px 8px rgba(0,0,0,0.5)';
+      });
+    }
 
-    this.syncToFirebase({ isSpinning: true, statusMsg: '🎡 Çark dönüyor...' });
-
-    const animate = (now) => {
-      const elapsed = now - startTime;
+    const animate = (currentTime) => {
+      const elapsed = currentTime - startTime;
       const progress = Math.min(1, elapsed / duration);
-      const ease = 1 - Math.pow(1 - progress, 4);
-      this.wheelRotation = startRot + totalDelta * ease;
-      this.drawWheel();
+      
+      // Yumuşak ve tatmin edici yavaşlama (Cubic ease-out)
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const curPos = startOffset + distance * easeOut;
+      this.currentOffset = curPos;
 
-      const currentNeedleAngle = (1.5 * Math.PI - (this.wheelRotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-      const curSlice = Math.floor(currentNeedleAngle / sliceAngle);
-      if (curSlice !== lastTickSlice && progress < 0.98) {
-        lastTickSlice = curSlice;
+      if (this.stripTrack) {
+        this.stripTrack.style.transform = `translateX(${curPos}px)`;
+      }
+
+      // Merkezden geçen her kartta tik sesi
+      const currentPassedCard = Math.floor((-curPos + centerOffset) / this.cardWidth);
+      if (currentPassedCard !== lastTickCard && progress < 0.98) {
+        lastTickCard = currentPassedCard;
         try { sounds.playWheelTick(); } catch (e) {}
       }
 
@@ -559,6 +571,23 @@ export class CarkifelekEngine {
         this.spinAnimId = null;
         this.isSpinning = false;
         if (btnSpin) btnSpin.innerHTML = '🎡 ÇARKI ÇEVİR';
+
+        // Kazanan kartı merkezde altın neon ile parlat
+        if (this.stripCards && this.stripCards[cardsToSkip]) {
+          const winEl = this.stripCards[cardsToSkip].element;
+          winEl.style.transform = 'scale(1.14)';
+          winEl.style.borderColor = 'var(--gold)';
+          winEl.style.boxShadow = '0 0 25px var(--gold), inset 0 2px 8px #FFF';
+          winEl.style.zIndex = '5';
+        }
+
+        // Kazanç veya İflas sesi
+        if (chosenSlice.type === 'bankrupt' || chosenSlice.type === 'pass') {
+          try { sounds.playBuzzer(); } catch(e) {}
+        } else {
+          try { sounds.playWheelWin(); } catch(e) {}
+        }
+
         this.handleSliceOutcome(chosenSlice);
       }
     };

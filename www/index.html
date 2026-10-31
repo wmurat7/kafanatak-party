@@ -1505,9 +1505,25 @@
       🎡 Çarkı çevirerek başlayın!
     </div>
 
-    <!-- Dönen Çark Canvas -->
-    <div style="position:relative; width:280px; height:280px; margin:0 auto 14px; -webkit-tap-highlight-color:transparent; outline:none;">
-      <canvas id="carkifelek-wheel-canvas" width="280" height="280" style="width:280px; height:280px; -webkit-tap-highlight-color:transparent !important; outline:none; touch-action:manipulation;"></canvas>
+    <!-- YATAY SONSUZ MAKARALI ÇARK ŞERİDİ (Madde 11: Sıfır Dikey Kaydırma) -->
+    <div id="cark-horizontal-reel-container" style="position:relative; width:100%; max-width:460px; height:82px; margin:0 auto 12px; background:linear-gradient(180deg, #0F172A, #1E293B); border:2px solid rgba(251,191,36,0.6); border-radius:18px; box-shadow:0 0 25px rgba(251,191,36,0.2), inset 0 2px 10px rgba(0,0,0,0.8); overflow:hidden; display:flex; align-items:center; user-select:none; -webkit-user-select:none;">
+      
+      <!-- Üst ve Alt Altın Merkez İbresi (Target Indicator) -->
+      <div style="position:absolute; top:-2px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:11px solid transparent; border-right:11px solid transparent; border-top:14px solid var(--gold); z-index:10; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.8)); pointer-events:none;"></div>
+      <div style="position:absolute; bottom:-2px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:11px solid transparent; border-right:11px solid transparent; border-bottom:14px solid var(--gold); z-index:10; filter:drop-shadow(0 -2px 6px rgba(0,0,0,0.8)); pointer-events:none;"></div>
+      
+      <!-- Merkez Vurgu Işığı (Center Highlight Beam) -->
+      <div style="position:absolute; left:50%; top:0; bottom:0; width:80px; transform:translateX(-50%); background:rgba(251,191,36,0.14); border-left:2px solid rgba(251,191,36,0.8); border-right:2px solid rgba(251,191,36,0.8); pointer-events:none; z-index:8;"></div>
+
+      <!-- Kenar Karartma Gradyanları (Vignette Fade) -->
+      <div style="position:absolute; left:0; top:0; bottom:0; width:50px; background:linear-gradient(to right, #0B0E14, transparent); z-index:9; pointer-events:none;"></div>
+      <div style="position:absolute; right:0; top:0; bottom:0; width:50px; background:linear-gradient(to left, #0B0E14, transparent); z-index:9; pointer-events:none;"></div>
+
+      <!-- Yatay Kayan Şerit (Slot Strip) -->
+      <div id="cark-strip-track" style="display:flex; height:68px; align-items:center; will-change:transform; transform:translateX(0px);"></div>
+      
+      <!-- Geriye dönük uyumluluk için gizli canvas -->
+      <canvas id="carkifelek-wheel-canvas" width="10" height="10" style="display:none;"></canvas>
     </div>
 
     <!-- Ana Aksiyon Butonları -->
