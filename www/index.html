@@ -1052,6 +1052,7 @@
        ========================================= -->
   <section id="screen-vampire" class="screen vampire-screen" style="padding: calc(env(safe-area-inset-top, 24px) + 26px) 16px calc(env(safe-area-inset-bottom, 16px) + 24px); max-width: 540px; margin: 0 auto;">
     <!-- Üst Bar: Geri Dön & Başlık -->
+    <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
       <div style="display:flex; align-items:center; gap:8px;">
         <button type="button" id="btn-vampire-back-home" class="btn-round-abort" style="display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:12px; padding:8px 14px; color:#FFF; font-weight:800; cursor:pointer;">
           <span>← Parti Arenası</span>
@@ -1659,9 +1660,8 @@
   </div>
 
   <!-- =========================================
-       6. ÖZEL PAKET & AI DESTE SİHİRBAZI MODALI
+       6. TURU BİTİR VE MENÜYE DÖN ONAY MODALI
        ========================================= -->
-  ========================================= -->
   <div id="modal-abort-round" class="modal-overlay">
     <div class="modal-card abort-modal-card">
       <div style="font-size:3.2rem; margin-bottom:10px;">⚠️</div>
@@ -1774,7 +1774,8 @@
   </div>
 
   
-   (2 Aşamalı: Kategori & Süre)
+  <!-- =========================================
+       6.2. TAKIM KADER ÇARKI (2 Aşamalı: Kategori & Süre)
        ========================================= -->
   <div id="modal-team-fortune-wheel" class="modal-overlay">
     <div class="modal-card team-fortune-card" style="max-width: 420px; text-align: center;">
@@ -2440,9 +2441,8 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
-  <div class="modal-actions" style="margin-top:24px; justify-content:center;">
+
+      <div class="modal-actions" style="margin-top:24px; justify-content:center;">
         <button type="button" id="btn-hub-done" class="btn-primary-big" style="padding:12px 36px;">
           Kaydet & Kapat
         </button>
