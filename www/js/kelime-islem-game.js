@@ -452,13 +452,23 @@ export class KelimeIslemEngine {
     this.renderScreen();
   }
 
+    // Geri Al Motoru: Bekleyen seçimi veya son işlemi geri al (Madde 12)
   undoLastCalculation() {
-    if (this.calcHistory.length === 0) return;
     sounds.playClick();
 
+    // 1. Eğer bekleyen bir işlem veya ilk sayı seçimi varsa önce onu iptal et
+    if (this.selectedOp || this.selectedNum1) {
+      this.selectedNum1 = null;
+      this.selectedOp = null;
+      this.renderScreen();
+      return;
+    }
+
+    // 2. Eğer bekleyen seçim yoksa son tamamlanan hesaplamayı geri al
+    if (this.calcHistory.length === 0) return;
     const last = this.calcHistory.pop();
     
-    // Yeni kartı kaldır
+    // Yeni oluşturulan sonuç kartını kaldır
     this.availableNumbers = this.availableNumbers.filter(c => c.id !== last.newId);
 
     // Eski iki kartı yeniden aktif yap
@@ -471,6 +481,35 @@ export class KelimeIslemEngine {
     this.selectedOp = null;
     this.updateBestPlayerValue();
     this.renderScreen();
+  }
+
+  // Kelime etabında son eklenen harfi geri alma (Madde 12)
+  undoLastLetter() {
+    if (this.selectedLetterIndices.length === 0) return;
+    sounds.playClick();
+    this.selectedLetterIndices.pop();
+    this.buildCurrentWord();
+    this.renderScreen();
+  }
+
+  // Oyun İçi Süre Kontrolleri (Duraklat / +15s Ek Süre)
+  togglePauseTimer() {
+    sounds.playClick();
+    if (this.isTimerPaused) {
+      this.isTimerPaused = false;
+      this.startTimer(this.currentSeconds);
+    } else {
+      this.isTimerPaused = true;
+      if (this.timerInterval) clearInterval(this.timerInterval);
+    }
+    this.renderScreen();
+  }
+
+  addExtraSeconds(sec = 15) {
+    sounds.playClick();
+    this.currentSeconds = Math.min(this.currentSeconds + sec, 180);
+    const el = document.getElementById('ki-timer-seconds');
+    if (el) el.textContent = this.currentSeconds;
   }
 
   updateBestPlayerValue() {
@@ -585,25 +624,37 @@ export class KelimeIslemEngine {
     }
   }
 
-  renderScoreHeader() {
+    renderScoreHeader() {
+    let teamBanner = '';
     if (this.playerMode === 'duel') {
+      const isRed = this.currentTurn === 'red';
+      teamBanner = `
+        <div style="background:${isRed ? 'linear-gradient(135deg, #EF4444, #991B1B)' : 'linear-gradient(135deg, #3B82F6, #1E40AF)'}; color:#FFF; font-size:1.15rem; font-weight:900; padding:10px 16px; border-radius:14px; box-shadow:0 0 20px ${isRed ? 'rgba(239,68,68,0.5)' : 'rgba(59,130,246,0.5)'}; margin-bottom:12px; letter-spacing:1px; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <span>${isRed ? '🔴' : '🔵'}</span>
+          <span>SIRA: ${isRed ? 'KIRMIZI TAKIM' : 'MAVİ TAKIM'}</span>
+          <span>${isRed ? '🔴' : '🔵'}</span>
+        </div>
+      `;
+
       return `
+        ${teamBanner}
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
-          <div style="background:rgba(239,68,68,0.15); border:1.5px solid ${this.currentTurn === 'red' ? '#EF4444' : 'rgba(239,68,68,0.3)'}; border-radius:14px; padding:8px 12px; text-align:left; box-shadow:${this.currentTurn === 'red' ? '0 0 15px rgba(239,68,68,0.35)' : 'none'};">
-            <div style="font-size:0.75rem; font-weight:800; color:#EF4444;">🔴 Kırmızı Takım ${this.currentTurn === 'red' ? '★ SIRADA' : ''}</div>
-            <div style="font-size:1.3rem; font-weight:900; color:#FFF;">${this.scores.red} P</div>
+          <div style="background:rgba(239,68,68,0.18); border:2px solid ${this.currentTurn === 'red' ? '#EF4444' : 'rgba(239,68,68,0.3)'}; border-radius:14px; padding:10px 12px; text-align:left; box-shadow:${this.currentTurn === 'red' ? '0 0 18px rgba(239,68,68,0.4)' : 'none'};">
+            <div style="font-size:0.75rem; font-weight:800; color:#EF4444;">🔴 Kırmızı Takım ${this.currentTurn === 'red' ? '★ YARIŞIYOR' : ''}</div>
+            <div style="font-size:1.4rem; font-weight:900; color:#FFF;">${this.scores.red} P</div>
           </div>
-          <div style="background:rgba(59,130,246,0.15); border:1.5px solid ${this.currentTurn === 'blue' ? '#3B82F6' : 'rgba(59,130,246,0.3)'}; border-radius:14px; padding:8px 12px; text-align:left; box-shadow:${this.currentTurn === 'blue' ? '0 0 15px rgba(59,130,246,0.35)' : 'none'};">
-            <div style="font-size:0.75rem; font-weight:800; color:#3B82F6;">🔵 Mavi Takım ${this.currentTurn === 'blue' ? '★ SIRADA' : ''}</div>
-            <div style="font-size:1.3rem; font-weight:900; color:#FFF;">${this.scores.blue} P</div>
+          <div style="background:rgba(59,130,246,0.18); border:2px solid ${this.currentTurn === 'blue' ? '#3B82F6' : 'rgba(59,130,246,0.3)'}; border-radius:14px; padding:10px 12px; text-align:left; box-shadow:${this.currentTurn === 'blue' ? '0 0 18px rgba(59,130,246,0.4)' : 'none'};">
+            <div style="font-size:0.75rem; font-weight:800; color:#3B82F6;">🔵 Mavi Takım ${this.currentTurn === 'blue' ? '★ YARIŞIYOR' : ''}</div>
+            <div style="font-size:1.4rem; font-weight:900; color:#FFF;">${this.scores.blue} P</div>
           </div>
         </div>
       `;
     }
+
     return `
-      <div style="background:rgba(251,191,36,0.12); border:1.5px solid var(--gold); border-radius:14px; padding:8px 14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-        <span style="font-size:0.85rem; font-weight:800; color:var(--gold);">👤 TEK KİŞİLİK PRATİK</span>
-        <span style="font-size:1.3rem; font-weight:900; color:#FFF;">${this.scores.solo} PUAN</span>
+      <div style="background:rgba(251,191,36,0.14); border:1.5px solid var(--gold); border-radius:14px; padding:10px 14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.9rem; font-weight:900; color:var(--gold);">👤 BİREYSEL PRATİK</span>
+        <span style="font-size:1.35rem; font-weight:900; color:#FFF;">${this.scores.solo} PUAN</span>
       </div>
     `;
   }
@@ -1097,12 +1148,25 @@ export class KelimeIslemEngine {
         </div>
 
         <!-- Aksiyonlar -->
-        <div style="display:grid; grid-template-columns:1fr 2fr; gap:8px;">
-          <button type="button" id="btn-clear-word" class="btn-secondary" style="font-size:0.85rem; font-weight:800; padding:12px; border-radius:12px; cursor:pointer;">
+        <!-- Süre Kontrolleri (+15s & Duraklat) -->
+        <div style="display:flex; justify-content:flex-end; gap:6px; margin-bottom:10px;">
+          <button type="button" id="btn-ki-add-time" class="btn-secondary" style="font-size:0.75rem; font-weight:800; padding:4px 10px; border-radius:8px; background:rgba(0,245,212,0.15); border:1px solid var(--primary); color:#00F5D4; cursor:pointer;">
+            +15s Ekle
+          </button>
+          <button type="button" id="btn-ki-pause-timer" class="btn-secondary" style="font-size:0.75rem; font-weight:800; padding:4px 10px; border-radius:8px; cursor:pointer;">
+            ${this.isTimerPaused ? '▶️ Devam Et' : '⏸️ Duraklat'}
+          </button>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1.6fr; gap:8px;">
+          <button type="button" id="btn-undo-word" class="btn-secondary" style="font-size:0.85rem; font-weight:800; padding:12px 6px; border-radius:12px; cursor:pointer; background:rgba(251,191,36,0.15); border:1.5px solid var(--gold); color:var(--gold);" ${this.selectedLetterIndices.length === 0 ? 'disabled' : ''}>
+            ⌫ Geri Al
+          </button>
+          <button type="button" id="btn-clear-word" class="btn-secondary" style="font-size:0.85rem; font-weight:800; padding:12px 6px; border-radius:12px; cursor:pointer;">
             🗑️ Temizle
           </button>
-          <button type="button" id="btn-submit-word" class="btn-main primary" style="font-size:1rem; font-weight:900; padding:12px; border-radius:12px; cursor:pointer;">
-            ✅ Kelimeyi Onayla (${this.currentWord.length} Harf)
+          <button type="button" id="btn-submit-word" class="btn-main primary" style="font-size:0.95rem; font-weight:900; padding:12px 6px; border-radius:12px; cursor:pointer;">
+            ✅ Onayla (${this.currentWord.length})
           </button>
         </div>
       </div>
@@ -1121,6 +1185,9 @@ export class KelimeIslemEngine {
       this.setJokerLetter(e.target.value);
     });
 
+    document.getElementById('btn-undo-word')?.addEventListener('click', () => this.undoLastLetter());
+    document.getElementById('btn-ki-add-time')?.addEventListener('click', () => this.addExtraSeconds(15));
+    document.getElementById('btn-ki-pause-timer')?.addEventListener('click', () => this.togglePauseTimer());
     document.getElementById('btn-clear-word')?.addEventListener('click', () => this.clearWord());
     document.getElementById('btn-submit-word')?.addEventListener('click', () => this.finishKelimeStage());
   }
@@ -1262,8 +1329,18 @@ export class KelimeIslemEngine {
 
         <!-- Alt Aksiyonlar -->
         <div style="display:grid; grid-template-columns:1fr 2fr; gap:8px;">
-          <button type="button" id="btn-undo-islem" class="btn-secondary" style="font-size:0.85rem; font-weight:800; padding:12px; border-radius:12px; cursor:pointer;" ${this.calcHistory.length === 0 ? 'disabled' : ''}>
-            ↩️ Geri Al
+          <!-- Süre Kontrolleri (+15s & Duraklat) -->
+        <div style="display:flex; justify-content:flex-end; gap:6px; margin-bottom:10px;">
+          <button type="button" id="btn-ki-islem-add-time" class="btn-secondary" style="font-size:0.75rem; font-weight:800; padding:4px 10px; border-radius:8px; background:rgba(0,245,212,0.15); border:1px solid var(--primary); color:#00F5D4; cursor:pointer;">
+            +15s Ekle
+          </button>
+          <button type="button" id="btn-ki-islem-pause-timer" class="btn-secondary" style="font-size:0.75rem; font-weight:800; padding:4px 10px; border-radius:8px; cursor:pointer;">
+            ${this.isTimerPaused ? '▶️ Devam Et' : '⏸️ Duraklat'}
+          </button>
+        </div>
+
+        <button type="button" id="btn-undo-islem" class="btn-secondary" style="font-size:0.85rem; font-weight:800; padding:12px; border-radius:12px; cursor:pointer; background:rgba(251,191,36,0.15); border:1.5px solid var(--gold); color:var(--gold);" ${(this.calcHistory.length === 0 && !this.selectedNum1 && !this.selectedOp) ? 'disabled' : ''}>
+            ↩️ Geri Al / İptal
           </button>
           <button type="button" id="btn-submit-islem" class="btn-main primary" style="font-size:1rem; font-weight:900; padding:12px; border-radius:12px; cursor:pointer;">
             ✅ Tamamla (${this.bestPlayerValue || 0})
@@ -1288,6 +1365,8 @@ export class KelimeIslemEngine {
       });
     });
 
+    document.getElementById('btn-ki-islem-add-time')?.addEventListener('click', () => this.addExtraSeconds(15));
+    document.getElementById('btn-ki-islem-pause-timer')?.addEventListener('click', () => this.togglePauseTimer());
     document.getElementById('btn-undo-islem')?.addEventListener('click', () => this.undoLastCalculation());
     document.getElementById('btn-submit-islem')?.addEventListener('click', () => this.finishIslemStage());
   }
