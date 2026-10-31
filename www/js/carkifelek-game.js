@@ -525,23 +525,52 @@ export class CarkifelekEngine {
 
     const containerW = this.reelContainer ? this.reelContainer.clientWidth : 400;
     const centerOffset = (containerW / 2) - (this.cardWidth / 2);
+    const cycleCards = CARKIFELEK_SLICES.length; // 16
+    const cycleWidth = cycleCards * this.cardWidth; // 1280px
 
-    // 40 ila 60 kart ileriye fırla
-    const cardsToSkip = 48 + chosenIndex;
-    const targetOffset = -(cardsToSkip * this.cardWidth - centerOffset);
+    // Mevcut merkezdeki kartın indeksi
+    let currentCardIndex = Math.round((-this.currentOffset + centerOffset) / this.cardWidth);
+    if (isNaN(currentCardIndex) || currentCardIndex < 0) currentCardIndex = 0;
+
+    // Eğer şeridin sonlarına yaklaşıldıysa, görünmez olarak başa sar (sonsuz makara döngüsü)
+    if (currentCardIndex > 140) {
+      const cyclesToReset = Math.floor(currentCardIndex / cycleCards) - 2;
+      currentCardIndex -= cyclesToReset * cycleCards;
+      this.currentOffset += cyclesToReset * cycleWidth;
+      if (this.stripTrack) {
+        this.stripTrack.style.transition = 'none';
+        this.stripTrack.style.transform = `translateX(${this.currentOffset}px)`;
+      }
+    }
+
+    // Hedef dilime ulaşmak için daima İLERİYE (tek yöne) adımlar hesapla
+    const currentSliceIndex = ((currentCardIndex % cycleCards) + cycleCards) % cycleCards;
+    let stepsForward = chosenIndex - currentSliceIndex;
+    if (stepsForward <= 0) {
+      stepsForward += cycleCards;
+    }
+
+    // Uzun ve gerilimli dönüş için 5 tam tur + hedef adım (80 ila 96 kart ileri)
+    const fullCycles = 5;
+    const totalCardsToAdvance = (fullCycles * cycleCards) + stepsForward;
+    const targetCardIndex = currentCardIndex + totalCardsToAdvance;
+
     const startOffset = this.currentOffset;
-    const distance = targetOffset - startOffset;
+    const targetOffset = -(targetCardIndex * this.cardWidth - centerOffset);
+    const distance = targetOffset - startOffset; // Daima negatif (tek yöne ileri akış)
 
-    const duration = 3400; // 3.4 saniye gerçekçi slot makarası akışı
+    // 4.8 saniye: Yüksek hızlı fırlama ve sonlara doğru nefes kesici yavaşlama
+    const duration = 4800;
     const startTime = performance.now();
     let lastTickCard = -1;
 
-    // Vurguları sıfırla
+    // Önceki vurguları sıfırla
     if (this.stripCards) {
       this.stripCards.forEach(c => {
         c.element.style.transform = 'scale(1)';
         c.element.style.borderColor = 'rgba(255,255,255,0.6)';
         c.element.style.boxShadow = 'inset 0 2px 6px rgba(255,255,255,0.4), 0 3px 8px rgba(0,0,0,0.5)';
+        c.element.style.zIndex = '1';
       });
     }
 
@@ -549,8 +578,8 @@ export class CarkifelekEngine {
       const elapsed = currentTime - startTime;
       const progress = Math.min(1, elapsed / duration);
       
-      // Yumuşak ve tatmin edici yavaşlama (Cubic ease-out)
-      const easeOut = 1 - Math.pow(1 - progress, 3);
+      // Quintic ease-out: Başta patlayıcı hız, sonda gerilimli ve net yavaşlama
+      const easeOut = 1 - Math.pow(1 - progress, 4.5);
       const curPos = startOffset + distance * easeOut;
       this.currentOffset = curPos;
 
@@ -573,11 +602,11 @@ export class CarkifelekEngine {
         if (btnSpin) btnSpin.innerHTML = '🎡 ÇARKI ÇEVİR';
 
         // Kazanan kartı merkezde altın neon ile parlat
-        if (this.stripCards && this.stripCards[cardsToSkip]) {
-          const winEl = this.stripCards[cardsToSkip].element;
-          winEl.style.transform = 'scale(1.14)';
+        if (this.stripCards && this.stripCards[targetCardIndex]) {
+          const winEl = this.stripCards[targetCardIndex].element;
+          winEl.style.transform = 'scale(1.16)';
           winEl.style.borderColor = 'var(--gold)';
-          winEl.style.boxShadow = '0 0 25px var(--gold), inset 0 2px 8px #FFF';
+          winEl.style.boxShadow = '0 0 28px var(--gold), inset 0 2px 8px #FFF';
           winEl.style.zIndex = '5';
         }
 
