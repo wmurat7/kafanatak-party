@@ -237,3 +237,4 @@ if (drawAndSpinRegex.test(carkJsContent)) {
 
 fs.writeFileSync(carkJsPath, carkJsContent, 'utf8');
 console.log('🎉 Madde 11 başarıyla tamamlandı!');
+

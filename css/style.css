@@ -6809,3 +6809,103 @@ input:checked + .slider:before {
 }
 
 
+
+
+/* =========================================
+   DİNAMİK LOGO ANİMASYONLARI (Kinetik Enerji & Shimmer)
+   ========================================= */
+@keyframes titleShimmerFlow {
+  0% {
+    background-position: 0% 50%;
+    filter: drop-shadow(0 4px 18px rgba(236, 72, 153, 0.75));
+  }
+  50% {
+    background-position: 100% 50%;
+    filter: drop-shadow(0 4px 28px rgba(0, 245, 212, 0.85)) drop-shadow(0 0 12px rgba(251, 191, 36, 0.6));
+  }
+  100% {
+    background-position: 0% 50%;
+    filter: drop-shadow(0 4px 18px rgba(236, 72, 153, 0.75));
+  }
+}
+
+@keyframes crownBounce3D {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg) scale(1);
+    filter: drop-shadow(0 0 16px rgba(255, 215, 0, 0.95)) drop-shadow(0 0 30px rgba(255, 142, 83, 0.6));
+  }
+  25% {
+    transform: translateY(-8px) rotate(-6deg) scale(1.08);
+  }
+  50% {
+    transform: translateY(-13px) rotate(0deg) scale(1.15);
+    filter: drop-shadow(0 0 28px rgba(255, 215, 0, 1)) drop-shadow(0 0 45px rgba(255, 46, 147, 0.85));
+  }
+  75% {
+    transform: translateY(-6px) rotate(6deg) scale(1.08);
+  }
+}
+
+@keyframes badgeNeonBreathing {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.35);
+    border-color: rgba(0, 240, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(255, 46, 147, 0.7), inset 0 0 10px rgba(0, 240, 255, 0.3);
+    border-color: #FF2E93;
+    color: #FFF;
+  }
+}
+
+.brand-crown-glow {
+  font-size: 3.2rem;
+  line-height: 1;
+  animation: crownBounce3D 2.8s ease-in-out infinite;
+  margin-bottom: 2px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  display: inline-block;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.brand-crown-glow:active {
+  transform: scale(1.25) rotate(15deg);
+}
+
+.brand-hero-title {
+  font-family: var(--font-heading);
+  font-size: 2.7rem;
+  font-weight: 900;
+  letter-spacing: 3.5px;
+  background: linear-gradient(90deg, #FFFFFF, #FBBF24, #FF2E93, #00F5D4, #FBBF24, #FFFFFF);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: titleShimmerFlow 4.5s ease-in-out infinite;
+  line-height: 1.08;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.brand-hero-title:active {
+  transform: scale(0.93) rotate(-2deg);
+}
+
+.brand-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(168, 85, 247, 0.18);
+  border: 1.5px solid rgba(0, 240, 255, 0.5);
+  color: #00F0FF;
+  animation: badgeNeonBreathing 3s infinite ease-in-out;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+}

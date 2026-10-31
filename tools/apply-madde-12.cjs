@@ -183,3 +183,4 @@ content = content.replace(oldBindIslem, newBindIslem);
 
 fs.writeFileSync(kelimeJsPath, content, 'utf8');
 console.log('🎉 Madde 12 başarıyla uygulandı!');
+

@@ -2359,60 +2359,90 @@
         </div>
       </div>
 
-      <!-- 5. SEKME: SİSTEM İZİNLERİ & HTTPS -->
+      <!-- 5. SEKME: CİHAZ İZİNLERİ & DONANIM MERKEZİ (Organize Edilmiş) -->
       <div id="hub-content-system" class="hub-tab-content">
         <div class="system-diagnostics-list">
-          <div class="system-diag-card">
-            <div class="card-icon" id="sys-https-icon">🔒</div>
-            <div class="card-details">
-              <div class="card-title">HTTPS / Güvenli Bağlam Durumu</div>
-              <div id="sys-https-desc" class="card-desc">Denetleniyor...</div>
+          
+          <!-- Kamera İzni Kartı -->
+          <div class="system-diag-card" style="border-radius:16px; padding:14px; background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,255,255,0.12); margin-bottom:10px;">
+            <div class="card-icon" style="font-size:1.8rem;">📸</div>
+            <div class="card-details" style="flex:1;">
+              <div class="card-title" style="font-weight:900; font-size:0.95rem; color:#FFF;">Kamera Erişimi</div>
+              <div class="card-desc" style="font-size:0.78rem; color:#94A3B8; margin-top:2px;">
+                Komik anları kaydetmek ve alın hareketlerini incelemek için kullanılır.
+              </div>
             </div>
-            <div id="sys-https-badge" class="status-badge">Bilinmiyor</div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+              <span id="perm-camera-badge" class="status-badge ok" style="font-size:0.75rem; font-weight:900; padding:4px 10px; border-radius:999px; background:rgba(16,185,129,0.2); color:#10B981; border:1px solid #10B981;">🟢 AKTİF</span>
+              <button type="button" id="btn-test-perm-camera" class="btn-secondary" style="font-size:0.72rem; padding:4px 8px; border-radius:8px;">Kamerayı Aç</button>
+            </div>
           </div>
 
-          <div class="system-diag-card">
-            <div class="card-icon">📱</div>
-            <div class="card-details">
-              <div class="card-title">iOS Jiroskop Sensör İzni</div>
-              <div class="card-desc">iPhone/iPad Safari kullanıyorsanız sensör izni vermeniz gerekebilir.</div>
+          <!-- Jiroskop Sensör İzni Kartı -->
+          <div class="system-diag-card" style="border-radius:16px; padding:14px; background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,255,255,0.12); margin-bottom:10px;">
+            <div class="card-icon" style="font-size:1.8rem;">📱</div>
+            <div class="card-details" style="flex:1;">
+              <div class="card-title" style="font-weight:900; font-size:0.95rem; color:#FFF;">Jiroskop & Eğim Sensörü</div>
+              <div class="card-desc" style="font-size:0.78rem; color:#94A3B8; margin-top:2px;">
+                Telefonu alnınıza koyduğunuzda başınızı eğerek (Doğru/Pas) oynamanızı sağlar.
+              </div>
             </div>
-            <button type="button" id="btn-sys-request-motion" class="btn-secondary" style="font-size:0.8rem;">
-              İzin İste
-            </button>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+              <span id="perm-motion-badge" class="status-badge ok" style="font-size:0.75rem; font-weight:900; padding:4px 10px; border-radius:999px; background:rgba(16,185,129,0.2); color:#10B981; border:1px solid #10B981;">🟢 HAZIR</span>
+              <button type="button" id="btn-goto-sensor-tab" class="btn-secondary" style="font-size:0.72rem; padding:4px 8px; border-radius:8px;">Sensör Testi</button>
+            </div>
           </div>
 
-          <!-- APK Paylaşım Kartı -->
-          <div class="system-diag-card" style="border: 1.5px solid rgba(0, 245, 212, 0.45); background: linear-gradient(135deg, rgba(0, 245, 212, 0.1) 0%, rgba(121, 40, 202, 0.15) 100%);">
+          <!-- Ses Efektleri & Haptik Kartı -->
+          <div class="system-diag-card" style="border-radius:16px; padding:14px; background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,255,255,0.12); margin-bottom:10px;">
+            <div class="card-icon" style="font-size:1.8rem;">🔊</div>
+            <div class="card-details" style="flex:1;">
+              <div class="card-title" style="font-weight:900; font-size:0.95rem; color:#FFF;">Ses Efektleri & Titreşim</div>
+              <div class="card-desc" style="font-size:0.78rem; color:#94A3B8; margin-top:2px;">
+                Saatli bomba, geri sayım ve parti müzik efektleri Web Audio API ile yerel üretilir.
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+              <span class="status-badge ok" style="font-size:0.75rem; font-weight:900; padding:4px 10px; border-radius:999px; background:rgba(16,185,129,0.2); color:#10B981; border:1px solid #10B981;">🟢 AKTİF</span>
+              <button type="button" id="btn-test-sound-sample" class="btn-secondary" style="font-size:0.72rem; padding:4px 8px; border-radius:8px;">Test Bipi Çal</button>
+            </div>
+          </div>
+
+          <!-- Çevrimdışı Çalışma Güvencesi -->
+          <div class="system-diag-card" style="border-radius:16px; padding:14px; background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,255,255,0.12); margin-bottom:12px;">
+            <div class="card-icon" style="font-size:1.8rem;">⚡</div>
+            <div class="card-details" style="flex:1;">
+              <div class="card-title" style="font-weight:900; font-size:0.95rem; color:#FFF;">Çevrimdışı Mod Uyumluluğu</div>
+              <div class="card-desc" style="font-size:0.78rem; color:#94A3B8; margin-top:2px;">
+                Tüm parti oyunları ve yerel modlar internet bağlantısı olmaksızın %100 çevrimdışı çalışır.
+              </div>
+            </div>
+            <span class="status-badge ok" style="font-size:0.75rem; font-weight:900; padding:4px 10px; border-radius:999px; background:rgba(0,245,212,0.2); color:#00F5D4; border:1px solid #00F5D4;">📶 TAM UYUMLU</span>
+          </div>
+
+          <!-- APK Paylaşım Kartı (Modern) -->
+          <div class="system-diag-card" style="border-radius:16px; padding:14px; border: 1.5px solid rgba(0, 245, 212, 0.45); background: linear-gradient(135deg, rgba(0, 245, 212, 0.12), rgba(121, 40, 202, 0.2));">
             <div class="card-icon" style="font-size:2rem;">📲</div>
-            <div class="card-details">
+            <div class="card-details" style="flex:1;">
               <div class="card-title" style="color:#00F5D4; font-size:1rem; font-weight:900;">Kafana Tak! APK Paylaş</div>
-              <div class="card-desc" style="font-size:0.8rem; line-height:1.4;">
-                Oyunu arkadaşlarının telefonuna anında yükle (WhatsApp, Quick Share, Bluetooth veya Yerel Wi-Fi).
+              <div class="card-desc" style="font-size:0.8rem; color:#E2E8F0; line-height:1.4; margin-top:2px;">
+                Oyunu arkadaşlarının telefonuna anında gönder (WhatsApp, Quick Share, Bluetooth).
               </div>
             </div>
             <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
-              <button type="button" id="btn-share-app-apk" class="btn-primary-big" style="padding:8px 14px; font-size:0.82rem; background:linear-gradient(135deg, #00F5D4, #7928CA); white-space:nowrap;">
+              <button type="button" id="btn-share-app-apk" class="btn-main primary" style="padding:8px 14px; font-size:0.82rem; font-weight:900; white-space:nowrap; border-radius:10px;">
                 🚀 APK Paylaş
               </button>
-              <button type="button" id="btn-open-apk-qr" class="btn-secondary" style="padding:6px 10px; font-size:0.75rem; white-space:nowrap;">
+              <button type="button" id="btn-open-apk-qr" class="btn-secondary" style="padding:6px 10px; font-size:0.75rem; font-weight:800; white-space:nowrap; border-radius:10px;">
                 📷 QR ile İndirt
               </button>
             </div>
           </div>
-
-          <div class="system-troubleshoot-box">
-            <h4>💡 Telefonda Kamera Açılmıyorsa:</h4>
-            <ol>
-              <li>Telefonunuzun adres çubuğuna mutlaka <strong>https://</strong> ile girdiğinizden emin olun (Örn: <code>https://192.168.1.159:3443</code>).</li>
-              <li>Tarayıcı "Bağlantınız gizli değil" uyarısı verirse <strong>Gelişmiş -> Siteye İlerle</strong> butonuna basın.</li>
-              <li>Kamera izin istem penceresi çıktığında <strong>İzin Ver</strong> seçeneğini işaretleyin.</li>
-            </ol>
-          </div>
         </div>
       </div>
-
-      <div class="modal-actions" style="margin-top:24px; justify-content:center;">
+    </div>
+  </div>
+  <div class="modal-actions" style="margin-top:24px; justify-content:center;">
         <button type="button" id="btn-hub-done" class="btn-primary-big" style="padding:12px 36px;">
           Kaydet & Kapat
         </button>

@@ -105,3 +105,4 @@ content = content.replace(oldBindBoard, newBindBoard);
 
 fs.writeFileSync(ayPath, content, 'utf8');
 console.log('🎉 Madde 13 başarıyla uygulandı!');
+

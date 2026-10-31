@@ -20,3 +20,4 @@ if (target !== -1) {
 } else {
   console.log('Needle not found');
 }
+

@@ -324,3 +324,4 @@ console.log('✓ js/passaparola-game.js takımlara özel soru destesi ve AI moto
 
 fs.writeFileSync(path.join(__dirname, 'temp_apply_passa.cjs'), scriptContent, 'utf8');
 console.log('🎉 Geçici script oluşturuldu.');
+

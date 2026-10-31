@@ -295,3 +295,4 @@ if (clownHornRegex.test(content)) {
 
 fs.writeFileSync(audioPath, content, 'utf8');
 console.log('🎉 js/audio.js başarıyla güncellendi!');
+
