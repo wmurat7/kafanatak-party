@@ -708,6 +708,7 @@ export class PassaparolaEngine {
     }
 
     try { sounds.playFanfare(); } catch(e) {}
+    try { sounds.startPartyBeat(); } catch (e) {}
     this.renderWheel();
     this.loadQuestionForCurrent();
     this.updateStatsUI();
@@ -716,6 +717,10 @@ export class PassaparolaEngine {
     this.timerInterval = setInterval(() => {
       this.remainingSeconds--;
       this.updateTimerUI();
+
+      if (this.remainingSeconds <= 15 && this.remainingSeconds > 0) {
+        try { sounds.setMusicUrgent(true); } catch (e) {}
+      }
 
       if (this.remainingSeconds <= 0) {
         clearInterval(this.timerInterval);
@@ -730,6 +735,8 @@ export class PassaparolaEngine {
   finishTeamTurn(reason) {
     this.isPlaying = false;
     clearInterval(this.timerInterval);
+    try { sounds.setMusicUrgent(false); } catch (e) {}
+    try { sounds.stopPartyBeat(); } catch (e) {}
     try { sounds.playFanfare(); } catch (e) {}
 
     const playBox = document.getElementById('passa-play-stage');
@@ -1065,6 +1072,8 @@ export class PassaparolaEngine {
     this.isPlaying = false;
     this.isFinished = true;
     clearInterval(this.timerInterval);
+    try { sounds.setMusicUrgent(false); } catch (e) {}
+    try { sounds.stopPartyBeat(); } catch (e) {}
 
     try { sounds.playFanfare(); } catch (e) {}
 

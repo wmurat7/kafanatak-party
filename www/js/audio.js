@@ -8,12 +8,13 @@ class SoundEngine {
     this.masterGain = null;
     this.musicGain = null;
     this.muted = typeof localStorage !== 'undefined' ? (localStorage.getItem('kafanatak_muted') === 'true') : false;
-    const validThemes = ['none', 'suspense', 'ticking_clock', 'noir_mystery', 'minimal_drone'];
+    const validThemes = ['party_groove', 'tv_quiz', 'suspense', 'ticking_clock', 'noir_mystery', 'minimal_drone', 'none'];
     const savedTheme = typeof localStorage !== 'undefined' ? localStorage.getItem('kafanatak_music_theme') : null;
-    this.musicTheme = validThemes.includes(savedTheme) ? savedTheme : 'none';
+    this.musicTheme = validThemes.includes(savedTheme) ? savedTheme : 'party_groove';
     this.musicPlaying = false;
     this.musicTimer = null;
     this.musicStep = 0;
+    this.isUrgent = false;
 
     // Aktif çalan ses kaynakları, osilatörler ve bekleyen zamanlayıcılar (Ekranda çıkınca anında durdurmak için)
     this.activeSources = new Set();
@@ -236,6 +237,25 @@ class SoundEngine {
   }
 
   vibrate(pattern) {
+    // 1. Capacitor Native Haptics (Gerçek donanım taptik titreşim motoru)
+    try {
+      const haptics = window.Capacitor?.Plugins?.Haptics;
+      if (haptics) {
+        if (typeof pattern === 'number') {
+          if (pattern <= 25) {
+            haptics.impact({ style: 'LIGHT' }).catch(() => {});
+          } else if (pattern <= 70) {
+            haptics.impact({ style: 'MEDIUM' }).catch(() => {});
+          } else {
+            haptics.impact({ style: 'HEAVY' }).catch(() => {});
+          }
+        } else if (Array.isArray(pattern)) {
+          haptics.notification({ type: 'SUCCESS' }).catch(() => {});
+        }
+      }
+    } catch (e) {}
+
+    // 2. Web API navigator.vibrate fallback
     if ('vibrate' in navigator) {
       try {
         navigator.vibrate(pattern);
@@ -271,16 +291,12 @@ class SoundEngine {
   }
 
   // =========================================================================
-  // 2.1. YANLIŞ SESİ (Modern & Tok Quiz Hata Tonu - Palyaço/Korna Yerine)
+  // 2.1. YANLIŞ SESİ & BUZZER (Otantik TV Stüdyo Yarışması "X" Buzzer)
   // =========================================================================
   playWrong() {
     if (this.muted) return;
     this.unlockAudio();
-    this.vibrate([120, 60, 120]);
-
-    if (!this.playBuffer('pass', 0.9)) {
-      this.synthModernWrong();
-    }
+    this.playBuzzer();
   }
 
   synthModernWrong() {
@@ -771,51 +787,64 @@ class SoundEngine {
   playBuzzer() {
     if (this.muted) return;
     this.unlockAudio();
-    this.vibrate([60, 40]);
+    this.vibrate([100, 40, 160]);
     this.init();
     try {
       const ctx = this.ctx;
       if (!ctx) {
-        this.playBuffer('bell', 0.85);
+        this.playBuffer('pass', 0.95);
         return;
       }
       const now = ctx.currentTime;
-      const osc = ctx.createOscillator();
+      const outNode = this.getOutputNode();
+
+      // Otantik TV Stüdyosu "X" Buzzer (Dissonant Çift Testere & Kare Osilatör: 130Hz + 185Hz Gerilimli Tritone)
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
       const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
 
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(440, now);
-      osc.frequency.exponentialRampToValueAtTime(330, now + 0.20);
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(1400, now);
 
-      gain.gain.setValueAtTime(0.28, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.20);
+      osc1.type = 'sawtooth';
+      osc1.frequency.setValueAtTime(130.81, now); // C3
+      osc2.type = 'square';
+      osc2.frequency.setValueAtTime(185.00, now); // F#3 (Dramatik gerilim aralığı)
 
-      osc.connect(gain);
-      gain.connect(this.masterGain || this.getOutputNode());
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.70, now + 0.012);
+      gain.gain.setValueAtTime(0.70, now + 0.22);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.30);
 
-      osc.start(now);
-      osc.stop(now + 0.22);
+      osc1.connect(filter);
+      osc2.connect(filter);
+      filter.connect(gain);
+      gain.connect(outNode);
 
-      this.activeOscillators.add(osc);
+      osc1.start(now);
+      osc2.start(now);
+      osc1.stop(now + 0.32);
+      osc2.stop(now + 0.32);
+
+      this.activeOscillators.add(osc1);
+      this.activeOscillators.add(osc2);
       setTimeout(() => {
-        if (this.activeOscillators) this.activeOscillators.delete(osc);
-      }, 250);
+        if (this.activeOscillators) {
+          this.activeOscillators.delete(osc1);
+          this.activeOscillators.delete(osc2);
+        }
+      }, 380);
     } catch (e) {
-      this.playBuffer('bell', 0.85);
+      this.playBuffer('pass', 0.95);
     }
   }
 
-  playWheelTick() {
-    if (this.muted) return;
-    this.unlockAudio();
-    this.playBuffer('tick', 0.55, 1.35);
-  }
-
   // =========================================================================
-  // 8. ARKA PLAN PARTİ RİTMİ (Sakin & Gerilimli Temalar)
+  // 8. ARKA PLAN PARTİ RİTMİ & OYUN MÜZİĞİ MOTORU
   // =========================================================================
   setMusicTheme(theme) {
-    this.musicTheme = theme || 'none';
+    this.musicTheme = theme || 'party_groove';
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('kafanatak_music_theme', this.musicTheme);
     }
@@ -823,6 +852,185 @@ class SoundEngine {
       this.stopPartyBeat();
       this.startPartyBeat();
     }
+  }
+
+  setMusicUrgent(isUrgent = true) {
+    this.isUrgent = !!isUrgent;
+  }
+
+  // --- Sentetik Parti Enstrümanları (Sıfır gecikmeli dinamik sentez) ---
+  synthDrumKick(time, punch = 1.0) {
+    if (!this.ctx) return;
+    try {
+      const target = this.musicGain || this.getOutputNode();
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(140, time);
+      osc.frequency.exponentialRampToValueAtTime(45, time + 0.065);
+      gain.gain.setValueAtTime(0.55 * punch, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.075);
+      osc.connect(gain);
+      gain.connect(target);
+      osc.start(time);
+      osc.stop(time + 0.08);
+      this.activeOscillators.add(osc);
+      setTimeout(() => { if (this.activeOscillators) this.activeOscillators.delete(osc); }, 120);
+    } catch (e) {}
+  }
+
+  synthDrumSnare(time, punch = 0.8) {
+    if (!this.ctx) return;
+    try {
+      const target = this.musicGain || this.getOutputNode();
+      const osc = this.ctx.createOscillator();
+      const oscGain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(220, time);
+      osc.frequency.exponentialRampToValueAtTime(90, time + 0.06);
+      oscGain.gain.setValueAtTime(0.35 * punch, time);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, time + 0.07);
+      osc.connect(oscGain);
+      oscGain.connect(target);
+      osc.start(time);
+      osc.stop(time + 0.08);
+
+      const bufSize = Math.floor(this.ctx.sampleRate * 0.08);
+      const noiseBuf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
+      const data = noiseBuf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.022));
+      }
+      const noiseSrc = this.ctx.createBufferSource();
+      noiseSrc.buffer = noiseBuf;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(1900, time);
+      filter.Q.setValueAtTime(2.2, time);
+      const noiseGain = this.ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.38 * punch, time);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+      noiseSrc.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(target);
+      noiseSrc.start(time);
+      noiseSrc.stop(time + 0.09);
+
+      this.activeOscillators.add(osc);
+      this.activeSources.add(noiseSrc);
+      setTimeout(() => {
+        if (this.activeOscillators) this.activeOscillators.delete(osc);
+        if (this.activeSources) this.activeSources.delete(noiseSrc);
+      }, 150);
+    } catch (e) {}
+  }
+
+  synthHiHat(time, open = false, volume = 0.20) {
+    if (!this.ctx) return;
+    try {
+      const target = this.musicGain || this.getOutputNode();
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.setValueAtTime(6500, time);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(8000, time);
+      const dur = open ? 0.07 : 0.022;
+      gain.gain.setValueAtTime(volume, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(target);
+      osc.start(time);
+      osc.stop(time + dur + 0.005);
+      this.activeOscillators.add(osc);
+      setTimeout(() => { if (this.activeOscillators) this.activeOscillators.delete(osc); }, 100);
+    } catch (e) {}
+  }
+
+  synthBassNote(freq, time, dur = 0.13, volume = 0.30) {
+    if (!this.ctx || !freq || freq <= 0) return;
+    try {
+      const target = this.musicGain || this.getOutputNode();
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(420, time);
+      filter.frequency.exponentialRampToValueAtTime(140, time + dur);
+      filter.Q.setValueAtTime(3.2, time);
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, time);
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(volume, time + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(target);
+      osc.start(time);
+      osc.stop(time + dur + 0.02);
+      this.activeOscillators.add(osc);
+      setTimeout(() => { if (this.activeOscillators) this.activeOscillators.delete(osc); }, 250);
+    } catch (e) {}
+  }
+
+  synthLeadPip(freq, time, dur = 0.07, volume = 0.12) {
+    if (!this.ctx || !freq || freq <= 0) return;
+    try {
+      const target = this.musicGain || this.getOutputNode();
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, time);
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(volume, time + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+      osc.connect(gain);
+      gain.connect(target);
+      osc.start(time);
+      osc.stop(time + dur + 0.01);
+      this.activeOscillators.add(osc);
+      setTimeout(() => { if (this.activeOscillators) this.activeOscillators.delete(osc); }, 150);
+    } catch (e) {}
+  }
+
+  synthMarimba(freq, time, dur = 0.18, volume = 0.24) {
+    if (!this.ctx || !freq || freq <= 0) return;
+    try {
+      const target = this.musicGain || this.getOutputNode();
+      const osc1 = this.ctx.createOscillator();
+      const osc2 = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(freq, time);
+
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(freq * 3.8, time); // Karakteristik ahşap çekiç harmonik
+
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(volume, time + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(target);
+
+      osc1.start(time);
+      osc2.start(time);
+      osc1.stop(time + dur + 0.02);
+      osc2.stop(time + dur + 0.02);
+
+      this.activeOscillators.add(osc1);
+      this.activeOscillators.add(osc2);
+      setTimeout(() => {
+        if (this.activeOscillators) {
+          this.activeOscillators.delete(osc1);
+          this.activeOscillators.delete(osc2);
+        }
+      }, 250);
+    } catch (e) {}
   }
 
   startPartyBeat() {
@@ -837,27 +1045,91 @@ class SoundEngine {
     this.musicPlaying = true;
     this.musicStep = 0;
 
-    let bpm = 84;
-    if (this.musicTheme === 'suspense') bpm = 84;
+    let bpm = 122;
+    if (this.musicTheme === 'party_groove') bpm = this.isUrgent ? 134 : 122;
+    else if (this.musicTheme === 'tv_quiz') bpm = this.isUrgent ? 124 : 110;
+    else if (this.musicTheme === 'suspense') bpm = 84;
     else if (this.musicTheme === 'ticking_clock') bpm = 90;
     else if (this.musicTheme === 'noir_mystery') bpm = 76;
     else if (this.musicTheme === 'minimal_drone') bpm = 68;
 
     const stepMs = Math.round((60000 / bpm) / 4);
 
-    // Gizemli Dedektif Bass Notaları (D minör)
+    // Kıpır Kıpır Parti Bas Dizisi (A Minör Funk Akışı - 32 adım / 2 bar)
+    const partyBass = [
+      55.00, 0, 0, 55.00, 0, 0, 65.41, 0, 73.42, 0, 0, 73.42, 0, 0, 82.41, 0,
+      55.00, 0, 0, 55.00, 0, 0, 98.00, 0, 82.41, 0, 73.42, 0, 65.41, 0, 61.74, 0
+    ];
+    // Parti Melodi Çalımı (Off-beat Akor/Puan Işıltısı)
+    const partyLead = [
+      0, 0, 523.25, 0, 0, 0, 659.25, 0, 0, 0, 587.33, 0, 0, 0, 783.99, 0,
+      0, 0, 659.25, 0, 0, 0, 783.99, 0, 0, 0, 880.00, 0, 0, 0, 659.25, 0
+    ];
+
+    // TV Yarışması Marimba Tansiyon Motifi (16 adım döngü)
+    const tvMarimba = [
+      293.66, 0, 349.23, 0, 415.30, 0, 392.00, 0,
+      293.66, 0, 349.23, 0, 466.16, 0, 440.00, 0
+    ];
+
+    // Dedektif Noir Bas
     const noirNotes = [73.42, 0, 0, 0, 87.31, 0, 0, 0, 82.41, 0, 0, 0, 73.42, 0, 58.27, 55.00];
 
     this.musicTimer = setInterval(() => {
       if (!this.musicPlaying || this.muted) return;
-      const step = this.musicStep % 16;
+      const step16 = this.musicStep % 16;
+      const step32 = this.musicStep % 32;
       const now = this.ctx ? this.ctx.currentTime : 0;
       const target = this.musicGain || this.getOutputNode();
 
-      if (this.musicTheme === 'suspense') {
-        // 💓 Kalp Atışı Nabzı (Sakin ama gerilimi hissettiren derin lub-dub nabzı)
-        if (step === 0 || step === 2) {
-          const isFirst = (step === 0);
+      if (this.musicTheme === 'party_groove') {
+        // 🎉 1. KIPIR KIPIR PARTİ (Canlı Davul, Akıcı Bas & Eğlenceli Disco Synth)
+        // Dört Dörtlük Kick
+        if (step16 === 0 || step16 === 4 || step16 === 8 || step16 === 12) {
+          this.synthDrumKick(now, (step16 === 0 || step16 === 8) ? 1.05 : 0.9);
+        }
+        // Snare / Alkış
+        if (step16 === 4 || step16 === 12) {
+          this.synthDrumSnare(now, 0.95);
+        }
+        // Hi-Hat (Normalde 2, 6, 10, 14; Panikte her tekli adımda coşar)
+        if (step16 === 2 || step16 === 6 || step16 === 10 || step16 === 14) {
+          this.synthHiHat(now, false, 0.22);
+        } else if (this.isUrgent && (step16 % 2 === 1)) {
+          this.synthHiHat(now, false, 0.16);
+        }
+
+        // Bas Groove
+        const bFreq = partyBass[step32];
+        if (bFreq && bFreq > 0) {
+          this.synthBassNote(bFreq, now, this.isUrgent ? 0.09 : 0.13, this.isUrgent ? 0.36 : 0.30);
+        }
+        // Melodi İğnesi
+        const lFreq = partyLead[step32];
+        if (lFreq && lFreq > 0) {
+          this.synthLeadPip(lFreq, now, 0.065, 0.10);
+        }
+
+      } else if (this.musicTheme === 'tv_quiz') {
+        // 📺 2. TV STÜDYO & YARIŞMA (Gerilimli Marimba & Stüdyo Nabzı)
+        // Stüdyo Saati Tıkı
+        if (step16 % 4 === 0) {
+          this.synthHiHat(now, false, 0.18);
+        }
+        // Kalp Nabzı
+        if (step16 === 0 || step16 === 8) {
+          this.synthDrumKick(now, 0.7);
+        }
+        // Marimba Tansiyon Motifi
+        const mFreq = tvMarimba[step16];
+        if (mFreq && mFreq > 0) {
+          this.synthMarimba(this.isUrgent ? mFreq * 1.5 : mFreq, now, 0.15, this.isUrgent ? 0.28 : 0.22);
+        }
+
+      } else if (this.musicTheme === 'suspense') {
+        // 💓 3. KALP ATIŞI NABZI (Derin Lub-Dub Nabzı)
+        if (step16 === 0 || step16 === 2) {
+          const isFirst = (step16 === 0);
           this.playBuffer('tick', isFirst ? 0.35 : 0.22, isFirst ? 0.65 : 0.60);
           if (this.ctx) {
             try {
@@ -865,7 +1137,7 @@ class SoundEngine {
               const subGain = this.ctx.createGain();
               subOsc.type = 'sine';
               subOsc.frequency.setValueAtTime(isFirst ? 52 : 46, now);
-              subGain.gain.setValueAtTime(isFirst ? 0.25 : 0.16, now);
+              subGain.gain.setValueAtTime(isFirst ? 0.28 : 0.18, now);
               subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
               subOsc.connect(subGain);
               subGain.connect(target);
@@ -875,22 +1147,23 @@ class SoundEngine {
               subOsc.stop(now + 0.15);
             } catch (e) {}
           }
-        } else if (step === 8) {
+        } else if (step16 === 8) {
           this.playBuffer('tick', 0.18, 1.15);
         }
+
       } else if (this.musicTheme === 'ticking_clock') {
-        // ⏱️ Yarışma Sayacı & Tansiyon (Minimalist organik tik-tak ve hafif tansiyon şişmesi)
-        if (step % 4 === 0) {
+        // ⏱️ 4. YARIŞMA SAYACI (Tik-Tak Tansiyon)
+        if (step16 % 4 === 0) {
           this.playBuffer('tick', 0.32, 1.1);
-        } else if (step % 4 === 2) {
+        } else if (step16 % 4 === 2) {
           this.playBuffer('tick', 0.18, 0.95);
         }
-        if (step === 0 && (this.musicStep % 32 === 0) && this.ctx) {
+        if (step16 === 0 && (this.musicStep % 32 === 0) && this.ctx) {
           try {
             const padOsc = this.ctx.createOscillator();
             const padGain = this.ctx.createGain();
             padOsc.type = 'sine';
-            padOsc.frequency.setValueAtTime(65.41, now); // C2
+            padOsc.frequency.setValueAtTime(65.41, now);
             padGain.gain.setValueAtTime(0.001, now);
             padGain.gain.linearRampToValueAtTime(0.08, now + 0.3);
             padGain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
@@ -902,16 +1175,17 @@ class SoundEngine {
             padOsc.stop(now + 0.95);
           } catch (e) {}
         }
+
       } else if (this.musicTheme === 'noir_mystery') {
-        // 🕵️ Gizem & Tekinsiz (Ağır tempolu, sakin caz tınılı gerilim bası)
-        const note = noirNotes[step];
+        // 🕵️ 5. GİZEM & DEDEKTİF (Ağır Caz Bası)
+        const note = noirNotes[step16];
         if (note && note > 0 && this.ctx) {
           try {
             const bOsc = this.ctx.createOscillator();
             const bGain = this.ctx.createGain();
             bOsc.type = 'triangle';
             bOsc.frequency.setValueAtTime(note, now);
-            bGain.gain.setValueAtTime(0.18, now);
+            bGain.gain.setValueAtTime(0.20, now);
             bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
             bOsc.connect(bGain);
             bGain.connect(target);
@@ -921,17 +1195,18 @@ class SoundEngine {
             bOsc.stop(now + 0.30);
           } catch (e) {}
         }
-        if (step === 0 || step === 8) {
+        if (step16 === 0 || step16 === 8) {
           this.playBuffer('tick', 0.2, 0.85);
         }
+
       } else if (this.musicTheme === 'minimal_drone') {
-        // 🌌 Sinematik Odaklanma (Sakin, derin ve odaklayıcı ambiyans tansiyonu)
-        if (step === 0 && this.ctx) {
+        // 🌌 6. SİNEMATİK ODAKLANMA (Derin Drone)
+        if (step16 === 0 && this.ctx) {
           try {
             const dOsc = this.ctx.createOscillator();
             const dGain = this.ctx.createGain();
             dOsc.type = 'sine';
-            dOsc.frequency.setValueAtTime(73.42, now); // D2
+            dOsc.frequency.setValueAtTime(73.42, now);
             dGain.gain.setValueAtTime(0.001, now);
             dGain.gain.linearRampToValueAtTime(0.09, now + 0.4);
             dGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
@@ -943,7 +1218,7 @@ class SoundEngine {
             dOsc.stop(now + 1.25);
           } catch (e) {}
         }
-        if (step === 0 || step === 8) {
+        if (step16 === 0 || step16 === 8) {
           this.playBuffer('tick', 0.15, 1.2);
         }
       }
@@ -1116,24 +1391,48 @@ class SoundEngine {
     });
   }
 
-  // --- Güvenli Fallback Metotları ---
+  // --- Güvenli & Zengin Sentez Fallback Metotları ---
   fallbackChime() {
     if (!this.ctx) return;
     try {
       const now = this.ctx.currentTime;
-      [783.99, 987.77, 1318.51, 1567.98].forEach((f, i) => {
-        const osc = this.ctx.createOscillator();
+      const target = this.getOutputNode();
+      // Kristal Sihirli Zil / Glockenspiel (C6, E6, G6, C7 yükselen kutlama akoru)
+      const freqs = [1046.50, 1318.51, 1567.98, 2093.00];
+      freqs.forEach((f, i) => {
+        const t = now + i * 0.045;
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
-        const t = now + i * 0.05;
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(f, t);
+
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(f, t);
+
+        // Kristal parıltı için 2x harmonik
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(f * 2, t);
+
         gain.gain.setValueAtTime(0, t);
-        gain.gain.linearRampToValueAtTime(0.6, t + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
-        osc.connect(gain);
-        gain.connect(this.getOutputNode());
-        osc.start(t);
-        osc.stop(t + 0.4);
+        gain.gain.linearRampToValueAtTime(0.55, t + 0.008);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.38);
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(target);
+
+        osc1.start(t);
+        osc2.start(t);
+        osc1.stop(t + 0.40);
+        osc2.stop(t + 0.40);
+
+        this.activeOscillators.add(osc1);
+        this.activeOscillators.add(osc2);
+        setTimeout(() => {
+          if (this.activeOscillators) {
+            this.activeOscillators.delete(osc1);
+            this.activeOscillators.delete(osc2);
+          }
+        }, 500);
       });
     } catch (e) {}
   }
@@ -1142,17 +1441,34 @@ class SoundEngine {
     if (!this.ctx) return;
     try {
       const now = this.ctx.currentTime;
+      const target = this.getOutputNode();
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(450, now);
-      osc.frequency.exponentialRampToValueAtTime(220, now + 0.2);
-      gain.gain.setValueAtTime(0.6, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-      osc.connect(gain);
-      gain.connect(this.getOutputNode());
+      const filter = this.ctx.createBiquadFilter();
+
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(320, now);
+      filter.Q.setValueAtTime(3.5, now);
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(380, now);
+      osc.frequency.exponentialRampToValueAtTime(140, now + 0.18);
+
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.60, now + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(target);
+
       osc.start(now);
-      osc.stop(now + 0.28);
+      osc.stop(now + 0.24);
+
+      this.activeOscillators.add(osc);
+      setTimeout(() => {
+        if (this.activeOscillators) this.activeOscillators.delete(osc);
+      }, 300);
     } catch (e) {}
   }
 

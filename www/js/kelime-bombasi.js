@@ -55,6 +55,7 @@ export class KelimeBombasiEngine {
     if (btnBack) {
       btnBack.onclick = () => {
         clearInterval(this.timerInterval);
+        try { sounds.stopPartyBeat(); } catch (e) {}
         this.game.showScreen('partyGames');
       };
     }
@@ -85,15 +86,26 @@ export class KelimeBombasiEngine {
     clearInterval(this.timerInterval);
     this.currentSeconds = this.baseSeconds;
     this.updateTimerDisplay();
+    try { sounds.startPartyBeat(); } catch (e) {}
 
     const startTime = performance.now();
     const durationMs = this.baseSeconds * 1000;
+    let lastSec = Math.ceil(this.baseSeconds);
 
     this.timerInterval = setInterval(() => {
       const elapsed = performance.now() - startTime;
       const rem = Math.max(0, (durationMs - elapsed) / 1000);
       this.currentSeconds = rem;
       this.updateTimerDisplay();
+
+      const curSec = Math.ceil(rem);
+      if (curSec !== lastSec) {
+        lastSec = curSec;
+        try { sounds.playBombTick(rem, this.baseSeconds); } catch (e) {}
+        if (rem <= 5.0) {
+          try { sounds.setMusicUrgent(true); } catch (e) {}
+        }
+      }
 
       if (rem <= 0) {
         clearInterval(this.timerInterval);
@@ -134,6 +146,8 @@ export class KelimeBombasiEngine {
 
   explode() {
     this.isExploded = true;
+    try { sounds.setMusicUrgent(false); } catch (e) {}
+    try { sounds.stopPartyBeat(); } catch (e) {}
     sounds.playExplosion();
 
     if (navigator.vibrate) {

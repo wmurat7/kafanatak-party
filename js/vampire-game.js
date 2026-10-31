@@ -6,6 +6,7 @@
 import { firebaseNetwork } from './firebase-network.js';
 import QRCode from './qrcode.esm.js';
 import { HostModerationPanel } from './host-moderation-panel.js';
+import { sounds } from './audio.js';
 
 export function getApiBaseUrl() {
   const savedIp = localStorage.getItem('kafanatak_last_server_ip') || '192.168.1.159';
@@ -494,16 +495,19 @@ export class VampireGameEngine {
 
     if (vTarget && vTarget === dTarget) {
       this.singleReportText = '🎉 Doktor harika bir iş çıkardı! Gece saldırıya uğrayan köylüyü iyileştirdi. Bu gece kimse ölmedi!';
+      try { sounds.playFanfare(); } catch (e) {}
       this.speak('Güneş doğdu! Köy halkı uyanın! Doktor harika bir iş çıkardı, dün gece kimse ölmedi.');
     } else if (vTarget) {
       const victim = this.players.find(p => p.id === vTarget);
       if (victim) {
         victim.alive = false;
         this.singleReportText = `☠️ Korkunç bir geceydi... Dün gece ${victim.name} vampirler tarafından ısırıldı ve hayatını kaybetti!`;
+        try { sounds.playBuzzer(); } catch (e) {}
         this.speak(`Güneş doğdu! Köy halkı uyanın! Korkunç bir geceydi, dün gece ${victim.name} aramızdan ayrıldı.`);
       }
     } else {
       this.singleReportText = 'Köyde sakin bir gece geçti, kimse yaralanmadı.';
+      try { sounds.playBell(); } catch (e) {}
       this.speak('Güneş doğdu! Bu gece köy sakin geçti.');
     }
 
@@ -534,6 +538,7 @@ export class VampireGameEngine {
         p.alive = false;
         const isV = p.role === 'vampir';
         this.singleVoteResultText = `⚖️ Köy halkının kararıyla ${p.name} asıldı! Kendisi bir ${isV ? 'VAMPİRDİ! 🧛‍♂️' : 'MASUM KÖYLÜYDÜ! 🧑‍🌾'}`;
+        try { isV ? sounds.playApplause() : sounds.playBuzzer(); } catch (e) {}
         this.speak(`Köy halkının kararıyla ${p.name} asıldı. Kendisi bir ${isV ? 'vampirdi' : 'masum köylüydü'}.`);
       }
     }

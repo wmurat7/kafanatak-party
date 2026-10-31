@@ -143,6 +143,7 @@ export class AilelerYarisiyorEngine {
       this.activeTeam = (team === 'red') ? 'blue' : 'red';
     }
     this.stage = 'playing';
+    try { sounds.startPartyBeat(); } catch (e) {}
     this.syncRoomState();
     this.renderScreen();
   }
@@ -244,6 +245,7 @@ export class AilelerYarisiyorEngine {
 
   finishRound(summaryMessage) {
     // Kalan kapalı cevapları göster
+    try { sounds.stopPartyBeat(); } catch (e) {}
     this.revealedAnswers = this.revealedAnswers.map(() => true);
     this.stage = 'round_summary';
     this.roundSummaryMessage = summaryMessage;

@@ -1044,6 +1044,7 @@ export class IsimSehirGameEngine {
 
     // Cevap Formu ve Sekmeleri Render Et
     this.renderPlayingInputs();
+    try { sounds.startPartyBeat(); } catch (e) {}
 
     clearInterval(this.timerInterval);
     this.timerInterval = setInterval(() => {
@@ -1267,6 +1268,7 @@ export class IsimSehirGameEngine {
     }
 
     clearInterval(this.timerInterval);
+    try { sounds.setMusicUrgent(true); } catch (e) {}
     let remaining = 60;
     this.timerInterval = setInterval(() => {
       remaining--;
@@ -1356,6 +1358,8 @@ export class IsimSehirGameEngine {
   enterReviewPhase(roomState) {
     this.phase = 'review';
     clearInterval(this.timerInterval);
+    try { sounds.setMusicUrgent(false); } catch (e) {}
+    try { sounds.stopPartyBeat(); } catch (e) {}
     document.getElementById('isim-stage-wheel').style.display = 'none';
     document.getElementById('isim-stage-review').style.display = 'block';
 

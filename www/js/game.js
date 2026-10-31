@@ -16,6 +16,7 @@ import { PassaparolaEngine } from './passaparola-game.js';
 import { CarkifelekEngine } from './carkifelek-game.js';
 import { KelimeIslemEngine } from './kelime-islem-game.js';
 import { AilelerYarisiyorEngine } from './aileler-yarisiyor-game.js';
+import { PartyTournamentEngine } from './party-tournament.js';
 import { initPartyGuides } from './party-guide.js';
 import { firebaseNetwork } from './firebase-network.js';
 import { HostModerationPanel } from './host-moderation-panel.js';
@@ -23,6 +24,7 @@ import { HostModerationPanel } from './host-moderation-panel.js';
 class GameApp {
   constructor() {
     this.categories = [...CATEGORIES];
+    this.tournamentEngine = new PartyTournamentEngine(this);
     this.currentCategory = this.categories[0];
     this.roundDuration = 60; // saniye
     this.remainingTime = 60;
@@ -1031,9 +1033,9 @@ class GameApp {
     // Müzik Teması Seçimi & Play / Stop Butonları
     const selectMusicTheme = document.getElementById('select-music-theme');
     if (selectMusicTheme) {
-      const validThemes = ['none', 'suspense', 'ticking_clock', 'noir_mystery', 'minimal_drone'];
+      const validThemes = ['party_groove', 'tv_quiz', 'suspense', 'ticking_clock', 'noir_mystery', 'minimal_drone', 'none'];
       if (!validThemes.includes(sounds.musicTheme)) {
-        sounds.musicTheme = 'suspense';
+        sounds.musicTheme = 'party_groove';
       }
       selectMusicTheme.value = sounds.musicTheme;
       selectMusicTheme.addEventListener('change', (e) => {
@@ -1042,6 +1044,8 @@ class GameApp {
           this.showToast('🔕 Sessiz & Sade Mod Seçildi (Müziksiz)');
         } else {
           const names = {
+            party_groove: '🎉 Kıpır Kıpır Parti (Funk & Disco)',
+            tv_quiz: '📺 TV Stüdyo & Yarışma (Marimba Tansiyonu)',
             suspense: '💓 Kalp Atışı Nabzı (Gerilim)',
             ticking_clock: '⏱️ Yarışma Sayacı (Tansiyon)',
             noir_mystery: '🕵️ Gizem & Tekinsiz (Ağır Gerilim)',
@@ -2562,6 +2566,10 @@ class GameApp {
     // 13. NASIL OYNANIR REHBER MODALI BAĞLANTILARI
     // =========================================
     initPartyGuides(this);
+    if (this.tournamentEngine) {
+      this.tournamentEngine.init();
+    }
+    window.gameApp = this;
 
     // =========================================
     // 12. OYUNDAN ÇIKIŞ VE MENÜYE DÖNÜŞ MODALI OLAYLARI
@@ -3292,8 +3300,9 @@ class GameApp {
           try { announcer.onCountdown10(); } catch (e) {}
         }
 
-        // Panik HUD: Son 10 saniyede ekran kenarlarında atan neon kırmızı nabız
+        // Panik HUD: Son 10 saniyede ekran kenarlarında atan neon kırmızı nabız & Hızlanan Müzik
         if (this.remainingTime <= 10 && this.remainingTime > 0) {
+          try { sounds.setMusicUrgent(true); } catch (e) {}
           if (this.screens && this.screens.round) {
             this.screens.round.classList.add('panic-pulse-active');
           }
@@ -4209,6 +4218,7 @@ class GameApp {
     try { this.stopCheerPolling(); } catch (e) {}
     try { this.broadcastSpectatorState('summary'); } catch (e) {}
     this.motion.stop();
+    try { sounds.setMusicUrgent(false); } catch (e) {}
     sounds.stopPartyBeat();
     sounds.playFinish();
     this.releaseWakeLock();
