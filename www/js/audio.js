@@ -317,41 +317,83 @@ class SoundEngine {
     }
   }
 
+    // =========================================================================
+  // 4. GERİ SAYIM & BİP (Stüdyo Kalitesinde Kristal UI Ping & Zafer Akoru)
   // =========================================================================
-  // 4. GERİ SAYIM & BİP (Modern Quiz Show Temiz Dijital Bip)
-  // =========================================================================
+  playCountdown(isFinal = false) {
+    this.playCountdownBeep(isFinal);
+  }
+
   playCountdownBeep(isFinal = false) {
     if (this.muted) return;
     this.unlockAudio();
-    this.vibrate(isFinal ? [80, 50, 140] : 40);
-
-    if (isFinal) {
-      if (!this.playBuffer('bell', 0.9) && !this.playBuffer('triangle', 0.9)) {
-        this.synthModernBeep(1200, 0.45, true);
-      }
-    } else {
-      this.synthModernBeep(880, 0.18, false);
-    }
+    this.vibrate(isFinal ? [70, 40, 160] : 35);
+    this.synthModernBeep(isFinal ? 1046.5 : 880, isFinal ? 0.45 : 0.16, isFinal);
   }
 
-  synthModernBeep(freq = 880, duration = 0.2, isFinal = false) {
+  synthModernBeep(freq = 880, duration = 0.16, isFinal = false) {
     this.init();
     if (!this.ctx) return;
     try {
       const now = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = isFinal ? 'triangle' : 'sine';
-      osc.frequency.setValueAtTime(freq, now);
+      const outNode = this.getOutputNode();
+
       if (isFinal) {
-        osc.frequency.exponentialRampToValueAtTime(freq * 1.5, now + duration);
+        // Final "BAŞLA / 0 / BİTTİ" Sesi: Parlak C Major Arpej Akoru (C6, E6, G6, C7)
+        const notes = [1046.50, 1318.51, 1567.98, 2093.00];
+        notes.forEach((f, idx) => {
+          const t = now + idx * 0.035;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(f, t);
+          osc.frequency.exponentialRampToValueAtTime(f * 1.02, t + 0.35);
+
+          gain.gain.setValueAtTime(0, t);
+          gain.gain.linearRampToValueAtTime(0.45, t + 0.012);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+
+          osc.connect(gain);
+          gain.connect(outNode);
+          osc.start(t);
+          osc.stop(t + 0.5);
+          this.activeOscillators.add(osc);
+          setTimeout(() => this.activeOscillators?.delete(osc), 600);
+        });
+      } else {
+        // Normal 3.. 2.. 1.. Geri Sayım: Çift Harmonikli Kristal Stüdyo Ping (960Hz + 1920Hz)
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(freq, now);
+        osc1.frequency.exponentialRampToValueAtTime(freq * 0.98, now + duration);
+
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(freq * 2, now); // 1 oktav tiz ışıltı
+
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.55, now + 0.006);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(outNode);
+
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + duration + 0.05);
+        osc2.stop(now + duration + 0.05);
+
+        this.activeOscillators.add(osc1);
+        this.activeOscillators.add(osc2);
+        setTimeout(() => {
+          this.activeOscillators?.delete(osc1);
+          this.activeOscillators?.delete(osc2);
+        }, 300);
       }
-      gain.gain.setValueAtTime(0.35, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-      osc.connect(gain);
-      gain.connect(this.masterGain || this.ctx.destination);
-      osc.start(now);
-      osc.stop(now + duration + 0.05);
     } catch (e) {}
   }
 
@@ -399,21 +441,55 @@ class SoundEngine {
     this.pendingTimeouts.push(t);
   }
 
+    // =========================================================================
+  // 6. SAATLİ BOMBA SESLERİ (Gerilimli Çift Mekanizma & Mobil Sinematik Patlama)
   // =========================================================================
-  // 6. BOMBA SESLERİ
-  // =========================================================================
-  playBombTick(remainingSec = 30) {
+  playBombTick(remainingSec = 30, totalSec = 30) {
     if (this.muted) return;
-    const rate = Math.min(2.0, Math.max(1.0, 1 + (30 - remainingSec) / 18));
-    this.playBuffer('tick', 0.9, rate);
-    this.vibrate(remainingSec < 10 ? 40 : 20);
+    this.unlockAudio();
+    this.init();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const outNode = this.getOutputNode();
+      const progress = Math.max(0, Math.min(1, 1 - (remainingSec / (totalSec || 30))));
+      
+      // Süre azaldıkça ton tizleşir ve daha gerilimli hale gelir
+      const isTick = Math.floor(remainingSec) % 2 === 0;
+      const baseFreq = isTick ? (900 + progress * 600) : (650 + progress * 500);
+      const duration = Math.max(0.04, 0.08 - progress * 0.04);
+
+      // Metalik Saat Tıkırtısı
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const filter = this.ctx.createBiquadFilter();
+
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(baseFreq * 2.2, now);
+      filter.Q.setValueAtTime(4.0, now);
+
+      osc.type = isTick ? 'square' : 'triangle';
+      osc.frequency.setValueAtTime(baseFreq, now);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.5, now + duration);
+
+      gain.gain.setValueAtTime(0.4 + progress * 0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(outNode);
+
+      osc.start(now);
+      osc.stop(now + duration + 0.02);
+      this.vibrate(progress > 0.7 ? 40 : 20);
+    } catch (e) {}
   }
 
   playBombExplosion() {
     if (this.muted) return;
     this.unlockAudio();
-    this.vibrate([150, 50, 200, 50, 400]);
-
+    this.vibrate([160, 40, 240, 40, 450]);
     this.synthBombExplosion();
   }
 
@@ -422,43 +498,61 @@ class SoundEngine {
     if (!this.ctx) return;
     try {
       const now = this.ctx.currentTime;
-      // 1. Sub-bass sine drop (Darbeli sarsıntı)
-      const subOsc = this.ctx.createOscillator();
-      const subGain = this.ctx.createGain();
-      subOsc.type = 'sine';
-      subOsc.frequency.setValueAtTime(140, now);
-      subOsc.frequency.exponentialRampToValueAtTime(30, now + 0.8);
-      subGain.gain.setValueAtTime(0.8, now);
-      subGain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
-      subOsc.connect(subGain);
-      subGain.connect(this.masterGain || this.ctx.destination);
-      subOsc.start(now);
-      subOsc.stop(now + 0.85);
+      const outNode = this.getOutputNode();
 
-      // 2. White noise patlama & kırılma
-      const bufferSize = this.ctx.sampleRate * 1.2;
+      // 1. Mobil Hoparlör Tok Darbesi (Punch Kick Transient: 650Hz -> 85Hz in 35ms)
+      const kickOsc = this.ctx.createOscillator();
+      const kickGain = this.ctx.createGain();
+      kickOsc.type = 'triangle';
+      kickOsc.frequency.setValueAtTime(650, now);
+      kickOsc.frequency.exponentialRampToValueAtTime(85, now + 0.045);
+      kickOsc.frequency.exponentialRampToValueAtTime(40, now + 0.5);
+
+      kickGain.gain.setValueAtTime(1.0, now);
+      kickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.55);
+      kickOsc.connect(kickGain);
+      kickGain.connect(outNode);
+      kickOsc.start(now);
+      kickOsc.stop(now + 0.6);
+
+      // 2. Doygun Gövde Sarsıntısı (Saturated Sub-Rumble)
+      const boomOsc = this.ctx.createOscillator();
+      const boomGain = this.ctx.createGain();
+      boomOsc.type = 'sawtooth';
+      boomOsc.frequency.setValueAtTime(140, now);
+      boomOsc.frequency.exponentialRampToValueAtTime(45, now + 0.9);
+
+      boomGain.gain.setValueAtTime(0.7, now);
+      boomGain.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
+      boomOsc.connect(boomGain);
+      boomGain.connect(outNode);
+      boomOsc.start(now);
+      boomOsc.stop(now + 1.0);
+
+      // 3. Patlama & Şok Dalgası Gürültüsü (Swept Noise Blast)
+      const bufferSize = Math.floor(this.ctx.sampleRate * 1.5);
       const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-      const output = noiseBuffer.getChannelData(0);
+      const data = noiseBuffer.getChannelData(0);
       for (let i = 0; i < bufferSize; i++) {
-        output[i] = Math.random() * 2 - 1;
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.45));
       }
-      const whiteNoise = this.ctx.createBufferSource();
-      whiteNoise.buffer = noiseBuffer;
+      const noiseSource = this.ctx.createBufferSource();
+      noiseSource.buffer = noiseBuffer;
 
-      const filter = this.ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(1200, now);
-      filter.frequency.exponentialRampToValueAtTime(60, now + 1.1);
+      const noiseFilter = this.ctx.createBiquadFilter();
+      noiseFilter.type = 'lowpass';
+      noiseFilter.frequency.setValueAtTime(2400, now);
+      noiseFilter.frequency.exponentialRampToValueAtTime(120, now + 1.4);
 
       const noiseGain = this.ctx.createGain();
-      noiseGain.gain.setValueAtTime(0.7, now);
-      noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 1.1);
+      noiseGain.gain.setValueAtTime(0.9, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
 
-      whiteNoise.connect(filter);
-      filter.connect(noiseGain);
-      noiseGain.connect(this.masterGain || this.ctx.destination);
-      whiteNoise.start(now);
-      whiteNoise.stop(now + 1.2);
+      noiseSource.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(outNode);
+      noiseSource.start(now);
+      noiseSource.stop(now + 1.5);
     } catch (e) {}
   }
 
@@ -519,11 +613,61 @@ class SoundEngine {
     }
   }
 
+    // =========================================================================
+  // 7. PALYAÇO KORNASI (Komik Lastik Balon Korna "TÖÖT-TÖÖT!")
+  // =========================================================================
   playClownHorn() {
     if (this.muted) return;
     this.unlockAudio();
-    this.vibrate(120);
-    this.playBuffer('clown_horn', 1.0);
+    this.vibrate([70, 40, 110]);
+    this.synthCartoonClownHorn();
+  }
+
+  synthCartoonClownHorn() {
+    this.init();
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      const outNode = this.getOutputNode();
+
+      // İki ardışık komik korna sıkışı: Birinci "Tööt", hemen ardından daha tiz "Tööt!"
+      const squeaks = [
+        { start: now, freq: 520, targetFreq: 720, dur: 0.12, gain: 0.65 },
+        { start: now + 0.13, freq: 620, targetFreq: 850, dur: 0.16, gain: 0.8 }
+      ];
+
+      squeaks.forEach(sq => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const filter = this.ctx.createBiquadFilter();
+
+        // Karikatür rezonansı (Pirinç/lastik tınısı)
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(sq.freq * 1.8, sq.start);
+        filter.Q.setValueAtTime(4.5, sq.start);
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(sq.freq, sq.start);
+        osc.frequency.exponentialRampToValueAtTime(sq.targetFreq, sq.start + sq.dur * 0.6);
+        osc.frequency.exponentialRampToValueAtTime(sq.freq * 0.9, sq.start + sq.dur);
+
+        gain.gain.setValueAtTime(0, sq.start);
+        gain.gain.linearRampToValueAtTime(sq.gain, sq.start + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, sq.start + sq.dur);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(outNode);
+
+        osc.start(sq.start);
+        osc.stop(sq.start + sq.dur + 0.02);
+
+        this.activeOscillators.add(osc);
+        setTimeout(() => this.activeOscillators?.delete(osc), (sq.dur + 0.3) * 1000);
+      });
+    } catch (e) {
+      this.playBuffer('clown_horn', 1.0);
+    }
   }
 
   playDrumroll() {
