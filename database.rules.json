@@ -1,0 +1,19 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "kafanatak": {
+      ".read": false,
+      ".write": false,
+      "$namespace": {
+        ".read": false,
+        ".write": false,
+        "$roomId": {
+          ".read": "$roomId.length >= 3 && $roomId.length <= 16",
+          ".write": "$roomId.length >= 3 && $roomId.length <= 16",
+          ".indexOn": ["createdAt", "lastActive"]
+        }
+      }
+    }
+  }
+}
