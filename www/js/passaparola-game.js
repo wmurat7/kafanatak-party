@@ -316,10 +316,13 @@ export class PassaparolaEngine {
   init() {
     this.bindEvents();
     this.setupLocalMode();
-    this.renderWheel();
+    this.showSetup();
   }
 
   bindEvents() {
+    if (this.eventsBound) return;
+    this.eventsBound = true;
+
     // Mod Seçimi
     const btnModeLocal = document.getElementById('btn-passa-mode-local');
     const btnModeWifi = document.getElementById('btn-passa-mode-wifi');
@@ -443,19 +446,25 @@ export class PassaparolaEngine {
       btnAi.onclick = () => this.changeCurrentQuestionWithAI();
     }
 
-    // Geri Dön
+    // Geri Dön: Oyun/Sonuç ekranındayken hazırlık menüsüne döner; hazırlıktayken parti menüsüne döner
     const btnBack = document.getElementById('btn-back-from-passaparola');
     if (btnBack) {
       btnBack.onclick = () => {
-        if (this.game && this.game.showGameLeaveConfirmModal) {
-          this.game.showGameLeaveConfirmModal('partyGames', () => {
-            clearInterval(this.timerInterval);
-            this.isPlaying = false;
-            try { sounds.stopAll(); } catch (e) {}
-          });
+        sounds.playClick();
+        if (this.isInGameOrResult()) {
+          this.showSetup();
         } else {
           this.game.showScreen('partyGames');
         }
+      };
+    }
+
+    // Sonuç Ekranından Hazırlık Menüsüne Dön Butonu
+    const btnBackToSetup = document.getElementById('btn-passa-back-to-setup');
+    if (btnBackToSetup) {
+      btnBackToSetup.onclick = () => {
+        sounds.playClick();
+        this.showSetup();
       };
     }
   }
@@ -667,6 +676,34 @@ export class PassaparolaEngine {
     this.updateStatsUI();
   }
 
+  showSetup() {
+    clearInterval(this.timerInterval);
+    this.isPlaying = false;
+    this.isFinished = false;
+    try { sounds.stopPartyBeat(); } catch (e) {}
+    try { sounds.setMusicUrgent(false); } catch (e) {}
+
+    const setupBox = document.getElementById('passa-setup-stage');
+    const playBox = document.getElementById('passa-play-stage');
+    const resultBox = document.getElementById('passa-result-stage');
+
+    if (setupBox) setupBox.style.display = 'block';
+    if (playBox) playBox.style.display = 'none';
+    if (resultBox) resultBox.style.display = 'none';
+
+    this.renderLocalPlayersUI();
+    this.renderWheel();
+    this.updateStatsUI();
+  }
+
+  isInGameOrResult() {
+    const playBox = document.getElementById('passa-play-stage');
+    const resultBox = document.getElementById('passa-result-stage');
+    const isPlayVisible = playBox && playBox.style.display !== 'none';
+    const isResultVisible = resultBox && resultBox.style.display !== 'none';
+    return this.isPlaying || isPlayVisible || isResultVisible;
+  }
+
   startGame() {
     this.startTeamTurn(0);
   }
@@ -676,6 +713,17 @@ export class PassaparolaEngine {
   // =========================================================================
   startTeamTurn(playerIndex = 0) {
     this.activePlayerIndex = playerIndex;
+
+    // Yeni yarışma başlarken tüm oyuncuların puan ve sayaçlarını sıfırla
+    if (playerIndex === 0) {
+      this.players.forEach(p => {
+        p.score = 0;
+        p.correct = 0;
+        p.wrong = 0;
+        p.pass = 0;
+      });
+    }
+
     const activePlayer = this.players[this.activePlayerIndex] || this.players[0];
 
     // Bu takıma özel sıfır çakışmalı yepyeni 24 harflik soru destesi üret
@@ -734,6 +782,7 @@ export class PassaparolaEngine {
 
   finishTeamTurn(reason) {
     this.isPlaying = false;
+    this.isFinished = true;
     clearInterval(this.timerInterval);
     try { sounds.setMusicUrgent(false); } catch (e) {}
     try { sounds.stopPartyBeat(); } catch (e) {}
@@ -744,55 +793,60 @@ export class PassaparolaEngine {
     if (playBox) playBox.style.display = 'none';
     if (resultBox) resultBox.style.display = 'block';
 
-    const activePlayer = this.players[this.activePlayerIndex] || this.players[0];
-    const hasNextTeam = this.activePlayerIndex + 1 < this.players.length;
-
     const titleEl = document.getElementById('passa-result-title');
     const scoreEl = document.getElementById('passa-result-score');
     const correctEl = document.getElementById('passa-result-correct');
     const wrongEl = document.getElementById('passa-result-wrong');
     const rateEl = document.getElementById('passa-result-rate');
 
+    const totalCorrect = PASSAPAROLA_LETTERS.filter(l => this.letterStates[l] === 'correct').length;
+    const totalWrong = PASSAPAROLA_LETTERS.filter(l => this.letterStates[l] === 'wrong').length;
+    const totalScore = totalCorrect * 10;
+    const totalAnswered = totalCorrect + totalWrong;
+    const rate = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+
     if (titleEl) {
-      titleEl.innerHTML = reason + '<br><span style="font-size:1.15rem; color:#FFF; font-weight:800;">' + (activePlayer.avatar || '🦁') + ' ' + activePlayer.name + ' Turu Tamamladı!</span>';
+      titleEl.innerHTML = (reason || 'Yarışma Bitti!') + '<br><span style="font-size:1.15rem; color:#FFF; font-weight:800;">🎉 Passaparola Turu Tamamlandı!</span>';
     }
-    if (scoreEl) scoreEl.textContent = (activePlayer.score || 0) + ' Puan';
-    if (correctEl) correctEl.textContent = activePlayer.correct || 0;
-    if (wrongEl) wrongEl.textContent = activePlayer.wrong || 0;
-    if (rateEl) {
-      const answered = (activePlayer.correct || 0) + (activePlayer.wrong || 0);
-      const rate = answered > 0 ? Math.round(((activePlayer.correct || 0) / answered) * 100) : 0;
-      rateEl.textContent = '%' + rate;
-    }
+    if (scoreEl) scoreEl.textContent = totalScore + ' Puan';
+    if (correctEl) correctEl.textContent = totalCorrect;
+    if (wrongEl) wrongEl.textContent = totalWrong;
+    if (rateEl) rateEl.textContent = '%' + rate;
 
-    let btnNextTeam = document.getElementById('btn-passa-next-team-turn');
-    if (!btnNextTeam) {
-      btnNextTeam = document.createElement('button');
-      btnNextTeam.id = 'btn-passa-next-team-turn';
-      btnNextTeam.className = 'btn-main primary';
-      btnNextTeam.style.cssText = 'font-size:1.05rem; font-weight:900; padding:14px; width:100%; border-radius:14px; margin-bottom:10px; box-shadow:0 0 25px rgba(0,245,212,0.4); border:none; cursor:pointer;';
-      const restartBtn = document.getElementById('btn-passa-restart');
-      if (restartBtn && restartBtn.parentElement) {
-        restartBtn.parentElement.insertBefore(btnNextTeam, restartBtn);
+    // Oyuncu Katkıları & Puan Dağılımı Dökümü
+    const breakdownEl = document.getElementById('passa-result-players-breakdown');
+    if (breakdownEl) {
+      if (this.players.length > 1) {
+        breakdownEl.style.display = 'block';
+        const sorted = [...this.players].sort((a, b) => (b.score || 0) - (a.score || 0));
+        breakdownEl.innerHTML = `
+          <div style="font-size:0.8rem; font-weight:800; color:rgba(255,255,255,0.7); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">👥 Oyuncu Skorları & Katkıları</div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            ${sorted.map(p => `
+              <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.06); padding:8px 12px; border-radius:10px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:1.15rem;">${p.avatar || '🦁'}</span>
+                  <span style="font-weight:800; font-size:0.95rem; color:#FFF;">${p.name}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <span style="font-size:0.85rem; color:rgba(255,255,255,0.6);">${p.correct || 0} Doğru</span>
+                  <span style="font-weight:900; font-size:1rem; color:var(--primary);">${p.score || 0} P</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } else {
+        breakdownEl.style.display = 'none';
       }
     }
 
-    if (hasNextTeam) {
-      const nextPlayer = this.players[this.activePlayerIndex + 1];
-      btnNextTeam.style.display = 'block';
-      btnNextTeam.innerHTML = '👉 Sıradaki Takım: ' + (nextPlayer.avatar || '🦊') + ' ' + nextPlayer.name + ' (Farklı Sorularla Başla!)';
-      btnNextTeam.onclick = () => {
-        sounds.playClick();
-        this.startTeamTurn(this.activePlayerIndex + 1);
-      };
-    } else {
+    const btnNextTeam = document.getElementById('btn-passa-next-team-turn');
+    if (btnNextTeam) {
       btnNextTeam.style.display = 'none';
-      if (titleEl) {
-        const sorted = [...this.players].sort((a,b) => (b.score || 0) - (a.score || 0));
-        const champion = sorted[0];
-        titleEl.innerHTML = '🏆 Tüm Takımların Yarışması Bitti!<br><span style="font-size:1.15rem; color:var(--gold);">👑 Şampiyon: ' + champion.avatar + ' ' + champion.name + ' (' + champion.score + ' Puan)</span>';
-      }
     }
+
+    this.syncRoomState('finished');
   }
 
   async changeCurrentQuestionWithAI() {
@@ -1027,11 +1081,7 @@ export class PassaparolaEngine {
     if (this.players.length > 1) {
       this.activePlayerIndex = (this.activePlayerIndex + 1) % this.players.length;
     }
-    const activePlayer = this.players[this.activePlayerIndex];
-    const lbl = document.getElementById('lbl-passa-active-player');
-    if (lbl && activePlayer) {
-      lbl.textContent = `${activePlayer.avatar || '🦁'} ${activePlayer.name}`;
-    }
+    this.updateStatsUI();
     this.syncRoomState();
   }
 
@@ -1041,9 +1091,22 @@ export class PassaparolaEngine {
     const elWrong = document.getElementById('passa-stat-wrong');
     const elScore = document.getElementById('passa-stat-score');
 
-    if (elCorrect) elCorrect.textContent = `${activePlayer.correct || 0} Doğru`;
-    if (elWrong) elWrong.textContent = `${activePlayer.wrong || 0} Yanlış`;
-    if (elScore) elScore.textContent = `${activePlayer.score || 0} P`;
+    // Turun toplam doğru, yanlış ve puanı (26 harf üzerinden hesaplanır)
+    const totalCorrect = PASSAPAROLA_LETTERS.filter(l => this.letterStates[l] === 'correct').length;
+    const totalWrong = PASSAPAROLA_LETTERS.filter(l => this.letterStates[l] === 'wrong').length;
+    const totalScore = totalCorrect * 10;
+
+    if (elCorrect) elCorrect.textContent = `${totalCorrect} Doğru`;
+    if (elWrong) elWrong.textContent = `${totalWrong} Yanlış`;
+    if (elScore) elScore.textContent = `${totalScore} P`;
+
+    // Aktif yarışmacı etiketi: çoklu oyuncuda oyuncunun bireysel puanını da gösterir
+    const lbl = document.getElementById('lbl-passa-active-player');
+    if (lbl && activePlayer && activePlayer.name) {
+      lbl.textContent = this.players.length > 1
+        ? `${activePlayer.avatar || '🦁'} ${activePlayer.name} (${activePlayer.score || 0} P)`
+        : `${activePlayer.avatar || '🦁'} ${activePlayer.name}`;
+    }
   }
 
   syncRoomState(actionName = '') {

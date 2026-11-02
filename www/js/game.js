@@ -3688,6 +3688,11 @@ class GameApp {
 
       // 4.3 Passaparola
       if (this.screens.passaparola && this.screens.passaparola.classList.contains('active')) {
+        if (this.passaparolaEngine && this.passaparolaEngine.isInGameOrResult && this.passaparolaEngine.isInGameOrResult()) {
+          sounds.playClick();
+          this.passaparolaEngine.showSetup();
+          return;
+        }
         if (this.passaparolaEngine) {
           if (this.passaparolaEngine.timerInterval) clearInterval(this.passaparolaEngine.timerInterval);
           this.passaparolaEngine.isPlaying = false;
