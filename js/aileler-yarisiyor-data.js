@@ -292,6 +292,558 @@ export const AILELER_YARISIYOR_KIDS_QUESTIONS = [
       { text: "Tavşan / Hamster", points: 7, keywords: ["tavşan", "hamster"] },
       { text: "Akvaryum Balığı", points: 3, keywords: ["balık", "japon balığı"] }
     ]
+  },
+  {
+    id: "ay_25",
+    question: "100 kişiye sorduk: Misafirlikteyken kibarlıktan söylenen en yaygın yalan nedir?",
+    category: "Sosyal İlişkiler",
+    answers: [
+      { text: "Valla çok tokum / Yeni yedim", points: 44, keywords: ["tokum","aç değilim","yeni yedim","yedim geldim","tok"] },
+      { text: "Kalkalım artık / Geç oldu", points: 24, keywords: ["kalkalım","geç oldu","gitmemiz lazım","müsaade"] },
+      { text: "Çok güzel olmuş eline sağlık (Beğenmese bile)", points: 15, keywords: ["eline sağlık","harika","güzel olmuş","nefis"] },
+      { text: "Hiç zahmet etmeyin / Bir şey yapmayın", points: 11, keywords: ["zahmet","uğraşmayın","gerek yok","hiç gerek yok"] },
+      { text: "Yarın erken kalkacağım", points: 6, keywords: ["erken","iş var","uyuyacağım","kalkacağım"] }
+    ]
+  },
+  {
+    id: "ay_26",
+    question: "100 kişiye sorduk: Bir Türk düğününde mutlaka yaşanan bir olay nedir?",
+    category: "Düğün & Eğlence",
+    answers: [
+      { text: "Halay çekmek / Mendil sallamak", points: 41, keywords: ["halay","mendil","halay başı","dans"] },
+      { text: "Altın / Takı takma merasimi ve kuyruk", points: 28, keywords: ["takı","altın","para","kuyruk","iğnelemek"] },
+      { text: "Düğün pastasının köpük/sahte çıkması", points: 13, keywords: ["pasta","maket pasta","köpük pasta","sahte pasta"] },
+      { text: "Gelin ayakkabısının altına isim yazmak", points: 11, keywords: ["ayakkabı","gelin ayakkabısı","isim yazmak"] },
+      { text: "Gelin arabasının önünü çocukların kesmesi", points: 7, keywords: ["araba","ön kesmek","zarf","bahşiş"] }
+    ]
+  },
+  {
+    id: "ay_27",
+    question: "100 kişiye sorduk: Dolmuşta veya minibüste en çok duyulan cümle nedir?",
+    category: "Şehir & Ulaşım",
+    answers: [
+      { text: "Müsait bir yerde / Kaptan müsait bir yer", points: 48, keywords: ["müsait","inecek var","kaptan","sağda"] },
+      { text: "Bir kişi uzatır mısınız? / Bir öğrenci", points: 27, keywords: ["uzatır mısınız","para uzatmak","öğrenci","tam"] },
+      { text: "Arkayı dörtleyelim / Biraz ilerleyelim", points: 12, keywords: ["dörtleyelim","ilerleyin","sıkışın","arkaya doğru"] },
+      { text: "Üstü kalsın / Paranın üstü geldi mi?", points: 8, keywords: ["para üstü","kalsın","bozuk"] },
+      { text: "Kapıyı kapatır mısınız?", points: 5, keywords: ["kapı","kapat","rüzgar"] }
+    ]
+  },
+  {
+    id: "ay_28",
+    question: "100 kişiye sorduk: Bir öğrencinin sınav sabahı yaşadığı en büyük panik nedir?",
+    category: "Okul & Öğrencilik",
+    answers: [
+      { text: "Uyanamamak / Alarma uyanamamak", points: 45, keywords: ["uyanamamak","geç kalmak","alarm","uyuyakalmak"] },
+      { text: "Hiç çalışmadığı yerden soru gelmesi korkusu", points: 25, keywords: ["çalışmadığı yer","soru","çıkmaz dediği","unuttum"] },
+      { text: "Kalem, silgi veya kimliği unutmak", points: 14, keywords: ["kalem","silgi","kimlik","uç","uçlu kalem"] },
+      { text: "Sınav yerini veya dersliği bulamamak", points: 9, keywords: ["sınıf","derslik","yer","bina"] },
+      { text: "Karnının veya midesinin ağrıması", points: 7, keywords: ["karın ağrısı","mide","heyecan","stres"] }
+    ]
+  },
+  {
+    id: "ay_29",
+    question: "100 kişiye sorduk: Yaz tatili valizine mutlaka ilk konulan şey nedir?",
+    category: "Tatil & Gezi",
+    answers: [
+      { text: "Mayo / Şort / Bikini", points: 43, keywords: ["mayo","şort","bikini","haşema"] },
+      { text: "Güneş kremi / Yağı", points: 26, keywords: ["güneş kremi","krem","koruyucu","bronzlaştırıcı"] },
+      { text: "Güneş gözlüğü", points: 14, keywords: ["gözlük","güneş gözlüğü"] },
+      { text: "Parmak arası terlik", points: 10, keywords: ["terlik","parmak arası","plaj terliği"] },
+      { text: "Plaj havlusu", points: 7, keywords: ["havlu","plaj havlusu"] }
+    ]
+  },
+  {
+    id: "ay_30",
+    question: "100 kişiye sorduk: Pazar günleri evde yapılan en popüler aktivite nedir?",
+    category: "Hafta Sonu",
+    answers: [
+      { text: "Uzun ve geç pazar kahvaltısı yapmak", points: 52, keywords: ["kahvaltı","pazar kahvaltısı","geç kahvaltı","sucuklu yumurta","pişi"] },
+      { text: "Televizyon / Dizi / Film izlemek", points: 20, keywords: ["film","dizi","tv","televizyon","netflix"] },
+      { text: "Öğle uykusu / Tembellik yapmak", points: 14, keywords: ["uyku","öğle uykusu","şekerleme","yatmak","tembellik"] },
+      { text: "Ev temizliği / Çamaşır yıkamak", points: 9, keywords: ["temizlik","çamaşır","süpürme","ütü"] },
+      { text: "Yürüyüşe / AVM'ye gitmek", points: 5, keywords: ["yürüyüş","avm","dışarı","park"] }
+    ]
+  },
+  {
+    id: "ay_31",
+    question: "100 kişiye sorduk: Sinemada film izlerken en çok sinir bozan durum nedir?",
+    category: "Eğlence",
+    answers: [
+      { text: "Yüksek sesle konuşanlar / Fısıldaşanlar", points: 42, keywords: ["konuşmak","ses","fısıltı","sohbet"] },
+      { text: "Telefonun çalması veya parlak ekran ışığı", points: 28, keywords: ["telefon","ekran ışığı","parlaklık","mesaj"] },
+      { text: "Koltuk arkasına tekme atılması", points: 15, keywords: ["tekme","koltuk","arkadan vurmak","ayak"] },
+      { text: "Hışırtılı mısır/cips yemek / Ağız şapırdatmak", points: 10, keywords: ["mısır","cips","hışırtı","şapırdatmak","sesli yemek"] },
+      { text: "Filmin sonunu söyleyenler (Spoiler)", points: 5, keywords: ["spoiler","sonunu söylemek","anlatan"] }
+    ]
+  },
+  {
+    id: "ay_32",
+    question: "100 kişiye sorduk: Bir restoranda hesabı öderken yaşanan en klasik sahne nedir?",
+    category: "Yeme & İçme",
+    answers: [
+      { text: "Hesabı ben ödeyeceğim kavgası / Yarışı", points: 56, keywords: ["kavga","ben öderim","sen ödeme","ısrar","çekişme"] },
+      { text: "Cüzdanı unutmuş gibi yapmak / Ağır davranmak", points: 18, keywords: ["cüzdan","ağır davranmak","unutmuş gibi","tuvalete kaçmak"] },
+      { text: "Alman usulü (Herkes kendi yediğini ödesin) demek", points: 13, keywords: ["alman usulü","bölüşmek","ayrı ayrı","paylaşmak"] },
+      { text: "Kart geçiyor mu diye sormak", points: 8, keywords: ["kart","kredi kartı","pos","nakit"] },
+      { text: "Kuver ve servis ücretine şaşırmak", points: 5, keywords: ["kuver","bahşiş","servis ücreti","pahalı"] }
+    ]
+  },
+  {
+    id: "ay_33",
+    question: "100 kişiye sorduk: Annelerin çocuklarına en çok söylediği tembih nedir?",
+    category: "Anne Sözleri",
+    answers: [
+      { text: "Üstüne bir şey al, üşütürsün / Ceketini giy", points: 48, keywords: ["üşütürsün","ceket","hırka","üstüne bir şey al","mont"] },
+      { text: "Terli terli soğuk su içme", points: 24, keywords: ["terli su","soğuk su","su içme","ter"] },
+      { text: "Eve geç kalma / Hava kararmadan gel", points: 14, keywords: ["geç kalma","erken gel","saat","gece"] },
+      { text: "Yabancılarla konuşma / Tanımadığından bir şey alma", points: 8, keywords: ["yabancı","tanımadığın","konuşma"] },
+      { text: "Odanı topla / Dağıtma", points: 6, keywords: ["oda","topla","dağınık","yatak"] }
+    ]
+  },
+  {
+    id: "ay_34",
+    question: "100 kişiye sorduk: Ramazan ayında iftar sofrasında mutlaka olan bir şey nedir?",
+    category: "Gelenekler",
+    answers: [
+      { text: "Ramazan pidesi (Sıcak pide)", points: 42, keywords: ["pide","ramazan pidesi","sıcak pide","ekmek"] },
+      { text: "Hurma", points: 28, keywords: ["hurma","medine hurması"] },
+      { text: "Çorba (Mercimek veya Ezogelin)", points: 16, keywords: ["çorba","mercimek","ezogelin","tarhana"] },
+      { text: "Güllaç tatlısı", points: 9, keywords: ["güllaç","tatlı"] },
+      { text: "Zeytin / İftariyelik tabağı", points: 5, keywords: ["zeytin","iftariyelik","peynir","pastırma"] }
+    ]
+  },
+  {
+    id: "ay_35",
+    question: "100 kişiye sorduk: Bir bayram sabahında yapılan ilk şey nedir?",
+    category: "Bayramlar",
+    answers: [
+      { text: "Bayram namazına gitmek", points: 38, keywords: ["namaz","bayram namazı","cami"] },
+      { text: "Yeni/temiz bayramlık kıyafetleri giymek", points: 26, keywords: ["bayramlık","kıyafet","giyinmek","elbise"] },
+      { text: "Büyüklerin elini öpmek ve bayramlaşmak", points: 22, keywords: ["el öpmek","bayramlaşmak","anne baba","büyükler"] },
+      { text: "Zengin aile bayram kahvaltısı", points: 9, keywords: ["kahvaltı","aile kahvaltısı","sofra"] },
+      { text: "Bayram mesajı atmak / Aramak", points: 5, keywords: ["mesaj","aramak","telefon","tebrik"] }
+    ]
+  },
+  {
+    id: "ay_36",
+    question: "100 kişiye sorduk: Çay bahçesinde veya kafede çayın yanına en çok ne sipariş edilir?",
+    category: "Yeme & İçme",
+    answers: [
+      { text: "Simit", points: 40, keywords: ["simit","gevrek"] },
+      { text: "Bisküvi / Kurabiye / Kek", points: 25, keywords: ["kurabiye","bisküvi","kek","pötibör"] },
+      { text: "Tost (Kaşarlı / Karışık)", points: 18, keywords: ["tost","kaşarlı tost","karışık tost"] },
+      { text: "Su", points: 11, keywords: ["su","şişe su"] },
+      { text: "Tatlı (Baklava, Pasta vb.)", points: 6, keywords: ["tatlı","pasta","baklava","cheesecake"] }
+    ]
+  },
+  {
+    id: "ay_37",
+    question: "100 kişiye sorduk: Kız isteme merasiminde mutlaka yaşanan bir gelenek nedir?",
+    category: "Gelenekler",
+    answers: [
+      { text: "Damat kahvesine tuz atmak (Tuzlu kahve)", points: 54, keywords: ["tuzlu kahve","tuz","kahve","damat kahvesi"] },
+      { text: "Çikolata ve çiçek götürmek", points: 22, keywords: ["çikolata","çiçek","gondol","buket"] },
+      { text: "Allahın emri peygamberin kavliyle sözü", points: 13, keywords: ["allahın emri","peygamber","istemek","söz"] },
+      { text: "Yüzük takma ve kurdele kesme", points: 7, keywords: ["yüzük","kurdele","makas","kesmek"] },
+      { text: "Damat tarafının aşırı gergin oturması", points: 4, keywords: ["gerginlik","sessizlik","heyecan","utanmak"] }
+    ]
+  },
+  {
+    id: "ay_38",
+    question: "100 kişiye sorduk: Sokakta seyyar arabada satılan en lezzetli sokak yiyeceği nedir?",
+    category: "Sokak Lezzetleri",
+    answers: [
+      { text: "Simit / Açma", points: 34, keywords: ["simit","açma","gevrek"] },
+      { text: "Kestane kebabı (Közde kestane)", points: 26, keywords: ["kestane","kebap","köz"] },
+      { text: "Midye dolma", points: 20, keywords: ["midye","midye dolma","limonlu midye"] },
+      { text: "Haşlanmış veya Közde Mısır", points: 14, keywords: ["mısır","köz mısır","haşlama mısır"] },
+      { text: "Nohutlu Pilav / Tavuklu Pilav", points: 6, keywords: ["pilav","nohutlu pilav","tavuk pilav"] }
+    ]
+  },
+  {
+    id: "ay_39",
+    question: "100 kişiye sorduk: Pazartesi sabahı işe ya da okula giderken hissedilen duygu nedir?",
+    category: "Duygular & Ruh Halleri",
+    answers: [
+      { text: "Uykusuzluk / Yorgunluk", points: 46, keywords: ["uykusuzluk","yorgunluk","uyku","bitkinlik"] },
+      { text: "Pazartesi sendromu / İsteksizlik", points: 28, keywords: ["sendrom","isteksizlik","gitmek istememek","bıkkınlık"] },
+      { text: "Hafta sonunu şimdiden özlemek", points: 14, keywords: ["hafta sonu","özlem","cuma gelse"] },
+      { text: "Trafik stresi / Öfke", points: 7, keywords: ["stres","trafik","öfke","gerginlik"] },
+      { text: "Yeni haftaya umutla başlamak", points: 5, keywords: ["umut","motivasyon","enerji","iyi"] }
+    ]
+  },
+  {
+    id: "ay_40",
+    question: "100 kişiye sorduk: Ev temizliği yaparken arkada mutlaka çalan veya açık olan şey nedir?",
+    category: "Ev Halleri",
+    answers: [
+      { text: "Hareketli Türkçe Pop veya Oyun Havası şarkıları", points: 50, keywords: ["müzik","oyun havası","türkçe pop","şarkı","ankara havası"] },
+      { text: "Gündüz kuşağı kadın programları (Müge Anlı vb.)", points: 26, keywords: ["müge anlı","gündüz kuşağı","kadın programı","tv"] },
+      { text: "Eski bir Türk dizisi tekrarı", points: 12, keywords: ["dizi","tekrar","yaprak dökümü","aşkı memnu"] },
+      { text: "Süpürgenin kendi motor sesi", points: 7, keywords: ["süpürge sesi","gürültü","motor"] },
+      { text: "YouTube temizlik/vlog videoları", points: 5, keywords: ["youtube","video","podcast","vlog"] }
+    ]
+  },
+  {
+    id: "ay_41",
+    question: "100 kişiye sorduk: Bir insanın grip veya nezle olduğunu gösteren en belirgin işaret nedir?",
+    category: "Sağlık",
+    answers: [
+      { text: "Burnunun akması veya sürekli silmesi", points: 47, keywords: ["burun akıntısı","burun","mendil","silmek"] },
+      { text: "Sık sık hapşırmak", points: 25, keywords: ["hapşırmak","aksırmak","hapşırık"] },
+      { text: "Sesinin kısılması / Genizden konuşması", points: 14, keywords: ["ses kısıklığı","geniz","boğuk ses","ses"] },
+      { text: "Gözlerinin kızarması ve sulanması", points: 8, keywords: ["göz sulanması","kızarıklık","gözler"] },
+      { text: "Halsizlik ve battaniye altına girmek", points: 6, keywords: ["halsizlik","battaniye","titreme","ateş"] }
+    ]
+  },
+  {
+    id: "ay_42",
+    question: "100 kişiye sorduk: Futbol maçı izlerken televizyon karşısında en çok ne yenir/içilir?",
+    category: "Spor & Eğlence",
+    answers: [
+      { text: "Çekirdek (Ayçekirdeği)", points: 46, keywords: ["çekirdek","ayçekirdeği","çitlemek"] },
+      { text: "Çay", points: 22, keywords: ["çay","demli çay"] },
+      { text: "Cips / Çerez", points: 17, keywords: ["cips","çerez","kuruyemiş","fıstık"] },
+      { text: "Gazlı içecek / Kola / Gazoz", points: 10, keywords: ["kola","gazoz","içecek","soğuk"] },
+      { text: "Pizza veya Lahmacun", points: 5, keywords: ["pizza","lahmacun","dürüm"] }
+    ]
+  },
+  {
+    id: "ay_43",
+    question: "100 kişiye sorduk: Çocukken mahallede oynanan en unutulmaz sokak oyunu nedir?",
+    category: "Çocukluk & Nostalji",
+    answers: [
+      { text: "Saklambaç", points: 42, keywords: ["saklambaç","sobe","saklanmak"] },
+      { text: "Yakan top (Ortada sıçan)", points: 24, keywords: ["yakan top","yakantop","ortada sıçan"] },
+      { text: "Körebe", points: 15, keywords: ["körebe","göz bağlama"] },
+      { text: "Misket / Bilye", points: 11, keywords: ["misket","bilye","cıncık"] },
+      { text: "Seksek", points: 8, keywords: ["seksek","çizgi","tebeşir"] }
+    ]
+  },
+  {
+    id: "ay_44",
+    question: "100 kişiye sorduk: Uzun otobüs yolculuğunda muavinin ikram ettiği şey nedir?",
+    category: "Yolculuk",
+    answers: [
+      { text: "Kek / Topkek", points: 44, keywords: ["kek","topkek","kakaolu kek"] },
+      { text: "Çay / Kahve", points: 26, keywords: ["çay","kahve","nescafe"] },
+      { text: "Meyve suyu / Kola", points: 15, keywords: ["meyve suyu","kola","meşrubat"] },
+      { text: "Su", points: 10, keywords: ["su","küçük su"] },
+      { text: "Kolonya", points: 5, keywords: ["kolonya","limon kolonyası"] }
+    ]
+  },
+  {
+    id: "ay_45",
+    question: "100 kişiye sorduk: Biri telefonla konuşurken yanındakilerin en çok duyduğu kelime nedir?",
+    category: "İletişim",
+    answers: [
+      { text: "Efendim / Alo", points: 42, keywords: ["efendim","alo","he","buyur"] },
+      { text: "Tamam / Oldu / Görüşürüz", points: 26, keywords: ["tamam","oldu","görüşürüz","hadi","baybay"] },
+      { text: "Neredesin? / Ne yapıyorsun?", points: 16, keywords: ["neredesin","ne yapıyorsun","nerdesin","ne örüyon"] },
+      { text: "Sesin gelmiyor / Kesiliyor", points: 10, keywords: ["sesin gelmiyor","kesiliyor","çekmiyor","alo alo"] },
+      { text: "Ben seni sonra arayayım", points: 6, keywords: ["sonra arayayım","müsait değilim","kapatıyorum"] }
+    ]
+  },
+  {
+    id: "ay_46",
+    question: "100 kişiye sorduk: Bir berbere veya kuaföre gidildiğinde en çok konuşulan konu nedir?",
+    category: "Gündelik Hayat",
+    answers: [
+      { text: "Futbol ve tutulan takım", points: 38, keywords: ["futbol","maç","takım","derbi","galatasaray","fenerbahçe","beşiktaş"] },
+      { text: "Siyaset ve memleket meseleleri", points: 27, keywords: ["siyaset","politika","haberler","seçim","hükümet"] },
+      { text: "Piyasa, ekonomi ve pahalılık", points: 18, keywords: ["ekonomi","enflasyon","fiyatlar","pahalılık","para"] },
+      { text: "Hava durumu", points: 10, keywords: ["hava","sıcaklık","yağmur","soğuk"] },
+      { text: "Mahalle dedikoduları", points: 7, keywords: ["dedikodu","komşular","kim evlenmiş","kim ayrılmış"] }
+    ]
+  },
+  {
+    id: "ay_47",
+    question: "100 kişiye sorduk: Pikniğe gidildiğinde mangalın üstüne konulan ilk et türü nedir?",
+    category: "Yeme & İçme",
+    answers: [
+      { text: "Köfte", points: 42, keywords: ["köfte","kasap köfte","ızgara köfte"] },
+      { text: "Tavuk kanat veya pirzola", points: 30, keywords: ["tavuk","kanat","tavuk kanat","pirzola","but"] },
+      { text: "Sucuk", points: 16, keywords: ["sucuk","mangal sucuğu"] },
+      { text: "Kuzu şiş / Kuşbaşı", points: 8, keywords: ["şiş","kuzu","kuşbaşı","et"] },
+      { text: "Biber ve Domates (Garnitür)", points: 4, keywords: ["biber","domates","soğan","patlıcan"] }
+    ]
+  },
+  {
+    id: "ay_48",
+    question: "100 kişiye sorduk: Bir evin buzdolabı kapağında mutlaka asılı olan şey nedir?",
+    category: "Ev Eşyaları",
+    answers: [
+      { text: "Magnet / Şehir magnetleri", points: 52, keywords: ["magnet","buzdolabı magneti","süs"] },
+      { text: "Su siparişi / Restoran sipariş magneti", points: 22, keywords: ["su magneti","sipariş","pideci","kebapçı","broşür"] },
+      { text: "Alışveriş veya yapılacaklar listesi notu", points: 13, keywords: ["liste","not","alışveriş listesi","kağıt"] },
+      { text: "Çocukların yaptığı resim", points: 8, keywords: ["resim","çocuk resmi","çizim"] },
+      { text: "Nazar boncuğu", points: 5, keywords: ["nazar boncuğu","nazar","mavi boncuk"] }
+    ]
+  },
+  {
+    id: "ay_49",
+    question: "100 kişiye sorduk: Anneannelerin veya babaannelerin torunlarına mutlaka ikram ettiği şey nedir?",
+    category: "Aile & Sevgi",
+    answers: [
+      { text: "Harçlık / Gizlice cepheye para sıkıştırmak", points: 44, keywords: ["harçlık","para","para vermek","cep harçlığı"] },
+      { text: "Börek / Sarmalar (Zeytinyağlı yaprak sarması)", points: 26, keywords: ["sarma","börek","yaprak sarması","dolma"] },
+      { text: "Şeker / Akide şekeri / Çikolata", points: 15, keywords: ["şeker","akide şekeri","çikolata","bonbon"] },
+      { text: "Meyve / Soyulmuş elma tabağı", points: 9, keywords: ["meyve","elma","soyulmuş elma","portakal"] },
+      { text: "Köfte patates", points: 6, keywords: ["köfte","patates","köfte patates"] }
+    ]
+  },
+  {
+    id: "ay_50",
+    question: "100 kişiye sorduk: Bir insanın çok mutlu olduğunu nasıl anlarsınız?",
+    category: "Duygular",
+    answers: [
+      { text: "Gözlerinin içi gülmesi / Sürekli tebessüm etmesi", points: 48, keywords: ["gülmek","tebessüm","gözlerinin içi gülmek","sırıtmak"] },
+      { text: "Yerinde duramaması / Zıplaması / Dans etmesi", points: 24, keywords: ["dans","zıplamak","oynamak","kıpır kıpır"] },
+      { text: "Herkesle konuşup neşeli sohbet etmesi", points: 14, keywords: ["konuşkan","sohbet","anlatmak","enerji"] },
+      { text: "Şarkı veya ıslık mırıldanması", points: 8, keywords: ["şarkı","ıslık","mırıldanmak"] },
+      { text: "Yemek veya tatlı ısmarlamak istemesi", points: 6, keywords: ["ısmarlamak","tatlı","yemek yedirmek"] }
+    ]
+  },
+  {
+    id: "ay_51",
+    question: "100 kişiye sorduk: Evde elektrikler kesilince yapılan ilk şey nedir?",
+    category: "Ev Halleri",
+    answers: [
+      { text: "Telefonun flaşını / fenerini açmak", points: 48, keywords: ["telefon flaşı","flaş","fener","telefon","ışık"] },
+      { text: "Mum veya çakmak aramak", points: 26, keywords: ["mum","çakmak","kibrit","ışıldak"] },
+      { text: "Camdan dışarı/karşı apartmana bakmak (Sadece bizde mi diye)", points: 14, keywords: ["camdan bakmak","karşı apartman","sokak","komşu"] },
+      { text: "Şalteri / Sigortayı kontrol etmek", points: 8, keywords: ["şalter","sigorta","attı mı","panoyu kontrol"] },
+      { text: "Modem kapandı diye internete üzülmek", points: 4, keywords: ["modem","wifi","internet","bağlantı"] }
+    ]
+  },
+  {
+    id: "ay_52",
+    question: "100 kişiye sorduk: Bir Türk ailesinde annenin kızınca attığı efsane eşya nedir?",
+    category: "Mizah & Aile",
+    answers: [
+      { text: "Terlik (Güdümlü anne terliği)", points: 68, keywords: ["terlik","güdümlü terlik","naylon terlik","ıslak terlik"] },
+      { text: "Yastık / Kırlent", points: 14, keywords: ["yastık","kırlent"] },
+      { text: "Merdane", points: 8, keywords: ["merdane","hamur merdanesi"] },
+      { text: "Kumanda", points: 6, keywords: ["kumanda","tv kumandası"] },
+      { text: "Mandal / Bez parçası", points: 4, keywords: ["mandal","bez","el bezi"] }
+    ]
+  },
+  {
+    id: "ay_53",
+    question: "100 kişiye sorduk: Yazın deniz kenarında şezlongda yatarken en çok ne yapılır?",
+    category: "Tatil",
+    answers: [
+      { text: "Güneşlenmek / Bronzlaşmak", points: 42, keywords: ["güneşlenmek","bronzlaşmak","yanmak"] },
+      { text: "Uyumak / Kestirmek", points: 26, keywords: ["uyumak","şekerleme","uyku","kestirmek"] },
+      { text: "Telefonda gezinmek / Fotoğraf çekilmek", points: 16, keywords: ["telefon","fotoğraf","sosyal medya","story"] },
+      { text: "Kitap veya dergi okumak", points: 10, keywords: ["kitap","dergi","okumak"] },
+      { text: "Soğuk içecek içmek / Dondurma yemek", points: 6, keywords: ["içecek","dondurma","limonata","bira","kokteyl"] }
+    ]
+  },
+  {
+    id: "ay_54",
+    question: "100 kişiye sorduk: Bir diş hekimine (dişçiye) gitmekten en çok neden korkulur?",
+    category: "Korkular",
+    answers: [
+      { text: "Diş çekme veya iğne acısı", points: 46, keywords: ["iğne","acı","diş çekimi","can yanması","ağrı"] },
+      { text: "Diş matkabının çıkardığı ses (Vızz sesi)", points: 28, keywords: ["matkap","ses","vızz","motor sesi","alet sesi"] },
+      { text: "Kanal tedavisi korkusu", points: 14, keywords: ["kanal tedavisi","kanal","sinir"] },
+      { text: "Ağzı uzun süre açık tutmak", points: 7, keywords: ["ağzı açık tutmak","çene yorulması","tükürük"] },
+      { text: "Çıkacak yüksek muayene/tedavi ücreti", points: 5, keywords: ["fiyat","ücret","para","pahalı"] }
+    ]
+  },
+  {
+    id: "ay_55",
+    question: "100 kişiye sorduk: Evde yemek yapmaya üşenildiğinde sipariş edilen ilk yemek nedir?",
+    category: "Sipariş & Lezzet",
+    answers: [
+      { text: "Lahmacun / Pide", points: 38, keywords: ["lahmacun","pide","kıymalı pide"] },
+      { text: "Pizza", points: 28, keywords: ["pizza","karışık pizza"] },
+      { text: "Dürüm / Döner (Et/Tavuk döner)", points: 20, keywords: ["döner","dürüm","tavuk döner","et döner"] },
+      { text: "Hamburger / Fast Food", points: 9, keywords: ["burger","hamburger","patates"] },
+      { text: "Çiğ köfte", points: 5, keywords: ["çiğ köfte","çiğköfte","dürüm çiğköfte"] }
+    ]
+  },
+  {
+    id: "ay_56",
+    question: "100 kişiye sorduk: Bir doğum günü partisinde mumlar üflenmeden önce ne yapılır?",
+    category: "Kutlamalar",
+    answers: [
+      { text: "İçinden dilek tutmak", points: 58, keywords: ["dilek","dilek tutmak","niyet"] },
+      { text: "İyi ki doğdun şarkısı söylemek ve alkışlamak", points: 24, keywords: ["şarkı","iyi ki doğdun","alkış","mutlu yıllar"] },
+      { text: "Fotoğraf ve video çekmek", points: 10, keywords: ["fotoğraf","video","poz vermek","kamera"] },
+      { text: "Işıkları kapatmak", points: 5, keywords: ["ışıklar","kapatmak","karanlık"] },
+      { text: "Pastaya parmak daldırmak veya krema sürmek", points: 3, keywords: ["krema","parmak","yalamak","şaka"] }
+    ]
+  },
+  {
+    id: "ay_57",
+    question: "100 kişiye sorduk: Kar yağdığında dışarı çıkıp yapılan en popüler şey nedir?",
+    category: "Kış & Doğa",
+    answers: [
+      { text: "Kardan adam yapmak", points: 46, keywords: ["kardan adam","kardan adam yapmak","havuç"] },
+      { text: "Kartopu savaşı oynamak", points: 34, keywords: ["kartopu","kartopu savaşı","kartopu oynamak"] },
+      { text: "Poşetle veya kızakla kaymak", points: 10, keywords: ["kaymak","poşet","kızak","yokuş"] },
+      { text: "Kar üstünde yürüyüp çıtırtı sesini dinlemek / Fotoğraf çekmek", points: 6, keywords: ["fotoğraf","yürümek","çıtırtı","manzara"] },
+      { text: "Karın tadına bakmak / Kar yemek", points: 4, keywords: ["kar yemek","tatmak","ağzına kar almak"] }
+    ]
+  },
+  {
+    id: "ay_58",
+    question: "100 kişiye sorduk: Taksiye binen bir yolcunun şoföre ilk söylediği şey nedir?",
+    category: "Ulaşım",
+    answers: [
+      { text: "Gideceği adresi / Semti söylemek", points: 52, keywords: ["adres","nereye gideceği","kadıköy","beşiktaş","kızılay","şuraya"] },
+      { text: "Selamünaleyküm / Kolay gelsin", points: 26, keywords: ["kolay gelsin","merhaba","selam","iyi günler"] },
+      { text: "Kredi kartı geçiyor mu? / Pos var mı?", points: 12, keywords: ["kredi kartı","pos","kart","nakit mi"] },
+      { text: "Acelem var biraz hızlı gidebilir miyiz?", points: 6, keywords: ["acelem var","hızlı","yetişmem lazım"] },
+      { text: "Taksi boş mu? / Müsait misiniz?", points: 4, keywords: ["boş mu","alıyor musunuz","müsait misiniz"] }
+    ]
+  },
+  {
+    id: "ay_59",
+    question: "100 kişiye sorduk: Bir işte terfi alan veya maaşına zam gelen birinden arkadaşları ne ister?",
+    category: "İş & Kariyer",
+    answers: [
+      { text: "Yemek / Tatlı ısmarlaması (Islatmak)", points: 64, keywords: ["yemek","tatlı","ısmarlamak","ıslatmak","baklava","kutlama"] },
+      { text: "Borç para istemek", points: 16, keywords: ["borç","para","borç vermek"] },
+      { text: "Bizi de yanına al / Torpil yap demesi", points: 11, keywords: ["torpil","bizi de al","yanına çek","yardım et"] },
+      { text: "Tebrik edip alkışlamak", points: 6, keywords: ["tebrik","alkış","kutlamak"] },
+      { text: "Hediye istemek", points: 3, keywords: ["hediye","bize ne aldın"] }
+    ]
+  },
+  {
+    id: "ay_60",
+    question: "100 kişiye sorduk: Kahvehanede oturan amcaların en çok oynadığı masa oyunu nedir?",
+    category: "Kahvehane Kültürü",
+    answers: [
+      { text: "Okey (Düz veya 101 Okey)", points: 54, keywords: ["okey","101","taş","ıstaka"] },
+      { text: "Tavla", points: 28, keywords: ["tavla","zar","mars","kapı"] },
+      { text: "Batak / Pişti (Kağıt oyunları)", points: 12, keywords: ["batak","pişti","kağıt","iskambil","king"] },
+      { text: "Domino", points: 4, keywords: ["domino"] },
+      { text: "Satranç veya Dama", points: 2, keywords: ["satranç","dama"] }
+    ]
+  },
+  {
+    id: "ay_61",
+    question: "100 kişiye sorduk: Bir lunaparkta en çok korkulan veya çığlık atılan alet nedir?",
+    category: "Eğlence Parkı",
+    answers: [
+      { text: "Hız Treni (Roller Coaster)", points: 44, keywords: ["hız treni","roller coaster","tren"] },
+      { text: "Gondol", points: 24, keywords: ["gondol","uçan gemi"] },
+      { text: "Kamikaze / Ranger", points: 16, keywords: ["kamikaze","ranger","ters dönen"] },
+      { text: "Korku Tüneli", points: 10, keywords: ["korku tüneli","korku evi"] },
+      { text: "Dönme Dolap (Yükseklik korkusu olanlar için)", points: 6, keywords: ["dönme dolap","yükseklik"] }
+    ]
+  },
+  {
+    id: "ay_62",
+    question: "100 kişiye sorduk: Çarşıda veya pazarda satıcıların müşteriyi çekmek için bağırdığı bir söz nedir?",
+    category: "Pazar Kültürü",
+    answers: [
+      { text: "Gel abla gel / Gel abi gel!", points: 48, keywords: ["gel abla","gel abi","gel vatandaş","koş"] },
+      { text: "Bedava bunlar bedava / Batan geminin malları!", points: 24, keywords: ["bedava","batan gemi","ucuz","kelepir"] },
+      { text: "Taze bunlar taze / Dalından yeni koptu!", points: 14, keywords: ["taze","dalından","günlük","çıtır çıtır"] },
+      { text: "Yarım kilo alana bir kilo bedava / Kampanya!", points: 8, keywords: ["kampanya","indirim","üç al iki öde"] },
+      { text: "Tadına bakmadan geçme / Şeker bunlar şeker!", points: 6, keywords: ["şeker","tadına bak","bal bunlar"] }
+    ]
+  },
+  {
+    id: "ay_63",
+    question: "100 kişiye sorduk: Bir insanın yeni eve taşınırken en çok zorlandığı şey nedir?",
+    category: "Taşınma",
+    answers: [
+      { text: "Koli toplamak ve sonra kolileri açmak", points: 46, keywords: ["koli","koli yapmak","kutu","toplamak","açmak"] },
+      { text: "Ağır mobilyaları ve beyaz eşyayı taşımak", points: 28, keywords: ["mobilya","beyaz eşya","buzdolabı","koltuk","ağır"] },
+      { text: "Yeni evi köşe bucak temizlemek", points: 14, keywords: ["temizlik","boya badana","ev temizliği"] },
+      { text: "Nakliyecilerle anlaşmak veya tartışmak", points: 8, keywords: ["nakliye","nakliyeci","kamyon"] },
+      { text: "Abonelikleri (Elektrik, Su, İnternet) taşımak", points: 4, keywords: ["abonelik","internet","doğalgaz","su"] }
+    ]
+  },
+  {
+    id: "ay_64",
+    question: "100 kişiye sorduk: Karadeniz denilince akla gelen ilk şey nedir?",
+    category: "Türkiye Coğrafyası",
+    answers: [
+      { text: "Hamsi ve Hamsili yemekler", points: 44, keywords: ["hamsi","balık","hamsili pilav"] },
+      { text: "Çay ve Çay bahçeleri", points: 26, keywords: ["çay","rize","çay tarlası"] },
+      { text: "Horon ve Kemençe", points: 15, keywords: ["horon","kemençe","tulum"] },
+      { text: "Sürekli yağmur ve yeşil yaylalar", points: 10, keywords: ["yağmur","yayla","yeşillik","sis","ayder"] },
+      { text: "Karadeniz fıkraları ve Temel", points: 5, keywords: ["fıkra","temel","şive","karadenizli"] }
+    ]
+  },
+  {
+    id: "ay_65",
+    question: "100 kişiye sorduk: Ege Bölgesi denilince akla gelen ilk lezzet veya özellik nedir?",
+    category: "Türkiye Coğrafyası",
+    answers: [
+      { text: "Zeytin ve Zeytinyağlı yemekler", points: 48, keywords: ["zeytinyağı","zeytin","zeytinyağlı"] },
+      { text: "Ege otları (Şevketibostan, Deniz börülcesi vb.)", points: 22, keywords: ["ot","ege otları","börülce","radika"] },
+      { text: "Boyoz ve Gevrek (İzmir)", points: 14, keywords: ["boyoz","gevrek","kumru"] },
+      { text: "Güzel tatil beldeleri (Bodrum, Çeşme, Alaçatı)", points: 10, keywords: ["bodrum","çeşme","alaçatı","deniz","tatil"] },
+      { text: "Sıcakkanlı ve neşeli insanları", points: 6, keywords: ["insanlar","sıcakkanlı","rahat","huzur"] }
+    ]
+  },
+  {
+    id: "ay_66",
+    question: "100 kişiye sorduk: Gaziantep denilince akla gelen ilk lezzet nedir?",
+    category: "Gaziantep & Mutfak",
+    answers: [
+      { text: "Baklava (Fıstıklı baklava)", points: 52, keywords: ["baklava","antep baklavası","fıstıklı baklava"] },
+      { text: "Antep fıstığı", points: 22, keywords: ["fıstık","antep fıstığı"] },
+      { text: "Kebap (Ali Nazik, Küşleme vb.)", points: 14, keywords: ["kebap","ali nazik","küşleme","lahmacun"] },
+      { text: "Beyran çorbası", points: 8, keywords: ["beyran","çorba"] },
+      { text: "Katmer", points: 4, keywords: ["katmer","tatlı"] }
+    ]
+  },
+  {
+    id: "ay_67",
+    question: "100 kişiye sorduk: Bir lunaparkta veya panayırda çocukların elinde görülen tatlı yiyecek nedir?",
+    category: "Tatlılar",
+    answers: [
+      { text: "Pamuk şeker (Pembe pamuk şeker)", points: 54, keywords: ["pamuk şeker","pamuk","şeker"] },
+      { text: "Elma şekeri", points: 26, keywords: ["elma şekeri","kırmızı elma"] },
+      { text: "Dondurma (Maraş dondurması)", points: 12, keywords: ["dondurma","külah","maraş"] },
+      { text: "Patlamış mısır", points: 5, keywords: ["mısır","patlamış mısır","popcorn"] },
+      { text: "Macun (Osmanlı macunu)", points: 3, keywords: ["macun","osmanlı macunu"] }
+    ]
+  },
+  {
+    id: "ay_68",
+    question: "100 kişiye sorduk: Hafta sonu balık tutmaya giden birinin yanında mutlaka olan şey nedir?",
+    category: "Hobiler",
+    answers: [
+      { text: "Olta takımı ve misina", points: 48, keywords: ["olta","misina","iğne","kamış"] },
+      { text: "Yem (Solucan, ekmek, kurt)", points: 24, keywords: ["yem","solucan","ekmek içi","karides"] },
+      { text: "Kova / Balık filesi (Tuttuğu balıklar için)", points: 14, keywords: ["kova","file","leğen"] },
+      { text: "Termos (Çay/Kahve)", points: 9, keywords: ["termos","çay","kahve"] },
+      { text: "Katlanır kamp sandalyesi", points: 5, keywords: ["sandalye","kamp sandalyesi","tabure"] }
+    ]
+  },
+  {
+    id: "ay_69",
+    question: "100 kişiye sorduk: Bir insanın telefonunda en çok şarj tüketen uygulama veya özellik nedir?",
+    category: "Teknoloji",
+    answers: [
+      { text: "Instagram / TikTok (Video izlemek)", points: 46, keywords: ["instagram","tiktok","reels","video","sosyal medya"] },
+      { text: "Oyunlar (Mobil oyunlar)", points: 24, keywords: ["oyun","pubg","mobil oyun"] },
+      { text: "Navigasyon / Harita (GPS)", points: 14, keywords: ["navigasyon","harita","gps","konum"] },
+      { text: "Kamera / Video kaydı", points: 10, keywords: ["kamera","video","fotoğraf"] },
+      { text: "Ekran parlaklığının sonuna kadar açık olması", points: 6, keywords: ["ekran","parlaklık","ışık"] }
+    ]
+  },
+  {
+    id: "ay_70",
+    question: "100 kişiye sorduk: Bir arkadaş ortamında ortamı en çok neşelendiren kişi kimdir?",
+    category: "Sosyal Yaşam",
+    answers: [
+      { text: "Sürekli espri yapan / Komik anlatan (Grubun komedyeni)", points: 56, keywords: ["espri","komik","güldüren","komedyen","şakacı"] },
+      { text: "Gitar çalan veya şarkı söyleyen kişi", points: 18, keywords: ["gitar","şarkı","müzisyen","türkü"] },
+      { text: "Yemek veya tatlı ısmarlayan bonkör kişi", points: 12, keywords: ["ısmarlayan","bonkör","cömert","yediren"] },
+      { text: "Enerjik ve herkesi oyuna/dansa kaldıran kişi", points: 9, keywords: ["dans","enerjik","hareketli","oyun"] },
+      { text: "En taze dedikoduları ve haberleri getiren kişi", points: 5, keywords: ["dedikodu","haber","anlatan"] }
+    ]
   }
 ];
 
