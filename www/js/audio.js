@@ -1084,13 +1084,13 @@ class SoundEngine {
 
       if (this.musicTheme === 'party_groove') {
         // 🎉 1. KIPIR KIPIR PARTİ (Canlı Davul, Akıcı Bas & Eğlenceli Disco Synth)
-        // Dört Dörtlük Kick
+        // Dört Dörtlük Kick (Dengeli stüdyo seviyesi, konuşmaları bastırmaz)
         if (step16 === 0 || step16 === 4 || step16 === 8 || step16 === 12) {
-          this.synthDrumKick(now, (step16 === 0 || step16 === 8) ? 1.05 : 0.9);
+          this.synthDrumKick(now, (step16 === 0 || step16 === 8) ? 0.58 : 0.48);
         }
         // Snare / Alkış
         if (step16 === 4 || step16 === 12) {
-          this.synthDrumSnare(now, 0.95);
+          this.synthDrumSnare(now, 0.52);
         }
         // Hi-Hat (Normalde 2, 6, 10, 14; Panikte her tekli adımda coşar)
         if (step16 === 2 || step16 === 6 || step16 === 10 || step16 === 14) {
@@ -1118,7 +1118,7 @@ class SoundEngine {
         }
         // Kalp Nabzı
         if (step16 === 0 || step16 === 8) {
-          this.synthDrumKick(now, 0.7);
+          this.synthDrumKick(now, 0.45);
         }
         // Marimba Tansiyon Motifi
         const mFreq = tvMarimba[step16];

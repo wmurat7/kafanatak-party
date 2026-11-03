@@ -540,7 +540,7 @@ export class CarkifelekEngine {
     this.stripTrack.innerHTML = '';
 
     // Sonsuz dönme hissi için 16 dilimi 15 kez ardışık olarak şeride ekle (240 kart)
-    const REPEAT_COUNT = 15;
+    const REPEAT_COUNT = 25;
     for (let r = 0; r < REPEAT_COUNT; r++) {
       CARKIFELEK_SLICES.forEach((slice, idx) => {
         const card = document.createElement('div');
@@ -605,7 +605,7 @@ export class CarkifelekEngine {
     const btnSpin = document.getElementById('btn-cark-spin');
     if (btnSpin) {
       btnSpin.disabled = true;
-      btnSpin.innerHTML = '🎡 MAKARA DÖNÜYOR...';
+      btnSpin.innerHTML = '🎡 ÇARKI ÇEVİRİYOR...';
     }
 
     try { sounds.playSpin(); } catch (e) {}
@@ -617,41 +617,29 @@ export class CarkifelekEngine {
     const containerW = this.reelContainer ? this.reelContainer.clientWidth : 400;
     const centerOffset = (containerW / 2) - (this.cardWidth / 2);
     const cycleCards = CARKIFELEK_SLICES.length; // 16
-    const cycleWidth = cycleCards * this.cardWidth; // 1280px
 
     // Mevcut merkezdeki kartın indeksi
     let currentCardIndex = Math.round((-this.currentOffset + centerOffset) / this.cardWidth);
     if (isNaN(currentCardIndex) || currentCardIndex < 0) currentCardIndex = 0;
 
-    // Eğer şeridin sonlarına yaklaşıldıysa, görünmez olarak başa sar (sonsuz makara döngüsü)
-    if (currentCardIndex > 140) {
-      const cyclesToReset = Math.floor(currentCardIndex / cycleCards) - 2;
-      currentCardIndex -= cyclesToReset * cycleCards;
-      this.currentOffset += cyclesToReset * cycleWidth;
-      if (this.stripTrack) {
-        this.stripTrack.style.transition = 'none';
-        this.stripTrack.style.transform = `translateX(${this.currentOffset}px)`;
-      }
-    }
-
-    // Hedef dilime ulaşmak için daima İLERİYE (tek yöne) adımlar hesapla
+    // Hedef dilime ulaşmak için daima İLERİYE (tek yöne saat yönünde) adımlar hesapla
     const currentSliceIndex = ((currentCardIndex % cycleCards) + cycleCards) % cycleCards;
     let stepsForward = chosenIndex - currentSliceIndex;
     if (stepsForward <= 0) {
       stepsForward += cycleCards;
     }
 
-    // Uzun ve gerilimli dönüş için 5 tam tur + hedef adım (80 ila 96 kart ileri)
-    const fullCycles = 5;
+    // Uzun ve gerilimli dönüş için 6 tam tur + hedef adım (100 ila 112 kart ileri)
+    const fullCycles = 6;
     const totalCardsToAdvance = (fullCycles * cycleCards) + stepsForward;
     const targetCardIndex = currentCardIndex + totalCardsToAdvance;
 
     const startOffset = this.currentOffset;
     const targetOffset = -(targetCardIndex * this.cardWidth - centerOffset);
-    const distance = targetOffset - startOffset; // Daima negatif (tek yöne ileri akış)
+    const distance = targetOffset - startOffset; // Daima negatif: tek yöne kesintisiz akış
 
-    // 4.8 saniye: Yüksek hızlı fırlama ve sonlara doğru nefes kesici yavaşlama
-    const duration = 4800;
+    // 5.8 saniye: Yüksek hızlı fırlama ve sonlara doğru nefes kesici gerçekçi yavaşlama
+    const duration = 5800;
     const startTime = performance.now();
     let lastTickCard = -1;
 
@@ -669,8 +657,8 @@ export class CarkifelekEngine {
       const elapsed = currentTime - startTime;
       const progress = Math.min(1, elapsed / duration);
       
-      // Quintic ease-out: Başta patlayıcı hız, sonda gerilimli ve net yavaşlama
-      const easeOut = 1 - Math.pow(1 - progress, 4.5);
+      // Quartic-Cubic fiziksel sürtünme eğrisi (uzun süzülme ve sonlarda belirgin adımlar)
+      const easeOut = 1 - Math.pow(1 - progress, 3.8);
       const curPos = startOffset + distance * easeOut;
       this.currentOffset = curPos;
 
@@ -678,9 +666,9 @@ export class CarkifelekEngine {
         this.stripTrack.style.transform = `translateX(${curPos}px)`;
       }
 
-      // Merkezden geçen her kartta tik sesi
+      // Merkezden geçen her kart piminde mekanik tık sesi
       const currentPassedCard = Math.floor((-curPos + centerOffset) / this.cardWidth);
-      if (currentPassedCard !== lastTickCard && progress < 0.98) {
+      if (currentPassedCard !== lastTickCard && progress < 0.985) {
         lastTickCard = currentPassedCard;
         try { sounds.playWheelTick(); } catch (e) {}
       }
@@ -695,9 +683,9 @@ export class CarkifelekEngine {
         // Kazanan kartı merkezde altın neon ile parlat
         if (this.stripCards && this.stripCards[targetCardIndex]) {
           const winEl = this.stripCards[targetCardIndex].element;
-          winEl.style.transform = 'scale(1.16)';
+          winEl.style.transform = 'scale(1.18)';
           winEl.style.borderColor = 'var(--gold)';
-          winEl.style.boxShadow = '0 0 28px var(--gold), inset 0 2px 8px #FFF';
+          winEl.style.boxShadow = '0 0 30px var(--gold), inset 0 2px 8px #FFF';
           winEl.style.zIndex = '5';
         }
 
@@ -707,6 +695,29 @@ export class CarkifelekEngine {
         } else {
           try { sounds.playWheelWin(); } catch(e) {}
         }
+
+        // Sonsuz tek yön döngüsü için sonraki tura görünmez güvenli hizalama (cycle 4)
+        const safeBaseIndex = (4 * cycleCards) + chosenIndex;
+        setTimeout(() => {
+          if (!this.isSpinning && this.stripTrack) {
+            this.currentOffset = -(safeBaseIndex * this.cardWidth - centerOffset);
+            this.stripTrack.style.transition = 'none';
+            this.stripTrack.style.transform = `translateX(${this.currentOffset}px)`;
+            if (this.stripCards && this.stripCards[safeBaseIndex]) {
+              this.stripCards.forEach(c => {
+                c.element.style.transform = 'scale(1)';
+                c.element.style.borderColor = 'rgba(255,255,255,0.6)';
+                c.element.style.boxShadow = 'inset 0 2px 6px rgba(255,255,255,0.4), 0 3px 8px rgba(0,0,0,0.5)';
+                c.element.style.zIndex = '1';
+              });
+              const safeWinEl = this.stripCards[safeBaseIndex].element;
+              safeWinEl.style.transform = 'scale(1.18)';
+              safeWinEl.style.borderColor = 'var(--gold)';
+              safeWinEl.style.boxShadow = '0 0 30px var(--gold), inset 0 2px 8px #FFF';
+              safeWinEl.style.zIndex = '5';
+            }
+          }
+        }, 1200);
 
         this.handleSliceOutcome(chosenSlice);
       }

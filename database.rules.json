@@ -9,8 +9,9 @@
         ".read": false,
         ".write": false,
         "$roomId": {
-          ".read": "$roomId.length >= 3 && $roomId.length <= 16",
-          ".write": "$roomId.length >= 3 && $roomId.length <= 16",
+          ".read": "$roomId.matches(/^[A-Z0-9_-]{3,12}$/)",
+          ".write": "$roomId.matches(/^[A-Z0-9_-]{3,12}$/)",
+          ".validate": "newData.hasChildren(['roomId']) && newData.child('roomId').isString() && newData.child('roomId').val() === $roomId",
           ".indexOn": ["createdAt", "lastActive"]
         }
       }
