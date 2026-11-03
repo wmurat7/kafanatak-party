@@ -628,7 +628,7 @@ class GameApp {
         if (target) {
           target.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-        this.showToast('📱 Kafana Tak! Alna koyma ve kural modları seçildi');
+        this.showToast('📱 Kafana Tak! Alna koyma oyun modları seçildi');
       });
     }
 
@@ -641,7 +641,7 @@ class GameApp {
         document.querySelectorAll('.dock-nav-item').forEach(btn => btn.classList.remove('active'));
         document.getElementById('dock-btn-party-games')?.classList.add('active');
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        this.showToast('🎭 Parti Arenası açıldı: 12 Masa & Çoklu Cihaz Oyunu');
+        this.showToast('🎭 Parti Arenası açıldı: 12 Efsane Parti & Grup Oyunu');
       });
     }
 

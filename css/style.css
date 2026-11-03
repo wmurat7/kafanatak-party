@@ -1372,11 +1372,18 @@ input:checked + .slider:before {
   background: var(--bg-card);
   backdrop-filter: blur(24px);
   border: 2px solid var(--border-glow);
-  padding: 36px 50px;
+  padding: 28px 24px;
   border-radius: 36px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-  max-width: 540px;
-  width: 100%;
+  max-width: 520px;
+  width: 90vw;
+  margin: 0 auto;
+  text-align: center;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .countdown-team-pill {
@@ -1388,6 +1395,7 @@ input:checked + .slider:before {
   font-size: 0.95rem;
   margin-bottom: 14px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  text-align: center;
 }
 
 .countdown-guidance {
@@ -1395,6 +1403,8 @@ input:checked + .slider:before {
   font-weight: 700;
   color: var(--secondary);
   margin-bottom: 8px;
+  text-align: center;
+  width: 100%;
 }
 
 .countdown-category {
@@ -1403,11 +1413,17 @@ input:checked + .slider:before {
   font-weight: 900;
   color: #FFF;
   margin-bottom: 20px;
+  text-align: center;
+  width: 100%;
 }
 
 .forehead-anim {
   font-size: 3.8rem;
   margin-bottom: 14px;
+  text-align: center;
+  width: 100%;
+  display: flex;
+  justify-content: center;
   animation: tiltPrompt 2s ease-in-out infinite;
 }
 
@@ -1419,16 +1435,24 @@ input:checked + .slider:before {
 
 .countdown-number {
   font-family: var(--font-heading);
-  font-size: 6rem;
+  font-size: clamp(3.2rem, 15vw, 5.5rem);
   font-weight: 900;
   color: var(--accent-yellow);
   text-shadow: 0 0 40px rgba(255, 230, 0, 0.5);
-  line-height: 1;
+  line-height: 1.1;
+  text-align: center;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px auto;
+  transform-origin: center center;
+  box-sizing: border-box;
 }
 
 .countdown-number.pulse {
-  transform: scale(1.2);
-  transition: transform 0.3s;
+  transform: scale(1.18);
+  transition: transform 0.25s ease-out;
 }
 
 .countdown-instruction {
