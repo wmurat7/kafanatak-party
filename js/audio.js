@@ -7,7 +7,16 @@ class SoundEngine {
     this.compressor = null;
     this.masterGain = null;
     this.musicGain = null;
-    this.muted = typeof localStorage !== 'undefined' ? (localStorage.getItem('kafanatak_muted') === 'true') : false;
+    this.masterVolume = (typeof localStorage !== 'undefined')
+      ? Math.max(0, Math.min(1, parseFloat(localStorage.getItem('kafanatak_volume') || '1.0')))
+      : 1.0;
+    this.sfxVolume = (typeof localStorage !== 'undefined')
+      ? Math.max(0, Math.min(1, parseFloat(localStorage.getItem('kafanatak_sfx_volume') || '1.0')))
+      : 1.0;
+    this.muted = (typeof localStorage !== 'undefined')
+      ? (localStorage.getItem('kafanatak_muted') === 'true' || localStorage.getItem('kafanatak_sound_muted') === 'true')
+      : false;
+    this.tickPhase = false; // Alternating TİK - TAK mechanical phases
     const validThemes = ['party_groove', 'tv_quiz', 'suspense', 'ticking_clock', 'noir_mystery', 'minimal_drone', 'none'];
     const savedTheme = typeof localStorage !== 'undefined' ? localStorage.getItem('kafanatak_music_theme') : null;
     this.musicTheme = validThemes.includes(savedTheme) ? savedTheme : 'party_groove';
@@ -96,7 +105,7 @@ class SoundEngine {
             try {
               const cur = this.ctx.currentTime;
               this.masterGain.gain.cancelScheduledValues(cur);
-              this.masterGain.gain.setValueAtTime(1.0, cur);
+              this.masterGain.gain.setValueAtTime(this.masterVolume, cur);
             } catch (err) {}
           }
         }, 60);
@@ -120,9 +129,10 @@ class SoundEngine {
           this.compressor.attack.setValueAtTime(0.003, this.ctx.currentTime);
           this.compressor.release.setValueAtTime(0.18, this.ctx.currentTime);
 
-          // Master Ses Seviyesi
+          // Master Ses Seviyesi (Kaydedilmiş masterVolume veya sessiz ise 0)
           this.masterGain = this.ctx.createGain();
-          this.masterGain.gain.setValueAtTime(1.0, this.ctx.currentTime);
+          const initVol = this.muted ? 0 : this.masterVolume;
+          this.masterGain.gain.setValueAtTime(initVol, this.ctx.currentTime);
 
           // Parti Ritmi Gain Düğümü
           this.musicGain = this.ctx.createGain();
@@ -137,6 +147,44 @@ class SoundEngine {
 
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume().catch(() => {});
+    }
+  }
+
+  setMasterVolume(val) {
+    const v = Math.max(0, Math.min(1, parseFloat(val) || 0));
+    this.masterVolume = v;
+    try {
+      localStorage.setItem('kafanatak_volume', v.toString());
+    } catch (e) {}
+    if (this.ctx && this.masterGain && !this.muted) {
+      try {
+        const now = this.ctx.currentTime;
+        this.masterGain.gain.cancelScheduledValues(now);
+        this.masterGain.gain.setValueAtTime(v, now);
+      } catch (e) {}
+    }
+  }
+
+  setSfxVolume(val) {
+    const v = Math.max(0, Math.min(1, parseFloat(val) || 0));
+    this.sfxVolume = v;
+    try {
+      localStorage.setItem('kafanatak_sfx_volume', v.toString());
+    } catch (e) {}
+  }
+
+  setMuted(isMuted) {
+    this.muted = !!isMuted;
+    try {
+      localStorage.setItem('kafanatak_muted', this.muted ? 'true' : 'false');
+      localStorage.setItem('kafanatak_sound_muted', this.muted ? 'true' : 'false');
+    } catch (e) {}
+    if (this.ctx && this.masterGain) {
+      try {
+        const now = this.ctx.currentTime;
+        this.masterGain.gain.cancelScheduledValues(now);
+        this.masterGain.gain.setValueAtTime(this.muted ? 0 : this.masterVolume, now);
+      } catch (e) {}
     }
   }
 
@@ -208,7 +256,8 @@ class SoundEngine {
       src.playbackRate.setValueAtTime(playbackRate, now);
 
       const gain = this.ctx.createGain();
-      gain.gain.setValueAtTime(volume, now);
+      const effectiveVol = volume * this.sfxVolume;
+      gain.gain.setValueAtTime(effectiveVol, now);
 
       src.connect(gain);
       gain.connect(this.getOutputNode());
@@ -216,7 +265,7 @@ class SoundEngine {
       if (maxDurationSec && maxDurationSec > 0) {
         const fadeDuration = 0.5;
         const fadeStart = Math.max(now, now + maxDurationSec - fadeDuration);
-        gain.gain.setValueAtTime(volume, fadeStart);
+        gain.gain.setValueAtTime(effectiveVol, fadeStart);
         gain.gain.linearRampToValueAtTime(0.001, now + maxDurationSec);
         src.stop(now + maxDurationSec);
       }
@@ -319,18 +368,105 @@ class SoundEngine {
   }
 
   // =========================================================================
-  // 3. SAYAC / TİK-TAK SESİ (Akustik Ahşap Blok Tıkı)
+  // 3. SAYAC / TİK-TAK SESİ (Gerçekçi Mekanik Sarkaç & Çift Fazlı Tik-Tak Sentezi)
   // =========================================================================
+  synthRealisticTick(isUrgent = false, isWheel = false) {
+    if (this.muted) return;
+    this.unlockAudio();
+    if (!this.ctx) return;
+
+    try {
+      const now = this.ctx.currentTime;
+      const outNode = this.getOutputNode();
+      this.tickPhase = !this.tickPhase; // Faz 0: Yüksek "TİK", Faz 1: Tok "TAK"
+
+      if (isWheel) {
+        // Çark İbresi Mandalı (Spring-loaded ratchet snap past metal pins)
+        // Plastik/deri mandalın çiviye çarpıp hızla geri atma sesi (crisp 2400Hz transient)
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const filter = this.ctx.createBiquadFilter();
+
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(2400, now);
+        filter.Q.setValueAtTime(6.5, now);
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(2800, now);
+        osc.frequency.exponentialRampToValueAtTime(700, now + 0.024);
+
+        const wheelVol = 0.42 * this.sfxVolume;
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(wheelVol, now + 0.0015);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(outNode);
+
+        osc.start(now);
+        osc.stop(now + 0.026);
+        this.activeOscillators.add(osc);
+        setTimeout(() => this.activeOscillators.delete(osc), 35);
+        return;
+      }
+
+      const isPhaseTik = this.tickPhase;
+      const baseFreq = isUrgent
+        ? (isPhaseTik ? 2200 : 1420)
+        : (isPhaseTik ? 1850 : 1180);
+      const duration = isUrgent ? 0.038 : (isPhaseTik ? 0.042 : 0.054);
+      const amp = (isUrgent ? 0.52 : 0.36) * this.sfxVolume;
+
+      // 1. Akustik Mekanik Ahşap/Kasa Rezonansı
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = isPhaseTik ? 'triangle' : 'sine';
+      osc.frequency.setValueAtTime(baseFreq, now);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.4, now + duration);
+
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(amp, now + 0.002);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+      osc.connect(gain);
+      gain.connect(outNode);
+
+      osc.start(now);
+      osc.stop(now + duration);
+      this.activeOscillators.add(osc);
+
+      // 2. Tırnak / Maşa Çelik Vuruşu (Transient Escapement Pallet Click)
+      if (isPhaseTik) {
+        const clickOsc = this.ctx.createOscillator();
+        const clickGain = this.ctx.createGain();
+        clickOsc.type = 'sawtooth';
+        clickOsc.frequency.setValueAtTime(3600, now);
+        clickOsc.frequency.exponentialRampToValueAtTime(1400, now + 0.012);
+
+        clickGain.gain.setValueAtTime(0, now);
+        clickGain.gain.linearRampToValueAtTime(amp * 0.45, now + 0.001);
+        clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.014);
+
+        clickOsc.connect(clickGain);
+        clickGain.connect(outNode);
+
+        clickOsc.start(now);
+        clickOsc.stop(now + 0.015);
+        this.activeOscillators.add(clickOsc);
+        setTimeout(() => this.activeOscillators.delete(clickOsc), 20);
+      }
+
+      setTimeout(() => this.activeOscillators.delete(osc), (duration * 1000) + 15);
+    } catch (e) {}
+  }
+
   playTick(isUrgent = false) {
     if (this.muted) return;
     this.unlockAudio();
-
-    if (isUrgent) {
-      this.vibrate(25);
-      this.playBuffer('tick', 0.95, 1.25);
-    } else {
-      this.playBuffer('tick', 0.65, 1.0);
-    }
+    this.vibrate(isUrgent ? 22 : 12);
+    this.synthRealisticTick(isUrgent, false);
   }
 
     // =========================================================================
@@ -434,7 +570,7 @@ class SoundEngine {
   // =========================================================================
   playWheelTick() {
     if (this.muted) return;
-    this.playBuffer('tick', 0.4, 1.45);
+    this.synthRealisticTick(false, true);
   }
 
   playSpin() {

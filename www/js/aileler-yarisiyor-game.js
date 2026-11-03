@@ -8,7 +8,8 @@ import { HostModerationPanel } from './host-moderation-panel.js';
 import {
   AILELER_YARISIYOR_QUESTIONS,
   AILELER_YARISIYOR_KIDS_QUESTIONS,
-  matchAnswerIndex
+  matchAnswerIndex,
+  findSmartAnswerSuggestion
 } from './aileler-yarisiyor-data.js';
 
 export class AilelerYarisiyorEngine {
@@ -808,6 +809,20 @@ export class AilelerYarisiyorEngine {
             </button>
           </div>
 
+          <!-- Akıllı Hakem Asistanı Yakın Cevap / Eş Anlamlı Bildirimi -->
+          <div id="ay-smart-match-box" style="display:none; background:rgba(16,185,129,0.18); border:1.5px solid #10B981; border-radius:12px; padding:8px 12px; margin-bottom:8px; text-align:left;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <span style="font-size:0.75rem; font-weight:900; color:#10B981; display:block;">💡 AKILLI HAKEM ASİSTANI ÖNERİSİ:</span>
+                <span id="ay-smart-match-text" style="font-size:0.86rem; font-weight:900; color:#FFF;"></span>
+              </div>
+              <button type="button" id="btn-ay-smart-accept" style="background:#10B981; color:#0B0E14; border:none; font-weight:900; font-size:0.78rem; padding:6px 12px; border-radius:8px; cursor:pointer; flex-shrink:0;">
+                ✓ Kabul Et & Aç
+              </button>
+            </div>
+            <div id="ay-smart-match-reason" style="font-size:0.68rem; color:#A7F3D0; margin-top:2px;"></div>
+          </div>
+
           <!-- Moderatör / Hakem Hızlı Çarpı Butonu -->
           <button type="button" id="btn-add-ay-strike" class="btn-secondary" style="width:100%; padding:11px; font-weight:900; font-size:0.9rem; border-radius:10px; background:rgba(239,68,68,0.18); border:1.5px solid #EF4444; color:#EF4444; cursor:pointer;">
             ❌ Yanlış Cevap Verildi (+1 Çarpı Ekle)
@@ -838,14 +853,45 @@ export class AilelerYarisiyorEngine {
       });
     });
 
-    // 3. Yazılı cevap girişi
+    // 3. Yazılı cevap girişi & Akıllı Hakem Asistanı
     const submitBtn = document.getElementById('btn-submit-ay-answer');
     const inputEl = document.getElementById('input-ay-answer');
+    const smartBox = document.getElementById('ay-smart-match-box');
+    const smartText = document.getElementById('ay-smart-match-text');
+    const smartReason = document.getElementById('ay-smart-match-reason');
+    const btnSmartAccept = document.getElementById('btn-ay-smart-accept');
+    let currentSuggestion = null;
+
+    inputEl?.addEventListener('input', () => {
+      const val = inputEl.value;
+      if (val && val.trim().length >= 2) {
+        currentSuggestion = findSmartAnswerSuggestion(val, this.currentQuestion.answers, this.revealedAnswers);
+        if (currentSuggestion && smartBox && smartText) {
+          smartText.textContent = `"${currentSuggestion.answer.text}" (${currentSuggestion.answer.points} Puan)`;
+          if (smartReason) smartReason.textContent = `🎯 ${currentSuggestion.reason}`;
+          smartBox.style.display = 'block';
+          return;
+        }
+      }
+      if (smartBox) smartBox.style.display = 'none';
+      currentSuggestion = null;
+    });
+
+    btnSmartAccept?.addEventListener('click', () => {
+      if (currentSuggestion) {
+        this.revealAnswer(currentSuggestion.index);
+        inputEl.value = '';
+        if (smartBox) smartBox.style.display = 'none';
+        currentSuggestion = null;
+      }
+    });
 
     const doSubmit = () => {
       if (inputEl && inputEl.value) {
         this.handleUserAnswer(inputEl.value);
         inputEl.value = '';
+        if (smartBox) smartBox.style.display = 'none';
+        currentSuggestion = null;
       }
     };
 

@@ -2055,6 +2055,21 @@
                 <span class="slider"></span>
               </label>
             </div>
+            <!-- Master Ses Seviyesi Sürgüsü -->
+            <div class="hub-volume-slider-row" style="display:flex; align-items:center; justify-content:space-between; gap:12px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1); border-radius:14px; padding:10px 14px; margin:10px 0;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.15rem;">🎚️</span>
+                <div>
+                  <div style="font-size:0.82rem; font-weight:800; color:#FFF;">Ses Seviyesi</div>
+                  <div style="font-size:0.7rem; color:var(--text-muted);" id="label-volume-percent">%100</div>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; flex:1; max-width:210px;">
+                <span style="font-size:0.75rem; color:#94A3B8;">🔈</span>
+                <input type="range" id="input-master-volume" min="0" max="100" step="5" value="100" class="range-slider" style="flex:1; cursor:pointer;" />
+                <span style="font-size:0.75rem; color:#94A3B8;">🔊</span>
+              </div>
+            </div>
 
             <!-- Play & Stop Master Kontrol Barı -->
             <div class="sound-test-master-bar">

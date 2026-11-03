@@ -1,5 +1,6 @@
 package com.kafanatak.party;
 
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import androidx.activity.OnBackPressedCallback;
@@ -28,6 +29,9 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Donanım ses tuşlarının daima Medya / Oyun Sesini kontrol etmesini sağla
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         // Android 13+ Predictive Back Gesture ve OnBackPressedDispatcher
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {

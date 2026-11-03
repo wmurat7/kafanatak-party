@@ -925,29 +925,143 @@ export const AILELER_YARISIYOR_KIDS_QUESTIONS = [
  * @param {Array} answers - Panodaki cevap listesi
  * @returns {number} Eşleşen cevabın indeksi (-1 bulunamazsa)
  */
-export function matchAnswerIndex(input, answers) {
-  if (!input) return -1;
-  const cleanInput = input.trim().toLocaleLowerCase('tr-TR');
+// Yaygın Türkçe Eş Anlamlılar ve Yakın Kavramlar Sözlüğü (Akıllı Hakem Asistanı)
+const TURKISH_SYNONYMS = {
+  'ayakkabı': ['pabuç', 'kundura', 'çizme', 'bot', 'terlik', 'çarık'],
+  'araba': ['otomobil', 'taşıt', 'araç', 'vasıta', 'oto'],
+  'para': ['nakit', 'cüzdan', 'banknot', 'madeni', 'dolar', 'avro', 'tl'],
+  'ev': ['daire', 'konut', 'apartman', 'hane', 'yuva', 'villa'],
+  'çay': ['demlik', 'çaydanlık', 'semaver', 'bardak', 'fincan'],
+  'kahve': ['nescafe', 'espresso', 'türk kahvesi', 'fincan', 'cezve'],
+  'öğretmen': ['muallim', 'hoca', 'eğitmen', 'öğretici'],
+  'öğrenci': ['talebe', 'okullu', 'çocuk'],
+  'doktor': ['hekim', 'tabip', 'sağlıkçı', 'uzman'],
+  'telefon': ['cep', 'akıllı telefon', 'mobil', 'ahize'],
+  'televizyon': ['tv', 'ekran', 'kumanda'],
+  'bilgisayar': ['pc', 'laptop', 'dizüstü', 'tablet'],
+  'kitap': ['roman', 'hikaye', 'eser', 'ansiklopedi', 'mecmua'],
+  'çanta': ['sırt çantası', 'bavul', 'valiz', 'el çantası', 'torba'],
+  'gözlük': ['güneş gözlüğü', 'lens', 'çerçeve'],
+  'saat': ['kol saati', 'duvar saati', 'kronometre', 'çalar saat'],
+  'yemek': ['aş', 'sofra', 'öğün', 'besin', 'gıda', 'ziyafet'],
+  'ekmek': ['somun', 'pide', 'francala', 'lavaş'],
+  'su': ['damacana', 'şişe', 'kaynak', 'maden suyu'],
+  'deniz': ['sahil', 'kumsal', 'plaj', 'okyanus'],
+  'anne': ['valide', 'ana', 'anneciğim', 'mami'],
+  'baba': ['peder', 'babacığım', 'babişko'],
+  'kardeş': ['abi', 'abla', 'bacı', 'birader']
+};
 
+/**
+ * 2 Karakter Dizisi Arasındaki Levenshtein Düzenleme Mesafesi (Harf Hatası Toleransı)
+ */
+function levenshteinDistance(a, b) {
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+  const matrix = [];
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          matrix[i][j - 1] + 1,     // insertion
+          matrix[i - 1][j] + 1      // deletion
+        );
+      }
+    }
+  }
+  return matrix[b.length][a.length];
+}
+
+/**
+ * Akıllı Yakın Cevap Hakem Asistanı:
+ * Kullanıcının yazdığı veya söylediği cevabı panodaki cevaplarla esnekçe karşılaştırır.
+ * Eş anlamlı, yakın kelime veya 1-2 harf hatasını yakalar.
+ * @returns {null | { index: number, answer: object, confidence: string, reason: string }}
+ */
+export function findSmartAnswerSuggestion(input, answers, revealedAnswers = {}) {
+  if (!input || typeof input !== 'string') return null;
+  const cleanInput = input.trim().toLocaleLowerCase('tr-TR');
+  if (cleanInput.length < 2) return null;
+
+  // 1. Doğrudan veya anahtar kelime eşleşmesi
   for (let i = 0; i < answers.length; i++) {
+    if (revealedAnswers[i]) continue;
     const ans = answers[i];
     const cleanText = ans.text.toLocaleLowerCase('tr-TR');
 
-    // 1. Doğrudan veya tam kapsama
-    if (cleanText.includes(cleanInput) || cleanInput.includes(cleanText)) {
-      return i;
+    if (cleanText === cleanInput || cleanText.includes(cleanInput) || cleanInput.includes(cleanText)) {
+      return { index: i, answer: ans, confidence: 'exact', reason: 'Tam / Kısmi İsim Eşleşmesi' };
     }
 
-    // 2. Anahtar kelimelerden biri geçiyor mu?
     if (ans.keywords && Array.isArray(ans.keywords)) {
       for (const kw of ans.keywords) {
         const cleanKw = kw.toLocaleLowerCase('tr-TR');
         if (cleanInput.includes(cleanKw) || cleanKw.includes(cleanInput)) {
-          return i;
+          return { index: i, answer: ans, confidence: 'keyword', reason: `Anahtar Kelime: "${kw}"` };
         }
       }
     }
   }
 
-  return -1;
+  // 2. Eş Anlamlı & Kavramsal Yakınlık Denetimi
+  for (let i = 0; i < answers.length; i++) {
+    if (revealedAnswers[i]) continue;
+    const ans = answers[i];
+    const cleanText = ans.text.toLocaleLowerCase('tr-TR');
+
+    // Panodaki kelime eş anlamlılar listesinde var mı?
+    for (const [keyWord, synList] of Object.entries(TURKISH_SYNONYMS)) {
+      const matchPano = cleanText.includes(keyWord);
+      const matchInput = synList.some(s => cleanInput.includes(s) || s.includes(cleanInput));
+
+      if (matchPano && matchInput) {
+        return { index: i, answer: ans, confidence: 'synonym', reason: `Yakın Kavram / Eş Anlam (${cleanInput} ≈ ${keyWord})` };
+      }
+
+      // Veya tersi (kullanıcının söylediği ana kelime, panoda eş anlamlısı var)
+      const inputIsKey = cleanInput.includes(keyWord);
+      const panoHasSyn = synList.some(s => cleanText.includes(s));
+      if (inputIsKey && panoHasSyn) {
+        return { index: i, answer: ans, confidence: 'synonym', reason: `Yakın Kavram (${keyWord} ≈ ${ans.text})` };
+      }
+    }
+  }
+
+  // 3. Yazım / Harf Hatası Toleransı (Levenshtein Distance)
+  for (let i = 0; i < answers.length; i++) {
+    if (revealedAnswers[i]) continue;
+    const ans = answers[i];
+    const cleanText = ans.text.toLocaleLowerCase('tr-TR');
+
+    // Kelimeleri bölerek de test et
+    const panoWords = cleanText.split(/\s+/);
+    for (const pw of panoWords) {
+      if (pw.length >= 4 && cleanInput.length >= 4) {
+        const dist = levenshteinDistance(pw, cleanInput);
+        if (dist <= 2) {
+          return { index: i, answer: ans, confidence: 'fuzzy', reason: `Yazım Toleransı ("${cleanInput}" ≈ "${pw}")` };
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Kullanıcı girdisini mevcut cevaplarla eşleştirmeye çalışır
+ * @param {string} input - Kullanıcı girdisi
+ * @param {Array} answers - Soruya ait cevaplar dizisi
+ * @returns {number} Eşleşen cevabın indeksi (-1 bulunamazsa)
+ */
+export function matchAnswerIndex(input, answers) {
+  if (!input) return -1;
+  const suggestion = findSmartAnswerSuggestion(input, answers, {});
+  return suggestion ? suggestion.index : -1;
 }

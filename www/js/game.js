@@ -1118,12 +1118,32 @@ class GameApp {
     if (this.soundToggle) {
       this.soundToggle.checked = !sounds.muted;
       this.soundToggle.addEventListener('change', (e) => {
-        sounds.muted = !e.target.checked;
-        try { localStorage.setItem('kafanatak_sound_muted', sounds.muted ? 'true' : 'false'); } catch (err) {}
-        if (!sounds.muted) {
+        const isMuted = !e.target.checked;
+        sounds.setMuted(isMuted);
+        if (!isMuted) {
           sounds.unlockAudio();
           sounds.playCorrect();
         }
+      });
+    }
+
+    // Master Ses Seviyesi Sürgüsü (%0 - %100)
+    const inputMasterVol = document.getElementById('input-master-volume');
+    const labelVolPercent = document.getElementById('label-volume-percent');
+    if (inputMasterVol) {
+      const curPct = Math.round((sounds.masterVolume || 1.0) * 100);
+      inputMasterVol.value = curPct;
+      if (labelVolPercent) labelVolPercent.textContent = `%${curPct}`;
+
+      inputMasterVol.addEventListener('input', (e) => {
+        const pct = parseInt(e.target.value, 10) || 0;
+        if (labelVolPercent) labelVolPercent.textContent = `%${pct}`;
+        sounds.setMasterVolume(pct / 100);
+      });
+
+      inputMasterVol.addEventListener('change', () => {
+        sounds.unlockAudio();
+        sounds.playTick(false);
       });
     }
 
