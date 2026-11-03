@@ -86,7 +86,7 @@ export class KelimeBombasiEngine {
     clearInterval(this.timerInterval);
     this.currentSeconds = this.baseSeconds;
     this.updateTimerDisplay();
-    try { sounds.startPartyBeat(); } catch (e) {}
+    try { sounds.startBombTicking(); } catch (e) {}
 
     const startTime = performance.now();
     const durationMs = this.baseSeconds * 1000;
@@ -147,8 +147,8 @@ export class KelimeBombasiEngine {
   explode() {
     this.isExploded = true;
     try { sounds.setMusicUrgent(false); } catch (e) {}
-    try { sounds.stopPartyBeat(); } catch (e) {}
-    sounds.playExplosion();
+    try { sounds.stopBombTicking(); } catch (e) {}
+    sounds.playBombExplosion();
 
     if (navigator.vibrate) {
       navigator.vibrate([100, 50, 100, 50, 400]);

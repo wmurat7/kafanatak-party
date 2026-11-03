@@ -3280,7 +3280,11 @@ class GameApp {
     }
 
     // Sensör zaten startCountdown'da başlatıldı ve kalibre edildi
-    sounds.startPartyBeat();
+    if (this.ruleMode === 'bomb') {
+      sounds.startBombTicking();
+    } else {
+      sounds.startPartyBeat();
+    }
     this.requestWakeLock();
     this.triggerHaptic('start');
     this.startCheerPolling();

@@ -156,15 +156,15 @@ export class BombGameEngine {
     this.remainingTime = this.totalDuration;
     this.currentPrompt = BOMB_PROMPTS[Math.floor(Math.random() * BOMB_PROMPTS.length)];
 
-    sounds.startPartyBeat();
+    sounds.startBombTicking();
     this.renderBombScreen();
 
     if (this.tickInterval) clearInterval(this.tickInterval);
     this.tickInterval = setInterval(() => {
       this.remainingTime--;
 
-      // Hızlanan ses efekti
-      sounds.playBombTick(this.remainingTime);
+      // Hızlanan saat bekleme efekti
+      sounds.playBombTick(this.remainingTime, this.totalDuration);
 
       if (this.remainingTime <= 0) {
         clearInterval(this.tickInterval);

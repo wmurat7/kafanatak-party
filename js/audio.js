@@ -29,6 +29,8 @@ class SoundEngine {
     this.activeSources = new Set();
     this.activeOscillators = new Set();
     this.pendingTimeouts = [];
+    this.bombTickingSource = null;
+    this.bombTickingGain = null;
 
     // Stüdyo Ses Tamponları (Decoded AudioBuffer Cache)
     this.buffers = {};
@@ -45,6 +47,8 @@ class SoundEngine {
       drumroll: 'assets/sounds/drumroll.ogg',
       horn: 'assets/sounds/horn.ogg',
       clown_horn: 'assets/sounds/clown_horn.ogg',
+      bomb_tick: 'assets/sounds/bomb_tick.ogg',
+      bomb_explosion: 'assets/sounds/bomb_explosion.ogg',
       ornek1_net_hizli_studyo: 'assets/sounds/samples/ornek1_net_hizli_studyo.wav',
       ornek2_neseli_kucuk_grup: 'assets/sounds/samples/ornek2_neseli_kucuk_grup.wav',
       ornek3_kipir_kipir_parti: 'assets/sounds/samples/ornek3_kipir_kipir_parti.wav',
@@ -63,6 +67,7 @@ class SoundEngine {
   // Tüm Çalan Sesleri, Osilatörleri ve Kuyruktaki Efektleri Anında %100 Kapatma
   stopAll() {
     this.stopPartyBeat();
+    this.stopBombTicking();
 
     // 1. Bekleyen tüm efekt zamanlayıcılarını sıfırla
     if (this.pendingTimeouts && this.pendingTimeouts.length > 0) {
@@ -594,55 +599,82 @@ class SoundEngine {
   }
 
     // =========================================================================
-  // 6. SAATLİ BOMBA SESLERİ (Gerilimli Çift Mekanizma & Mobil Sinematik Patlama)
+  // 6. SAATLİ BOMBA SESLERİ (Gerçekçi Saat Bekleme Döngüsü & Sinematik Patlama)
   // =========================================================================
-  playBombTick(remainingSec = 30, totalSec = 30) {
+  startBombTicking(playbackRate = 1.0) {
     if (this.muted) return;
     this.unlockAudio();
-    this.init();
+    this.stopBombTicking();
     if (!this.ctx) return;
+
+    const buffer = this.buffers['bomb_tick'];
+    if (!buffer) return;
 
     try {
       const now = this.ctx.currentTime;
-      const outNode = this.getOutputNode();
-      const progress = Math.max(0, Math.min(1, 1 - (remainingSec / (totalSec || 30))));
-      
-      // Süre azaldıkça ton tizleşir ve daha gerilimli hale gelir
-      const isTick = Math.floor(remainingSec) % 2 === 0;
-      const baseFreq = isTick ? (900 + progress * 600) : (650 + progress * 500);
-      const duration = Math.max(0.04, 0.08 - progress * 0.04);
+      const src = this.ctx.createBufferSource();
+      src.buffer = buffer;
+      src.loop = true;
+      src.playbackRate.setValueAtTime(playbackRate, now);
 
-      // Metalik Saat Tıkırtısı
-      const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
-      const filter = this.ctx.createBiquadFilter();
+      gain.gain.setValueAtTime(0.88 * this.sfxVolume, now);
 
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(baseFreq * 2.2, now);
-      filter.Q.setValueAtTime(4.0, now);
+      src.connect(gain);
+      gain.connect(this.getOutputNode());
 
-      osc.type = isTick ? 'square' : 'triangle';
-      osc.frequency.setValueAtTime(baseFreq, now);
-      osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.5, now + duration);
-
-      gain.gain.setValueAtTime(0.4 + progress * 0.35, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(outNode);
-
-      osc.start(now);
-      osc.stop(now + duration + 0.02);
-      this.vibrate(progress > 0.7 ? 40 : 20);
+      src.start(now);
+      this.bombTickingSource = src;
+      this.bombTickingGain = gain;
+      this.activeSources.add(src);
     } catch (e) {}
+  }
+
+  stopBombTicking() {
+    if (this.bombTickingSource) {
+      try {
+        this.bombTickingSource.stop(0);
+        this.bombTickingSource.disconnect();
+      } catch (e) {}
+      if (this.activeSources) {
+        this.activeSources.delete(this.bombTickingSource);
+      }
+      this.bombTickingSource = null;
+      this.bombTickingGain = null;
+    }
+  }
+
+  setBombTickingRate(rate = 1.0) {
+    if (this.bombTickingSource && this.ctx) {
+      try {
+        const now = this.ctx.currentTime;
+        const clampedRate = Math.max(0.7, Math.min(2.2, rate));
+        this.bombTickingSource.playbackRate.linearRampToValueAtTime(clampedRate, now + 0.15);
+      } catch (e) {}
+    }
+  }
+
+  playBombTick(remainingSec = 30, totalSec = 30) {
+    if (this.muted) return;
+    // Eğer arka plan döngüsü çalıyorsa hızını dinamik artır
+    if (this.bombTickingSource) {
+      const progress = Math.max(0, Math.min(1, 1 - (remainingSec / (totalSec || 30))));
+      this.setBombTickingRate(1.0 + progress * 0.45);
+      this.vibrate(progress > 0.7 ? 40 : 20);
+      return;
+    }
+    // Döngü yoksa başlat
+    this.startBombTicking();
   }
 
   playBombExplosion() {
     if (this.muted) return;
     this.unlockAudio();
-    this.vibrate([160, 40, 240, 40, 450]);
-    this.synthBombExplosion();
+    this.stopBombTicking();
+    this.vibrate([160, 40, 240, 40, 500]);
+    if (!this.playBuffer('bomb_explosion', 1.0)) {
+      this.synthBombExplosion();
+    }
   }
 
   synthBombExplosion() {
