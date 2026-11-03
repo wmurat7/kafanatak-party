@@ -641,7 +641,7 @@ class GameApp {
         document.querySelectorAll('.dock-nav-item').forEach(btn => btn.classList.remove('active'));
         document.getElementById('dock-btn-party-games')?.classList.add('active');
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        this.showToast('🎭 Parti Arenası açıldı: 12 Efsane Parti & Grup Oyunu');
+        this.showToast('🎭 Parti Arenası açıldı: 9 Efsane Oyun');
       });
     }
 
