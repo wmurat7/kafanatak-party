@@ -340,6 +340,33 @@ export const PARTY_GUIDES = {
       '💡 Çalma aşamasında takım kaptanı herkesi dinleyip en garanti cevabı seçmelidir.'
     ],
     launchAction: 'aileler-yarisiyor'
+  },
+
+  'ters-ses': {
+    id: 'ters-ses',
+    title: 'Ters Ses (Geri Vites)',
+    badge: '🔄 SES TAHMİNİ & 🎙️ GERİ VİTES CHALLENGE',
+    icon: '🔄',
+    players: '2-20 Kişi (Bireysel veya Takım)',
+    duration: '5 - 15 Dakika',
+    objective: 'Tersten çalınan gizemli kelimeleri doğru tahmin etmek ve mikrofon taklitleriyle orijinal sesi ortaya çıkarmak!',
+    howToPlay: [
+      '1. MOD 1 (Uzaylı Dilini Çöz): "Tersten Dinle" butonuna basılır. Sistem kelimeyi tersten okur (Örn: "Amrudnod" = Dondurma).',
+      '2. Dinleyen oyuncular veya takımlar kelimeyi bulmaya çalışır. Zorlanırsanız "Yavaşlat (%70)" veya "İpucu" butonlarını kullanabilirsiniz.',
+      '3. Doğru tahmin eden takım puanı kapar! "Cevabı Göster & Düz Çal" ile orijinal ses hoparlörden patlar.',
+      '4. MOD 2 (Geri Vites Challenge - Viral Kahkaha!): 1. oyuncu gizlice kelimenin tersini dinler. Mikrofon butonuna basılı tutarak o ters sesi taklit eder.',
+      '5. Sistem oyuncunun taklidini anında TERSİNE ÇEVİRİR ve hoparlörden çalar! Eğer oyuncu iyi taklit ettiyse, kendi sesinden düzgün kelime duyulur ve herkes kahkahaya boğulur!'
+    ],
+    scoring: [
+      '🟢 Kolay Kelimeler: 10 Puan',
+      '⚡ Orta Kelimeler: 15 Puan',
+      '🔥 Zor Kelimeler / Başarılı Taklit: 20 Puan'
+    ],
+    tips: [
+      '💡 Kelimenin son harfine odaklanın; ters okunuşta ilk harf haline gelir!',
+      '💡 Geri Vites Challenge modunda heceleri abartılı ve net çıkarırsanız tersine çevrildiğinde orijinal kelime kristal gibi duyulur!'
+    ],
+    launchAction: 'ters-ses'
   }
 };
 
@@ -409,6 +436,9 @@ export function triggerGameLaunch(action, appInstance) {
   } else if (action === 'aileler-yarisiyor') {
     appInstance.showScreen('ailelerYarisiyor');
     if (appInstance.ailelerYarisiyorEngine) appInstance.ailelerYarisiyorEngine.init();
+  } else if (action === 'ters-ses') {
+    appInstance.showScreen('tersSes');
+    if (appInstance.tersSesEngine) appInstance.tersSesEngine.init();
   }
 }
 

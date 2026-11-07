@@ -5,13 +5,20 @@
     "kafanatak": {
       ".read": false,
       ".write": false,
+      "content": {
+        ".read": true,
+        ".write": false
+      },
+      "questions": {
+        ".read": true,
+        ".write": false
+      },
       "$namespace": {
         ".read": false,
         ".write": false,
         "$roomId": {
           ".read": "$roomId.matches(/^[A-Z0-9_-]{3,12}$/)",
           ".write": "$roomId.matches(/^[A-Z0-9_-]{3,12}$/)",
-          ".validate": "newData.hasChildren(['roomId']) && newData.child('roomId').isString() && newData.child('roomId').val() === $roomId",
           ".indexOn": ["createdAt", "lastActive"]
         }
       }

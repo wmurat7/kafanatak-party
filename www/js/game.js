@@ -20,10 +20,18 @@ import { PartyTournamentEngine } from './party-tournament.js';
 import { initPartyGuides } from './party-guide.js';
 import { firebaseNetwork } from './firebase-network.js';
 import { HostModerationPanel } from './host-moderation-panel.js';
+import { TersSesEngine } from './ters-ses-game.js';
+import { contentSync } from './content-sync.js';
 
 class GameApp {
   constructor() {
+    contentSync.loadCachedPacks();
     this.categories = [...CATEGORIES];
+    window.addEventListener('kafanatak-content-updated', () => {
+      this.categories = [...CATEGORIES];
+      this.loadCustomDecks();
+      if (typeof this.renderCategoryGrid === 'function') this.renderCategoryGrid();
+    });
     this.tournamentEngine = new PartyTournamentEngine(this);
     this.currentCategory = this.categories[0];
     this.roundDuration = 60; // saniye
@@ -200,7 +208,9 @@ class GameApp {
       kelimeIslem: document.getElementById('screen-kelime-islem'),
       'kelime-islem': document.getElementById('screen-kelime-islem'),
       ailelerYarisiyor: document.getElementById('screen-aileler-yarisiyor'),
-      'aileler-yarisiyor': document.getElementById('screen-aileler-yarisiyor')
+      'aileler-yarisiyor': document.getElementById('screen-aileler-yarisiyor'),
+      tersSes: document.getElementById('screen-ters-ses'),
+      'ters-ses': document.getElementById('screen-ters-ses')
     };
 
     // Ayarlar & Modlar
@@ -641,7 +651,7 @@ class GameApp {
         document.querySelectorAll('.dock-nav-item').forEach(btn => btn.classList.remove('active'));
         document.getElementById('dock-btn-party-games')?.classList.add('active');
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        this.showToast('🎭 Parti Arenası açıldı: 9 Efsane Oyun');
+        this.showToast('🎭 Parti Arenası açıldı: 10 Efsane Oyun');
       });
     }
 
@@ -2553,6 +2563,20 @@ class GameApp {
     // 12. AİLELER YARIŞIYOR
     // =========================================
     this.ailelerYarisiyorEngine = new AilelerYarisiyorEngine(this);
+
+    // =========================================
+    // 10. TERS SES (GERİ VİTES)
+    // =========================================
+    this.tersSesEngine = new TersSesEngine(this);
+    const btnOpenTersSes = document.getElementById('btn-open-ters-ses-game');
+    if (btnOpenTersSes) {
+      btnOpenTersSes.addEventListener('click', () => {
+        sounds.playClick();
+        this.showScreen('tersSes');
+        this.tersSesEngine.init();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
     const btnOpenAY = document.getElementById('btn-open-aileler-yarisiyor-game');
     if (btnOpenAY) {
       btnOpenAY.addEventListener('click', () => {
@@ -6400,6 +6424,11 @@ const initGameApp = () => {
   window.gameApp = new GameApp();
   window.game = window.gameApp;
   unlockAllAudio();
+  try {
+    setTimeout(() => {
+      contentSync.checkAndSync().catch(() => {});
+    }, 1200);
+  } catch (e) {}
 };
 
 if (document.readyState === 'loading') {

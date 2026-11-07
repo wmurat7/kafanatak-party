@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "lastUpdated": 1740000000000,
+  "notice": "🔥 2026 Trendler ve Yeni Sorular Havuzu Aktif!",
+  "decks": [
+    {
+      "id": "trend-2026",
+      "title": "🔥 2026 Trendler & Viral Mizah",
+      "icon": "⚡",
+      "description": "En yeni diziler, vizyon filmleri, viral internet replikleri ve popüler trendler!",
+      "gradient": "linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%)",
+      "words": [
+        "Dune İkinci Kısım",
+        "Yalı Çapkını",
+        "Kızılcık Şerbeti",
+        "Gibi - İlkkan",
+        "TikTok Dansı",
+        "Dubai Çikolatası",
+        "Yapay Zeka Asistanı",
+        "Karakol İfadesi",
+        "Aura Puanı (+1000 Aura)",
+        "NPC Yayını",
+        "Formula 1 Pit Stop",
+        "Airfryerda Yemek",
+        "Akıllı Saat Adım Sayacı",
+        "Spotify Wrapped",
+        "Cold Brew Kahve",
+        "Kedi Memeleri",
+        "Pazar Sabahı Depresyonu",
+        "Ofis Dedikodusu"
+      ]
+    }
+  ],
+  "extraWords": {
+    "diziler-filmler": [
+      "Oppenheimer",
+      "Barbie Dünyası",
+      "Prens Dizisi",
+      "İnci Taneleri",
+      "Deadpool ve Wolverine",
+      "Avatar Suyun Yolu"
+    ],
+    "yemekler": [
+      "San Sebastian Cheesecake",
+      "Kruvasan Sandviç",
+      "Triliçe",
+      "Soğuk Baklava",
+      "Cağ Kebabı"
+    ]
+  },
+  "ailelerYarisiyor": [
+    {
+      "id": "ay_cloud_101",
+      "category": "Ev & Yaşam",
+      "question": "Pazar sabahı kahvaltısında masada olmazsa kavga çıkacak bir lezzet?",
+      "answers": [
+        { "text": "Sıcak Çay", "points": 36 },
+        { "text": "Sucuklu Yumurta", "points": 28 },
+        { "text": "Taze Simit / Ekmek", "points": 18 },
+        { "text": "Beyaz Peynir", "points": 12 },
+        { "text": "Zeytin", "points": 6 }
+      ]
+    },
+    {
+      "id": "ay_cloud_102",
+      "category": "İlişkiler & Aile",
+      "question": "Görücü usulü tanışmada kız istemeye giderken mutlaka götürülen şey?",
+      "answers": [
+        { "text": "Çiçek Buketi", "points": 42 },
+        { "text": "Gümüş Tepside Çikolata", "points": 38 },
+        { "text": "Takım Elbise", "points": 12 },
+        { "text": "Aile Büyükleri", "points": 8 }
+      ]
+    },
+    {
+      "id": "ay_cloud_103",
+      "category": "Mizah & Günlük Yaşam",
+      "question": "Pazartesi sabahı alarm çaldığında insanın aklından ilk geçen şey?",
+      "answers": [
+        { "text": "5 Dakika Daha Uyumak", "points": 45 },
+        { "text": "İstifa Etsem mi?", "points": 25 },
+        { "text": "Hafta Sonu Ne Çabuk Bitti", "points": 18 },
+        { "text": "Bugün Ne Giysem?", "points": 12 }
+      ]
+    }
+  ],
+  "tersSesWords": [
+    { "word": "Pikachu", "hint": "Efsanevi Sarı Çizgi Film Karakteri", "difficulty": "kolay", "category": "Çizgi Film" },
+    { "word": "Lahmacun", "hint": "Geleneksel Çıtır Fırın Lezzeti", "difficulty": "kolay", "category": "Yemekler" },
+    { "word": "Şener Şen", "hint": "Yeşilçam'ın Unutulmaz Dev Sanatçısı", "difficulty": "orta", "category": "Ünlüler" },
+    { "word": "Tost Makinesi", "hint": "Kahvaltıda Kaşar Eriten Mutfak Eşyası", "difficulty": "orta", "category": "Eşyalar" },
+    { "word": "Kemal Sunal", "hint": "Gülüşüyle Milyonları Büyüleyen Efsane", "difficulty": "orta", "category": "Ünlüler" },
+    { "word": "Helikopter", "hint": "Gökyüzünde Dönen Pervaneli Araç", "difficulty": "orta", "category": "Genel Kültür" },
+    { "word": "Gökkuşağı", "hint": "Yağmurdan Sonra Gökyüzünde 7 Renk", "difficulty": "orta", "category": "Doğa" },
+    { "word": "Transformers", "hint": "Arabaya Dönüşebilen Dev Robotlar", "difficulty": "zor", "category": "Sinema" },
+    { "word": "Dondurma", "hint": "Yazın Külahta Yenen Soğuk Tatlı", "difficulty": "kolay", "category": "Yemekler" },
+    { "word": "Cem Yılmaz", "hint": "Stand-up ve Komedinin Ustası", "difficulty": "kolay", "category": "Ünlüler" },
+    { "word": "Astronot", "hint": "Uzay Elbisesiyle Yer Çekimsiz Gezen", "difficulty": "orta", "category": "Meslekler" },
+    { "word": "İskender Kebap", "hint": "Pidesi, Döneri ve Kızgın Tereyağıyla Şölen", "difficulty": "orta", "category": "Yemekler" }
+  ]
+}
