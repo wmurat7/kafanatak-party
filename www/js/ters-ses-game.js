@@ -338,7 +338,8 @@ export class TersSesEngine {
         btnModeMimic.style.color = '#94A3B8';
         viewGuess.style.display = 'block';
         viewMimic.style.display = 'none';
-        this.startTimer();
+        this.timerSeconds = 30;
+        this.startTimer(true);
       };
 
       btnModeMimic.onclick = () => {
@@ -350,7 +351,8 @@ export class TersSesEngine {
         btnModeGuess.style.color = '#94A3B8';
         viewGuess.style.display = 'none';
         viewMimic.style.display = 'block';
-        this.stopTimer();
+        this.timerSeconds = 45;
+        this.startTimer(true);
       };
     }
 
@@ -575,19 +577,25 @@ export class TersSesEngine {
     const recPlayback = document.getElementById('ts-recorded-playback-box');
     if (recPlayback) recPlayback.style.display = 'none';
 
-    // Sayacı 30 saniyeye kur ve başlat
+    // Sayacı kur ve başlat
     if (this.activeMode === 'guess') {
-      this.startTimer();
+      this.timerSeconds = 30;
+      this.startTimer(true);
       // İlk gelişinde kaset sarma efektiyle tersten oku
       setTimeout(() => {
         this.playReversedWithRewindEffect(1.0);
       }, 350);
+    } else {
+      this.timerSeconds = 45;
+      this.startTimer(true);
     }
   }
 
-  startTimer() {
+  startTimer(reset = true) {
     this.stopTimer();
-    this.remainingSeconds = this.timerSeconds;
+    if (reset) {
+      this.remainingSeconds = this.timerSeconds;
+    }
     this.isTimerRunning = true;
     this.updateTimerUI();
 
@@ -787,6 +795,7 @@ export class TersSesEngine {
 
       this.mediaRecorder.start();
       this.isRecording = true;
+      this.stopTimer(); // Mikrofon kaydı sırasında süre dondurulur
 
       const btnRecord = document.getElementById('btn-record-mimic');
       const statusEl = document.getElementById('ts-record-status');
@@ -857,6 +866,9 @@ export class TersSesEngine {
       } finally {
         if (this.mediaStream) {
           this.mediaStream.getTracks().forEach(t => t.stop());
+        }
+        if (this.activeMode === 'mimic' && !this.isRevealed) {
+          this.startTimer(false); // Kayıt bitince kalan süreden geri sayıma devam et
         }
       }
     };
