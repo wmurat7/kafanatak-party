@@ -4,7 +4,7 @@
 // anında tersine çevirerek mikrofon kaydını hoparlörden orijinal ses olarak patlatır!
 
 import { sounds } from './audio.js';
-import { confettiEffect } from './confetti.js';
+import { confetti } from './confetti.js';
 import { contentSync } from './content-sync.js';
 
 export function reverseWordPhonetic(word) {
@@ -332,7 +332,7 @@ export class TersSesEngine {
         this.scores.teamA += 10;
         this.updateScoreUI();
         sounds.playCorrect();
-        confettiEffect.fire({ particleCount: 35, spread: 55, origin: { x: 0.2, y: 0.7 } });
+        confetti.fire({ count: 40 });
         if (!this.isRevealed) this.revealAnswer();
       };
     }
@@ -343,7 +343,7 @@ export class TersSesEngine {
         this.scores.teamB += 10;
         this.updateScoreUI();
         sounds.playCorrect();
-        confettiEffect.fire({ particleCount: 35, spread: 55, origin: { x: 0.8, y: 0.7 } });
+        confetti.fire({ count: 40 });
         if (!this.isRevealed) this.revealAnswer();
       };
     }
