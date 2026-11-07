@@ -1515,6 +1515,53 @@ class SoundEngine {
     this.playBombExplosion();
   }
 
+  playVictory() {
+    this.playFanfare();
+  }
+
+  playTapeRewind() {
+    if (!this.enabled || !this.ctx) return;
+    try {
+      this.unlockAudio();
+      const now = this.ctx.currentTime;
+      const bufferSize = Math.floor(this.ctx.sampleRate * 0.28);
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * (i / bufferSize));
+      }
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(800, now);
+      filter.frequency.exponentialRampToValueAtTime(3200, now + 0.15);
+      filter.frequency.exponentialRampToValueAtTime(600, now + 0.28);
+      filter.Q.value = 4.0;
+
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(150, now);
+      osc.frequency.exponentialRampToValueAtTime(1400, now + 0.16);
+      osc.frequency.exponentialRampToValueAtTime(220, now + 0.28);
+
+      const mainGain = this.ctx.createGain();
+      const vol = (this.sfxVolume || 1.0) * (this.masterVolume || 1.0) * 0.5;
+      mainGain.gain.setValueAtTime(vol, now);
+      mainGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+      noise.connect(filter);
+      filter.connect(mainGain);
+      osc.connect(mainGain);
+      mainGain.connect(this.ctx.destination);
+
+      noise.start(now);
+      osc.start(now);
+      noise.stop(now + 0.28);
+      osc.stop(now + 0.28);
+    } catch(e) {}
+  }
+
   playChime() {
     if (this.muted) return;
     this.unlockAudio();
