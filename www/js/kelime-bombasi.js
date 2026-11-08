@@ -1,3 +1,4 @@
+import { PartyMultiDeviceHelper } from './party-multi-device.js';
 // js/kelime-bombasi.js
 // Kafana Tak! - Son Sözü Kim Söyler? (Kelime Bombası / Hızlı Eliminasyon)
 
@@ -33,10 +34,21 @@ export class KelimeBombasiEngine {
     this.passCount = 0;
     this.timerInterval = null;
     this.isExploded = false;
+    this.multiHelper = new PartyMultiDeviceHelper({
+      namespace: 'kelimebombasi',
+      title: 'Kelime Bombası Masası',
+      subtitle: '☁️ Harf ve kategori canlı akar, kelimeyi bilen zili çalar!',
+      prefix: 'kelime'
+    });
   }
 
   init() {
     this.bindEvents();
+    if (this.multiHelper) {
+      this.multiHelper.bindEvents((mode) => {
+        console.log('[KelimeBombasi] Mod değişti:', mode);
+      });
+    }
     this.newRound();
   }
 

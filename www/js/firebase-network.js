@@ -867,6 +867,106 @@ class FirebaseNetworkManager {
     const webBase = this.getWebAppUrl();
     return `${webBase}/aileler-yarisiyor.html?room=${encodeURIComponent(roomId)}&cloud=1`;
   }
+
+  /**
+   * İkinci telefonların açabileceği Kelime Bombası URL'sini üretir
+   */
+  getKelimeBombasiUrl(roomId) {
+    const webBase = this.getWebAppUrl();
+    return `${webBase}/kelime-bombasi.html?room=${encodeURIComponent(roomId)}&cloud=1`;
+  }
+
+  /**
+   * İkinci telefonların açabileceği Saatli Bomba (Tick Tack Boom) URL'sini üretir
+   */
+  getBombUrl(roomId) {
+    const webBase = this.getWebAppUrl();
+    return `${webBase}/bomb.html?room=${encodeURIComponent(roomId)}&cloud=1`;
+  }
+
+  /**
+   * İkinci telefonların açabileceği Şişe Çevirmece / Doğruluk Cesaret URL'sini üretir
+   */
+  getBottleUrl(roomId) {
+    const webBase = this.getWebAppUrl();
+    return `${webBase}/bottle.html?room=${encodeURIComponent(roomId)}&cloud=1`;
+  }
+
+  /**
+   * İkinci telefonların açabileceği Ters Ses URL'sini üretir
+   */
+  getTersSesUrl(roomId) {
+    const webBase = this.getWebAppUrl();
+    return `${webBase}/ters-ses.html?room=${encodeURIComponent(roomId)}&cloud=1`;
+  }
+
+  /**
+   * Herhangi bir oyun namespace'i için doğrudan istemci URL'sini üretir
+   */
+  getGameUrl(namespace, roomId) {
+    const cleanNs = String(namespace || '').trim().toLowerCase();
+    switch (cleanNs) {
+      case 'passaparola': return this.getPassaparolaUrl(roomId);
+      case 'carkifelek': return this.getCarkifelekUrl(roomId);
+      case 'isimsehir':
+      case 'isim-sehir': return this.getIsimSehirUrl(roomId);
+      case 'kelimeislem':
+      case 'kelime-islem': return this.getKelimeIslemUrl(roomId);
+      case 'aileler':
+      case 'aileler-yarisiyor': return this.getAilelerYarisiyorUrl(roomId);
+      case 'vampire':
+      case 'koy': return this.getKoyUrl(roomId);
+      case 'kelimebombasi':
+      case 'kelime-bombasi': return this.getKelimeBombasiUrl(roomId);
+      case 'bomb':
+      case 'bomba': return this.getBombUrl(roomId);
+      case 'bottle':
+      case 'sise': return this.getBottleUrl(roomId);
+      case 'tersses':
+      case 'ters-ses': return this.getTersSesUrl(roomId);
+      case 'spectator':
+      case 'seyirci':
+      default: return this.getSpectatorUrl(roomId);
+    }
+  }
+
+  /**
+   * 4 Haneli oda kodunun hangi oyuna ait olduğunu Firebase'den tespit eder
+   */
+  async findRoomGame(roomId) {
+    if (!roomId) return null;
+    const cleanCode = String(roomId).trim().toUpperCase();
+    const candidateNamespaces = [
+      'passaparola',
+      'carkifelek',
+      'isimsehir',
+      'isim-sehir',
+      'kelimeislem',
+      'kelime-islem',
+      'aileler',
+      'aileler-yarisiyor',
+      'vampire',
+      'kelimebombasi',
+      'bomb',
+      'bottle',
+      'tersses',
+      'spectator'
+    ];
+
+    const lookups = candidateNamespaces.map(async (ns) => {
+      try {
+        const room = await this.getRoom(ns, cleanCode);
+        if (room && (room.roomId || room.phase || room.createdAt)) {
+          return { namespace: ns, room };
+        }
+      } catch (e) {}
+      return null;
+    });
+
+    const results = await Promise.all(lookups);
+    const found = results.find(r => r !== null);
+    return found || null;
+  }
 }
 
 export const firebaseNetwork = new FirebaseNetworkManager();

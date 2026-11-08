@@ -182,6 +182,45 @@
       box-sizing: border-box;
       z-index: 100;
     }
+  
+    /* ULTRA-RESPONSIVE COMPACT AVATAR GRID */
+    .avatar-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      max-width: 300px;
+      margin: 0 auto 14px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .avatar-btn {
+      aspect-ratio: 1 / 1;
+      width: 100%;
+      max-width: 64px;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(1.3rem, 5.5vw, 1.6rem);
+      line-height: 1;
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px solid rgba(255, 255, 255, 0.16);
+      border-radius: 14px;
+      cursor: pointer;
+      padding: 0;
+      margin: 0 auto;
+      transition: all 0.18s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .avatar-btn:active { transform: scale(0.92); }
+    .avatar-btn.selected {
+      border-color: var(--gold, #FBBF24) !important;
+      background: rgba(251, 191, 36, 0.22) !important;
+      box-shadow: 0 0 14px rgba(251, 191, 36, 0.45) !important;
+      transform: scale(1.05);
+    }
+
   </style>
 </head>
 <body>
@@ -206,7 +245,12 @@
         <input type="text" id="inp-room-code" placeholder="Örn: CARK" maxlength="6" style="width:100%; background:rgba(0,0,0,0.5); border:1.5px solid rgba(255,255,255,0.2); border-radius:12px; padding:12px 14px; color:#FFF; font-size:1.1rem; font-weight:900; text-align:center; letter-spacing:2px; text-transform:uppercase; outline:none;" />
       </div>
 
-      <input type="text" id="inp-player-name" placeholder="Adınızı veya Takımınızı Yazın..." maxlength="16"
+      
+      <div style="margin-bottom:12px;">
+        <label style="font-size:0.8rem; font-weight:800; color:var(--text-muted); display:block; margin-bottom:6px; text-align:left;">Avatar Seçin:</label>
+        <div id="avatar-grid" class="avatar-grid"></div>
+      </div>
+    <input type="text" id="inp-player-name" placeholder="Adınızı veya Takımınızı Yazın..." maxlength="16"
         style="width:100%; background:rgba(0,0,0,0.5); border:1.5px solid rgba(255,255,255,0.2); border-radius:12px; padding:12px 14px; color:#FFF; font-size:1rem; font-weight:800; text-align:center; outline:none; margin-bottom:12px;" />
 
       <div style="display:flex; gap:8px; justify-content:center; margin-bottom:16px;">
@@ -359,6 +403,24 @@
     let myPlayerId = localStorage.getItem('cark_player_id') || `p_${Date.now()}_${Math.random().toString(36).substring(2,6)}`;
     localStorage.setItem('cark_player_id', myPlayerId);
 
+    
+    const AVATARS = ['🦁', '🦊', '🐼', '🐯', '🦄', '🐸', '🐶', '🐱'];
+    let selectedAvatar = '🦁';
+    const avContainer = document.getElementById('avatar-grid');
+    if (avContainer) {
+      AVATARS.forEach(av => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'avatar-btn' + (av === selectedAvatar ? ' selected' : '');
+        btn.textContent = av;
+        btn.onclick = () => {
+          selectedAvatar = av;
+          avContainer.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+        };
+        avContainer.appendChild(btn);
+      });
+    }
     let myPlayerName = localStorage.getItem('cark_player_name') || '';
     let myColor = '#EF4444';
     let isRegistered = false;

@@ -367,6 +367,32 @@ export class CarkifelekEngine {
     if (lblCode) lblCode.textContent = this.roomId;
 
     const joinUrl = firebaseNetwork.getCarkifelekUrl(this.roomId);
+    const btnCopy = document.getElementById('btn-copy-cark-link');
+    if (btnCopy) {
+      btnCopy.onclick = async () => {
+        sounds.playClick();
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(joinUrl);
+          btnCopy.textContent = '✅ Kopyalandı!';
+          setTimeout(() => { if (btnCopy) btnCopy.textContent = '📋 Bağlantıyı Kopyala'; }, 2000);
+        } else {
+          prompt('Çarkıfelek Bağlantısı:', joinUrl);
+        }
+      };
+    }
+    const btnMod = document.getElementById('btn-cark-mod-open');
+    if (btnMod) {
+      btnMod.onclick = (e) => {
+        e.stopPropagation();
+        sounds.playClick();
+        HostModerationPanel.open({
+          namespace: 'carkifelek',
+          roomId: this.roomId || 'CARK',
+          title: 'Çarkıfelek Yarışma Masası'
+        });
+      };
+    }
+    
     const cvsContainer = document.getElementById('cark-qr-canvas');
     if (cvsContainer && window.QRCode) {
       cvsContainer.innerHTML = '';
@@ -375,7 +401,7 @@ export class CarkifelekEngine {
       window.QRCode.toCanvas(cvs, joinUrl, {
         width: 140,
         margin: 1,
-        color: { dark: '#00F5D4', light: '#0B0E14' }
+        color: { dark: '#000000', light: '#FFFFFF' }
       }, (err) => {
         if (err) console.error('Çarkıfelek QR error:', err);
       });

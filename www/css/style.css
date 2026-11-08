@@ -5647,6 +5647,28 @@ input:checked + .slider:before {
   font-size: 0.9rem;
 }
 
+/* 3. Ana Cihaza Bağlan Butonu */
+.btn-dock-connect {
+  background: linear-gradient(135deg, rgba(0, 245, 212, 0.28) 0%, rgba(0, 180, 216, 0.35) 100%);
+  border-color: rgba(0, 245, 212, 0.6);
+  color: #00F5D4;
+  box-shadow: 0 0 12px rgba(0, 245, 212, 0.35);
+}
+.btn-dock-connect:active {
+  background: linear-gradient(135deg, rgba(0, 245, 212, 0.45) 0%, rgba(0, 180, 216, 0.55) 100%);
+  box-shadow: 0 0 18px rgba(0, 245, 212, 0.65);
+}
+.btn-dock-connect .dock-action-icon {
+  font-size: 0.9rem;
+}
+
+/* Scanner HUD & Laser Animation */
+@keyframes scanLaserSweep {
+  0% { top: 8%; opacity: 0.2; }
+  50% { top: 88%; opacity: 1; }
+  100% { top: 8%; opacity: 0.2; }
+}
+
 /* =========================================
    PARTİ OYUNLARI KART BAŞLIK & ETİKET DÜZENİ
    ========================================= */

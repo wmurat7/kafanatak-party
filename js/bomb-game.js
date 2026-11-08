@@ -1,3 +1,4 @@
+import { PartyMultiDeviceHelper } from './party-multi-device.js';
 // js/bomb-game.js
 // Kafana Tak! - Saatli Bomba (Tick Tack Boom / Kelime Bombası) Parti Oyunu
 
@@ -137,6 +138,13 @@ export const BOMB_PENALTIES = [
 ];
 
 export class BombGameEngine {
+  bindSetup() {
+    if (this.multiHelper) {
+      this.multiHelper.bindEvents((mode) => {
+        console.log('[BombGame] Mod değişti:', mode);
+      });
+    }
+  }
   constructor(game) {
     this.game = game;
     this.state = 'idle'; // idle, running, exploded
@@ -146,6 +154,12 @@ export class BombGameEngine {
     this.tickInterval = null;
     this.roundCount = 1;
     this.passCount = 0;
+    this.multiHelper = new PartyMultiDeviceHelper({
+      namespace: 'bomb',
+      title: 'Saatli Bomba Masası',
+      subtitle: '☁️ Bomba telefonlar arasında canlı elden ele geçer, patlayan elenir!',
+      prefix: 'bomb'
+    });
   }
 
   startRound() {
@@ -157,6 +171,14 @@ export class BombGameEngine {
     this.currentPrompt = BOMB_PROMPTS[Math.floor(Math.random() * BOMB_PROMPTS.length)];
 
     sounds.startBombTicking();
+    if (this.multiHelper) {
+      this.multiHelper.updateRoomState({
+        phase: 'running',
+        prompt: this.currentPrompt,
+        currentHolderName: 'Ana Ekran (Masa)',
+        exploded: false
+      });
+    }
     this.renderBombScreen();
 
     if (this.tickInterval) clearInterval(this.tickInterval);

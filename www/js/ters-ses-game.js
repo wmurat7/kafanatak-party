@@ -1,3 +1,4 @@
+import { PartyMultiDeviceHelper } from './party-multi-device.js';
 // js/ters-ses-game.js
 // Kafana Tak! & Parti Arenası - 10. Efsane Oyun: "Ters Ses (Geri Vites / Ters Köşe)"
 // Web Audio API, Kaset Geri Sarma (Rewind Tape) efekti, Yerel Android TTS ve
@@ -52,6 +53,12 @@ export class TersSesEngine {
     this.recordedChunks = [];
     this.isRecording = false;
     this.lastRecordedBuffer = null;
+    this.multiHelper = new PartyMultiDeviceHelper({
+      namespace: 'tersses',
+      title: 'Ters Ses (Geri Vites) Masası',
+      subtitle: '☁️ Ters ses herkesin telefonunda canlı çalar, cevabı bilen zili çalar!',
+      prefix: 'ters'
+    });
   }
 
   init() {
@@ -110,6 +117,11 @@ export class TersSesEngine {
           </button>
         </div>
 
+        
+        <!-- Çoklu Cihaz / Wi-Fi Kutusu -->
+        <div id="ters-multidevice-wrap" style="margin-bottom:6px;">
+          ${this.multiHelper ? this.multiHelper.renderSetupHTML() : ''}
+        </div>
         <!-- Mod Seçici Sekmeler -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; background:rgba(15,23,42,0.85); padding:5px; border-radius:14px; border:1px solid rgba(255,255,255,0.1);">
           <button type="button" id="btn-mode-guess" class="ters-mode-tab active" style="background:linear-gradient(135deg, #7928CA, #FF0080); color:#FFF; border:none; padding:9px; border-radius:10px; font-weight:900; font-size:0.84rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px;">
@@ -296,6 +308,12 @@ export class TersSesEngine {
       </div>
     `;
 
+    
+    if (this.multiHelper) {
+      this.multiHelper.bindEvents((mode) => {
+        console.log('[TersSes] Mod değişti:', mode);
+      });
+    }
     this.bindEvents();
   }
 

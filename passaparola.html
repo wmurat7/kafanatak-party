@@ -108,6 +108,45 @@
     .passa-node.node-wrong { background: #EF4444; border-color: #F87171; color: #FFF; }
     .passa-node.node-passed { background: #FBBF24; border-color: #FDE047; color: #0B0E14; }
 
+    /* Ultra-Responsive Avatar Grid */
+    .avatar-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      max-width: 300px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .avatar-btn {
+      aspect-ratio: 1 / 1;
+      width: 100%;
+      max-width: 64px;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(1.3rem, 5.5vw, 1.6rem);
+      line-height: 1;
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px solid rgba(255, 255, 255, 0.16);
+      border-radius: 14px;
+      cursor: pointer;
+      padding: 0;
+      margin: 0 auto;
+      transition: all 0.18s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .avatar-btn:active {
+      transform: scale(0.92);
+    }
+    .avatar-btn.selected {
+      border-color: var(--gold) !important;
+      background: rgba(251, 191, 36, 0.22) !important;
+      box-shadow: 0 0 14px rgba(251, 191, 36, 0.45) !important;
+      transform: scale(1.05);
+    }
+
     /* Yarışmacı Cevap İpucu (Doğru cevap gizli!) */
     .contestant-hint-box {
       background: rgba(0, 245, 212, 0.12);
@@ -166,7 +205,7 @@
 
       <div style="margin-bottom:14px;">
         <label style="font-size:0.8rem; font-weight:800; color:var(--text-muted); display:block; margin-bottom:6px; text-align:left;">Avatar Seçin:</label>
-        <div id="avatar-grid" style="display:flex; justify-content:center; gap:8px;"></div>
+        <div id="avatar-grid" class="avatar-grid"></div>
       </div>
 
       <button type="button" id="btn-join-room" class="btn-main">
@@ -296,13 +335,12 @@
     AVATARS.forEach(av => {
       const btn = document.createElement('button');
       btn.type = 'button';
+      btn.className = 'avatar-btn' + (av === selectedAvatar ? ' selected' : '');
       btn.textContent = av;
-      btn.style.cssText = 'background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.15); border-radius:12px; font-size:1.4rem; padding:6px 10px; cursor:pointer;';
-      if (av === selectedAvatar) btn.style.borderColor = 'var(--gold)';
       btn.onclick = () => {
         selectedAvatar = av;
-        avContainer.querySelectorAll('button').forEach(b => b.style.borderColor = 'rgba(255,255,255,0.15)');
-        btn.style.borderColor = 'var(--gold)';
+        avContainer.querySelectorAll('.avatar-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
       };
       avContainer.appendChild(btn);
     });

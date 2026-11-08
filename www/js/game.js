@@ -22,10 +22,12 @@ import { firebaseNetwork } from './firebase-network.js';
 import { HostModerationPanel } from './host-moderation-panel.js';
 import { TersSesEngine } from './ters-ses-game.js';
 import { contentSync } from './content-sync.js';
+import { inAppScanner } from './in-app-scanner.js';
 
 class GameApp {
   constructor() {
     contentSync.loadCachedPacks();
+    try { inAppScanner.init(); } catch (e) {}
     this.categories = [...CATEGORIES];
     window.addEventListener('kafanatak-content-updated', () => {
       this.categories = [...CATEGORIES];
@@ -2365,6 +2367,8 @@ class GameApp {
   initOtherPartyGames() {
     this.bombEngine = new BombGameEngine(this);
     this.bottleEngine = new BottleGameEngine(this);
+    if (this.bombEngine.bindSetup) this.bombEngine.bindSetup();
+    if (this.bottleEngine.bindSetup) this.bottleEngine.bindSetup();
 
     // =========================================
     // 2. SAATLİ BOMBA (TICK TACK BOOM)

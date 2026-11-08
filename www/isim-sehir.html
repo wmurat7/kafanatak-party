@@ -66,32 +66,44 @@
     }
     .input-field:focus { border-color: var(--primary); box-shadow: 0 0 12px rgba(0, 245, 212, 0.3); }
 
-    /* Avatar Grid */
-    .avatar-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
+    /* ULTRA-RESPONSIVE COMPACT AVATAR GRID */
+    .avatar-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      max-width: 300px;
+      margin: 0 auto 14px;
+      width: 100%;
+      box-sizing: border-box;
+    }
     .avatar-btn {
-      background: rgba(255, 255, 255, 0.08);
-      border: 2px solid rgba(255, 255, 255, 0.16);
-      border-radius: 14px;
-      font-size: 1.8rem;
-      padding: 10px 4px;
-      cursor: pointer;
-      touch-action: manipulation;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-tap-highlight-color: transparent;
+      aspect-ratio: 1 / 1;
+      width: 100%;
+      max-width: 64px;
+      min-height: 48px;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.15s ease;
+      font-size: clamp(1.3rem, 5.5vw, 1.6rem);
+      line-height: 1;
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px solid rgba(255, 255, 255, 0.16);
+      border-radius: 14px;
+      cursor: pointer;
+      padding: 0;
+      margin: 0 auto;
+      transition: all 0.18s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
     .avatar-btn:active {
       transform: scale(0.92);
     }
     .avatar-btn.selected {
-      border-color: var(--gold) !important;
-      background: rgba(251, 191, 36, 0.25) !important;
-      transform: scale(1.14);
-      box-shadow: 0 0 18px rgba(251, 191, 36, 0.6) !important;
+      border-color: var(--gold, #FBBF24) !important;
+      background: rgba(251, 191, 36, 0.22) !important;
+      box-shadow: 0 0 14px rgba(251, 191, 36, 0.45) !important;
+      transform: scale(1.05);
     }
 
     /* Buttons */

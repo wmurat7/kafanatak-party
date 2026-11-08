@@ -1,3 +1,4 @@
+import { PartyMultiDeviceHelper } from './party-multi-device.js';
 // js/bottle-game.js
 // Kafana Tak! - Şişe Çevirmece: Doğruluk mu Cesaret mi? Parti Oyunu Motoru
 
@@ -226,10 +227,23 @@ class NonRepeatingDeck {
 }
 
 export class BottleGameEngine {
+  bindSetup() {
+    if (this.multiHelper) {
+      this.multiHelper.bindEvents((mode) => {
+        console.log('[BottleGame] Mod değişti:', mode);
+      });
+    }
+  }
   constructor(game) {
     this.game = game;
     this.mode = 'party'; // 'party' | 'adult'
     this.isSpinning = false;
+    this.multiHelper = new PartyMultiDeviceHelper({
+      namespace: 'bottle',
+      title: 'Şişe Çevirmece Masası',
+      subtitle: '☁️ Şişe ve görevler herkesin telefonuna anında düşer, cesaret oylanır!',
+      prefix: 'bottle'
+    });
     this.currentCardType = null; // 'truth' | 'dare'
     this.selectedPlayer = null;
 
