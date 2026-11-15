@@ -515,7 +515,13 @@
         isRegistered = true;
         document.getElementById('stage-join').style.display = 'none';
         document.getElementById('stage-game').style.display = 'flex';
-        fetchState();
+        if (!pollInterval) {
+          fetchState();
+          startListen();
+          pollInterval = setInterval(fetchState, 1200);
+        } else {
+          fetchState();
+        }
       } catch (e) {
         alert('Odaya bağlanırken hata oluştu. Lütfen tekrar deneyin.');
       } finally {
@@ -771,9 +777,16 @@
     }
 
     // SSE Canlı Akış + Polling
+    let evtSource = null;
+    let pollInterval = null;
     function startListen() {
+      if (!roomId) return;
+      if (evtSource) {
+        try { evtSource.close(); } catch (e) {}
+        evtSource = null;
+      }
       try {
-        const evtSource = new EventSource(`${dbUrl}/kafanatak/carkifelek/${roomId}.json`);
+        evtSource = new EventSource(`${dbUrl}/kafanatak/carkifelek/${roomId}.json`);
         evtSource.addEventListener('put', (e) => {
           try {
             const data = JSON.parse(e.data);
@@ -788,6 +801,7 @@
     }
 
     async function fetchState() {
+      if (!roomId) return;
       try {
         const res = await fetch(`${dbUrl}/kafanatak/carkifelek/${roomId}.json`);
         const room = await res.json();
@@ -795,9 +809,11 @@
       } catch (e) {}
     }
 
-    fetchState();
-    startListen();
-    setInterval(fetchState, 1200);
+    if (roomId) {
+      fetchState();
+      startListen();
+      pollInterval = setInterval(fetchState, 1200);
+    }
   </script>
 </body>
 </html>

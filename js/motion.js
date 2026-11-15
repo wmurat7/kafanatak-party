@@ -10,7 +10,7 @@ export class MotionDetector {
     this.isActive = false;
     this.state = 'NEUTRAL'; // 'NEUTRAL', 'CORRECT', 'PASS', 'WAITING_RETURN', 'TOUCH_MODE'
     this.lastTriggerTime = 0;
-    this.cooldownMs = 850;
+    this.cooldownMs = 1200; // 1.2s güvenli bekleme süresi
 
     // Platform algılama
     this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
@@ -20,10 +20,11 @@ export class MotionDetector {
     this.sensorType = 'none';
     this.lastEventTime = 0;
 
-    // Canlı okunan değerler
+    // Canlı okunan değerler & yumuşatma filtresi
     this.currentRawZ = 0;
     this.currentDeltaZ = 0;
     this.currentDegrees = 0;
+    this.smoothedDegrees = 0;
 
     // Kalıcı / Manuel Kalibrasyon
     const savedOffset = localStorage.getItem('kafanatak_neutral_z');
@@ -31,9 +32,10 @@ export class MotionDetector {
     this.calibratedNeutralZ = this.manualNeutralZ !== null ? this.manualNeutralZ : 0;
     this.isCalibrated = this.manualNeutralZ !== null;
 
-    // Eşik açısı (Varsayılan 22 derece)
+    // Eşik açısı (Varsayılan 42 derece - bilinçli kafa eğme)
     const savedDegrees = localStorage.getItem('kafanatak_tilt_degrees');
-    this.thresholdDegrees = savedDegrees !== null ? parseInt(savedDegrees, 10) : 22;
+    const parsedDeg = savedDegrees !== null ? parseInt(savedDegrees, 10) : 42;
+    this.thresholdDegrees = (parsedDeg < 25) ? 42 : parsedDeg;
     this.returnDegrees = Math.round(this.thresholdDegrees * 0.45);
 
     // Eğim yönünü ters çevirme
@@ -193,26 +195,35 @@ export class MotionDetector {
       return;
     }
 
+    // Düşük geçiren filtre (Exponential Moving Average): Anlık titreşimleri ve mikro hareketleri filtrele
+    if (this.smoothedDegrees === 0 && Math.abs(degrees) < 15) {
+      this.smoothedDegrees = degrees;
+    } else {
+      this.smoothedDegrees = (this.smoothedDegrees * 0.65) + (degrees * 0.35);
+    }
+    const filteredDegrees = Math.round(this.smoothedDegrees);
+    this.currentDegrees = filteredDegrees;
+
     const now = performance.now();
 
     // 1. Kilit durumu: Hareketi yaptıktan sonra tekrar dik konuma dönülmesini bekle
     if (this.state === 'WAITING_RETURN') {
-      if (Math.abs(degrees) < this.returnDegrees && (now - this.lastTriggerTime > 400)) {
+      if (Math.abs(filteredDegrees) < this.returnDegrees && (now - this.lastTriggerTime > 500)) {
         this.state = 'NEUTRAL';
-        this.onTiltStateChange('NEUTRAL', deltaZ, degrees);
+        this.onTiltStateChange('NEUTRAL', deltaZ, filteredDegrees);
       }
       return;
     }
 
     // 2. ÖNE EĞİLME (Baş öne eğilir -> Açı eşikten büyük) -> DOĞRU! (Yeşil)
-    if (degrees > this.thresholdDegrees) {
-      this.triggerAction('CORRECT', deltaZ, degrees);
+    if (filteredDegrees > this.thresholdDegrees) {
+      this.triggerAction('CORRECT', deltaZ, filteredDegrees);
       return;
     }
 
     // 3. ARKAYA EĞİLME (Baş arkaya kalkar -> Açı -eşikten küçük) -> PAS! (Turuncu)
-    if (degrees < -this.thresholdDegrees) {
-      this.triggerAction('PASS', deltaZ, degrees);
+    if (filteredDegrees < -this.thresholdDegrees) {
+      this.triggerAction('PASS', deltaZ, filteredDegrees);
       return;
     }
 
@@ -220,7 +231,7 @@ export class MotionDetector {
     if (this.state !== 'NEUTRAL') {
       this.state = 'NEUTRAL';
     }
-    this.onTiltStateChange('NEUTRAL', deltaZ, degrees);
+    this.onTiltStateChange('NEUTRAL', deltaZ, filteredDegrees);
   }
 
   triggerAction(actionType, deltaZ, degrees) {
@@ -240,7 +251,7 @@ export class MotionDetector {
   }
 
   setSensitivityDegrees(deg) {
-    const clampedDeg = Math.max(12, Math.min(45, deg));
+    const clampedDeg = Math.max(25, Math.min(60, deg));
     this.thresholdDegrees = clampedDeg;
     this.returnDegrees = Math.round(clampedDeg * 0.45);
     try {
@@ -250,16 +261,16 @@ export class MotionDetector {
 
   setSensitivity(preset) {
     if (preset === 'high') {
-      this.setSensitivityDegrees(16);
+      this.setSensitivityDegrees(32);
     } else if (preset === 'low') {
-      this.setSensitivityDegrees(30);
+      this.setSensitivityDegrees(52);
     } else {
-      this.setSensitivityDegrees(22);
+      this.setSensitivityDegrees(42);
     }
   }
 
   getThresholdDegrees() {
-    return this.thresholdDegrees || 22;
+    return this.thresholdDegrees || 42;
   }
 
   setInvert(invert) {
