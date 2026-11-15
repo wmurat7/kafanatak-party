@@ -162,6 +162,9 @@ class GameApp {
         });
       });
     }
+
+    this.updateRuleModeUI();
+    this.updateCategoryFilterUI();
   }
 
   loadCustomDecks() {
@@ -759,6 +762,53 @@ class GameApp {
       });
     }
 
+    // Açılır Seçmeli Menü: Oyun Kural Modu Seçici
+    const selectRuleMode = document.getElementById('select-rule-mode');
+    const pickerRule = document.getElementById('picker-rule-mode');
+    if (pickerRule && selectRuleMode) {
+      pickerRule.addEventListener('click', (e) => {
+        if (e.target !== selectRuleMode && typeof selectRuleMode.showPicker === 'function') {
+          try { selectRuleMode.showPicker(); } catch (err) {}
+        }
+      });
+    }
+    if (selectRuleMode) {
+      selectRuleMode.addEventListener('change', () => {
+        sounds.playClick();
+        this.ruleMode = selectRuleMode.value || 'classic';
+        localStorage.setItem('kafanatak_rule_mode', this.ruleMode);
+        this.updateRuleModeUI();
+        if (this.ruleMode === 'bomb') {
+          announcer.speak('Bomba modu seçildi! Telefon elden ele dolaşacak!');
+        } else if (this.ruleMode === 'mime') {
+          announcer.speak('Sessiz sinema seçildi! Konuşmak kesinlikle yasak!');
+        } else if (this.ruleMode === 'letter') {
+          announcer.speak('Yasak harf modu seçildi!');
+        } else if (this.ruleMode === 'taboo') {
+          announcer.speak('Klasik Tabu modu seçildi! Yasaklı kelimelere dikkat!');
+        }
+      });
+    }
+
+    // Açılır Seçmeli Menü: Kategori Filtresi Seçici
+    const selectCatFilter = document.getElementById('select-category-filter');
+    const pickerCat = document.getElementById('picker-category-filter');
+    if (pickerCat && selectCatFilter) {
+      pickerCat.addEventListener('click', (e) => {
+        if (e.target !== selectCatFilter && typeof selectCatFilter.showPicker === 'function') {
+          try { selectCatFilter.showPicker(); } catch (err) {}
+        }
+      });
+    }
+    if (selectCatFilter) {
+      selectCatFilter.addEventListener('change', () => {
+        sounds.playClick();
+        this.activeFilter = selectCatFilter.value || 'all';
+        this.updateCategoryFilterUI();
+        this.renderCategoryGrid();
+      });
+    }
+
     // Parti Kural Modları (Klasik, Bomba, Sessiz Sinema, Yasak Harf)
     if (this.ruleChips) {
       this.ruleChips.forEach(chip => {
@@ -768,7 +818,7 @@ class GameApp {
           chip.classList.add('active');
           this.ruleMode = chip.dataset.rule || 'classic';
           localStorage.setItem('kafanatak_rule_mode', this.ruleMode);
-          this.updateRuleModeDesc();
+          this.updateRuleModeUI();
           if (this.ruleMode === 'bomb') {
             announcer.speak('Bomba modu seçildi! Telefon elden ele dolaşacak!');
           } else if (this.ruleMode === 'mime') {
@@ -5282,6 +5332,18 @@ SADECE geçerli bir JSON array döndür. Başka hiçbir açıklama veya markdown
   }
 
   updateRuleModeUI() {
+    const selectRule = document.getElementById('select-rule-mode');
+    const ruleIcon = document.getElementById('rule-dropdown-icon');
+    const ruleText = document.getElementById('rule-dropdown-text');
+    if (selectRule) {
+      selectRule.value = this.ruleMode || 'classic';
+      const opt = selectRule.options[selectRule.selectedIndex];
+      if (opt) {
+        const parts = opt.text.trim().split(/\s+/);
+        if (ruleIcon && parts[0]) ruleIcon.textContent = parts[0];
+        if (ruleText) ruleText.textContent = parts.slice(1).join(' ').replace(/\s*\(.*\)/, '');
+      }
+    }
     if (this.ruleChips) {
       this.ruleChips.forEach(chip => {
         if (chip.dataset.rule === this.ruleMode) {
@@ -5292,6 +5354,21 @@ SADECE geçerli bir JSON array döndür. Başka hiçbir açıklama veya markdown
       });
     }
     this.updateRuleModeDesc();
+  }
+
+  updateCategoryFilterUI() {
+    const selectCat = document.getElementById('select-category-filter');
+    const catIcon = document.getElementById('cat-dropdown-icon');
+    const catText = document.getElementById('cat-dropdown-text');
+    if (selectCat) {
+      selectCat.value = this.activeFilter || 'all';
+      const opt = selectCat.options[selectCat.selectedIndex];
+      if (opt) {
+        const parts = opt.text.trim().split(/\s+/);
+        if (catIcon && parts[0]) catIcon.textContent = parts[0];
+        if (catText) catText.textContent = parts.slice(1).join(' ').replace(/\s*\(.*\)/, '');
+      }
+    }
   }
 
   updateRuleModeDesc() {

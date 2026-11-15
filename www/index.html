@@ -125,31 +125,50 @@
 
     
 
-    <!-- Parti Kural Modları (Klasik, Bomba, Sessiz Sinema, Yasak Harf) -->
-    <section class="rules-mode-bar" aria-label="Parti Kural Modları">
-      <div class="rules-chips-container">
-        <button type="button" class="rule-chip active" data-rule="classic">
-          <span class="rule-chip-icon">🌟</span>
-          <span class="rule-chip-title">Klasik</span>
-        </button>
-        <button type="button" class="rule-chip" data-rule="bomb">
-          <span class="rule-chip-icon">💣</span>
-          <span class="rule-chip-title">Bomba</span>
-          <span class="rule-chip-badge">HOT</span>
-        </button>
-        <button type="button" class="rule-chip" data-rule="mime">
-          <span class="rule-chip-icon">🤐</span>
-          <span class="rule-chip-title">Sinema</span>
-        </button>
-        <button type="button" class="rule-chip" data-rule="letter">
-          <span class="rule-chip-icon">🔤</span>
-          <span class="rule-chip-title">Yasak Harf</span>
-        </button>
-        <button type="button" class="rule-chip" data-rule="taboo">
-          <span class="rule-chip-icon">🚫</span>
-          <span class="rule-chip-title">Tabu</span>
-        </button>
+    <!-- Oyun Modu ve Kategori Filtreleme Açılır Seçmeli Menüleri -->
+    <section class="games-filter-dropdown-section" aria-label="Oyun ve Kategori Seçimi">
+      <div class="games-filter-dropdown-bar">
+        <!-- 1. Oyun Kural Modu Seçici (Açılır Menü) -->
+        <div class="dropdown-select-group">
+          <label class="dropdown-select-label" for="select-rule-mode">🎮 Oyun Modu</label>
+          <div class="custom-dropdown-picker" id="picker-rule-mode">
+            <select id="select-rule-mode" class="dropdown-native-select" aria-label="Oyun Modu Seçimi">
+              <option value="classic" selected>🌟 Klasik (Alna Koyma)</option>
+              <option value="bomb">💣 Bomba Modu (HOT)</option>
+              <option value="mime">🤐 Sessiz Sinema</option>
+              <option value="letter">🔤 Yasak Harf</option>
+              <option value="taboo">🚫 Tabu</option>
+            </select>
+            <div class="dropdown-trigger-box">
+              <span class="dropdown-trigger-icon" id="rule-dropdown-icon">🌟</span>
+              <span class="dropdown-trigger-text" id="rule-dropdown-text">Klasik</span>
+              <span class="dropdown-trigger-arrow">▾</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Kategori Filtresi Seçici (Açılır Menü) -->
+        <div class="dropdown-select-group">
+          <label class="dropdown-select-label" for="select-category-filter">📂 Kategori Filtrele</label>
+          <div class="custom-dropdown-picker" id="picker-category-filter">
+            <select id="select-category-filter" class="dropdown-native-select" aria-label="Kategori Filtreleme">
+              <option value="all" selected>🔥 Tümü (13)</option>
+              <option value="party">🎉 Parti & Oyun</option>
+              <option value="music">🎵 Şarkılar & Müzik</option>
+              <option value="cinema">🎬 Dizi & Sinema</option>
+              <option value="adult">🔞 Yetişkinler (+18)</option>
+              <option value="kids">👶 Çocuk & Doğa</option>
+            </select>
+            <div class="dropdown-trigger-box">
+              <span class="dropdown-trigger-icon" id="cat-dropdown-icon">🔥</span>
+              <span class="dropdown-trigger-text" id="cat-dropdown-text">Tümü (13)</span>
+              <span class="dropdown-trigger-arrow">▾</span>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <!-- Kural Modu Açıklama Şeridi -->
       <div id="rule-mode-desc-text" class="rule-mode-desc">
         🌟 <strong>Klasik:</strong> Telefonu alnına koy, arkadaşlarının anlattıklarını doğru tahmin et!
       </div>
@@ -215,18 +234,6 @@
         </button>
       </div>
     </div>
-
-    <!-- Hızlı Kategori Filtre Çipleri -->
-    <section class="category-filters-wrapper">
-      <div class="filter-chips">
-        <button type="button" class="filter-chip active" data-filter="all">🔥 Tümü (13)</button>
-        <button type="button" class="filter-chip" data-filter="party">🎉 Parti & Oyun</button>
-        <button type="button" class="filter-chip" data-filter="music">🎵 Şarkılar & Müzik</button>
-        <button type="button" class="filter-chip" data-filter="cinema">🎬 Dizi & Sinema</button>
-        <button type="button" class="filter-chip" data-filter="adult">🔞 Yetişkinler (+18)</button>
-        <button type="button" class="filter-chip" data-filter="kids">👶 Çocuk & Doğa</button>
-      </div>
-    </section>
 
     <!-- Kategori Listesi (2 Sütunlu Arcade Izgara) -->
     <section class="category-grid-section">
@@ -2041,108 +2048,27 @@
         <button type="button" id="btn-close-settings-hub" class="hub-close-x" aria-label="Kapat">&times;</button>
       </div>
 
-      <!-- 5 Kapsamlı Sekme Başlığı (Modern Segmented Bar) -->
+      <!-- 4 Kapsamlı Sekme Başlığı (Modern Segmented Bar) -->
       <div class="hub-tabs" role="tablist">
-        <button type="button" id="tab-btn-security" class="hub-tab" role="tab" aria-selected="false" title="PIN & Güvenlik Ayarları" style="display:none;">
-          <span class="hub-tab-icon">🔒</span>
-          <span class="hub-tab-label">Güvenlik</span>
-        </button>
-        <button type="button" id="tab-btn-gameplay" class="hub-tab active" role="tab" aria-selected="true" title="Oyun Modu & Süre Ayarları">
+        <button type="button" id="tab-btn-gameplay" class="hub-tab active" role="tab" aria-selected="true" title="Oyun Modu ve Süre Ayarları">
           <span class="hub-tab-icon">⏱️</span>
           <span class="hub-tab-label">Oyun</span>
         </button>
-        <button type="button" id="tab-btn-motion" class="hub-tab" role="tab" aria-selected="false" title="Eğim Sensörü & Kalibrasyon">
+        <button type="button" id="tab-btn-motion" class="hub-tab" role="tab" aria-selected="false" title="Eğim Sensörü ve Kalibrasyon">
           <span class="hub-tab-icon">📱</span>
           <span class="hub-tab-label">Sensör</span>
         </button>
-        <button type="button" id="tab-btn-camera" class="hub-tab" role="tab" aria-selected="false" title="Ön Kamera & Kayıt Ayarları">
+        <button type="button" id="tab-btn-camera" class="hub-tab" role="tab" aria-selected="false" title="Ön Kamera ve Kayıt Ayarları">
           <span class="hub-tab-icon">📹</span>
           <span class="hub-tab-label">Kamera</span>
         </button>
-        <button type="button" id="tab-btn-system" class="hub-tab" role="tab" aria-selected="false" title="İzinler, Ağ & Teşhis">
+        <button type="button" id="tab-btn-system" class="hub-tab" role="tab" aria-selected="false" title="İzinler, Ağ ve Teşhis">
           <span class="hub-tab-icon">🛡️</span>
           <span class="hub-tab-label">İzinler</span>
         </button>
       </div>
 
-      <!-- 1. SEKME: GÜVENLİK, ŞİFRE & KATEGORİ KİLİTLEME -->
-      <div id="hub-content-security" class="hub-tab-content" style="display:none;">
-        <!-- PIN Belirleme & Değiştirme Kartı -->
-        <div class="security-card">
-          <div class="security-card-header">
-            <div class="sec-icon">🔐</div>
-            <div>
-              <h3>PIN Kodu Belirleme & Değiştirme</h3>
-              <p>Yetişkinler (+18) ve kilitlediğiniz kategorileri açmak için kullanılan 4 haneli güvenlik kodu (Varsayılan: <strong>1818</strong>).</p>
-            </div>
-          </div>
-
-          <form id="form-change-pin" class="pin-change-form">
-            <div class="pin-inputs-row">
-              <div class="pin-field">
-                <label for="input-current-pin">Mevcut PIN</label>
-                <input type="password" id="input-current-pin" maxlength="4" placeholder="••••" class="form-input pin-mini-input" autocomplete="off" required>
-              </div>
-              <div class="pin-field">
-                <label for="input-new-pin">Yeni PIN (4 Rakam)</label>
-                <input type="password" id="input-new-pin" maxlength="4" placeholder="••••" class="form-input pin-mini-input" autocomplete="off" required>
-              </div>
-              <div class="pin-field">
-                <label for="input-new-pin-confirm">Yeni PIN Tekrar</label>
-                <input type="password" id="input-new-pin-confirm" maxlength="4" placeholder="••••" class="form-input pin-mini-input" autocomplete="off" required>
-              </div>
-            </div>
-
-            <div class="form-group" style="margin-top:14px; margin-bottom:8px; text-align:left;">
-              <label for="select-recovery-question" style="font-size:0.8rem; color:#A78BFA; font-weight:700;">
-                🔑 Güvenlik Kurtarma Sorusu (Şifre unutulursa doğrulamak için)
-              </label>
-              <select id="select-recovery-question" class="custom-select" style="font-size:0.85rem; padding:8px 10px; margin-top:4px;">
-                <option value="İlk evcil hayvanınızın adı nedir?">İlk evcil hayvanınızın adı nedir?</option>
-                <option value="Doğduğunuz şehir neresidir?">Doğduğunuz şehir neresidir?</option>
-                <option value="En sevdiğiniz film veya dizi nedir?">En sevdiğiniz film veya dizi nedir?</option>
-                <option value="Çocukluk lakabınız veya ilk okulunuz?">Çocukluk lakabınız veya ilk okulunuz?</option>
-                <option value="Özel gizli kurtarma kelimem">Özel gizli kurtarma kelimem</option>
-              </select>
-            </div>
-
-            <div class="form-group" style="margin-bottom:12px; text-align:left;">
-              <label for="input-recovery-answer" style="font-size:0.8rem; color:#A78BFA; font-weight:700;">
-                Gizli Kurtarma Cevabınız
-              </label>
-              <input type="text" id="input-recovery-answer" class="form-input" placeholder="Gizli cevabınız (Örn: Karabaş veya İzmir)" autocomplete="off" style="font-size:0.88rem; padding:8px 12px;">
-            </div>
-
-            <div id="pin-change-status-msg" class="pin-status-text" style="display:none;"></div>
-
-            <div class="pin-form-actions">
-              <button type="submit" class="btn-primary-big" style="padding:10px 22px; font-size:0.92rem;">
-                💾 PIN ve Güvenlik Sorusunu Kaydet
-              </button>
-              <button type="button" id="btn-open-reset-pin-modal" class="btn-secondary" style="font-size:0.85rem;" title="Mevcut PIN veya Kurtarma Sorusu gerektirir">
-                🔒 PIN Sıfırla (Güvenlik Korumalı)
-              </button>
-            </div>
-          </form>
-        </div>
-
-        <!-- Kategori Kilitleme Listesi (Ebeveyn Denetimi) -->
-        <div class="security-card" style="margin-top:18px;">
-          <div class="security-card-header">
-            <div class="sec-icon">🛡️</div>
-            <div>
-              <h3>Kategori Kilitleme (Ebeveyn Denetimi)</h3>
-              <p>Açık olan kategoriler kilitlenir ve oyuna başlanmadan önce PIN kodu sorar.</p>
-            </div>
-          </div>
-
-          <div id="category-locks-container" class="category-locks-list">
-            <!-- JS ile tüm kategorilerin kilit anahtarları dinamik üretilir -->
-          </div>
-        </div>
-      </div>
-
-      <!-- 2. SEKME: OYUN & SÜRE TERCİHLERİ -->
+      <!-- OYUN VE SÜRE TERCİHLERİ -->
       <div id="hub-content-gameplay" class="hub-tab-content active">
         <div class="hub-settings-list">
           <div class="hub-setting-row duration-setting-row">
