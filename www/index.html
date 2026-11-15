@@ -1012,7 +1012,7 @@
     </div>
 
     <!-- Alt İpucu (Yatay Modda Görünür) -->
-    <div class="round-bottom-hint">
+    <div class="round-bottom-hint" style="display:none !important;">
       <span>👈 Sol Dokun veya Başını Kaldır: PAS</span>
       <span>👉 Sağ Dokun veya Başını Öne Eğ: DOĞRU</span>
     </div>
@@ -1885,7 +1885,7 @@
   <!-- =========================================
        6.1. YETİŞKİNLER (+18) PIN KİLİDİ MODALI
        ========================================= -->
-  <div id="modal-pin-lock" class="modal-overlay">
+  <div id="modal-pin-lock" class="modal-overlay" style="display:none !important;">
     <div class="modal-card pin-modal-card">
       <div style="font-size:3.5rem; margin-bottom:10px;">🔞</div>
       <h3 style="color:#FF416C;">Yetişkinler (+18) Kilidi</h3>
@@ -1915,7 +1915,7 @@
   <!-- =========================================
        6.1.1. PIN GÜVENLİK VE SIFIRLAMA MODALI
        ========================================= -->
-  <div id="modal-pin-reset" class="modal-overlay">
+  <div id="modal-pin-reset" class="modal-overlay" style="display:none !important;">
     <div class="modal-card" style="max-width: 380px;">
       <div class="modal-header">
         <h2>🔐 PIN Güvenlik Doğrulaması</h2>
@@ -2043,11 +2043,11 @@
 
       <!-- 5 Kapsamlı Sekme Başlığı (Modern Segmented Bar) -->
       <div class="hub-tabs" role="tablist">
-        <button type="button" id="tab-btn-security" class="hub-tab active" role="tab" aria-selected="true" title="PIN & Güvenlik Ayarları">
+        <button type="button" id="tab-btn-security" class="hub-tab" role="tab" aria-selected="false" title="PIN & Güvenlik Ayarları" style="display:none;">
           <span class="hub-tab-icon">🔒</span>
           <span class="hub-tab-label">Güvenlik</span>
         </button>
-        <button type="button" id="tab-btn-gameplay" class="hub-tab" role="tab" aria-selected="false" title="Oyun Modu & Süre Ayarları">
+        <button type="button" id="tab-btn-gameplay" class="hub-tab active" role="tab" aria-selected="true" title="Oyun Modu & Süre Ayarları">
           <span class="hub-tab-icon">⏱️</span>
           <span class="hub-tab-label">Oyun</span>
         </button>
@@ -2066,7 +2066,7 @@
       </div>
 
       <!-- 1. SEKME: GÜVENLİK, ŞİFRE & KATEGORİ KİLİTLEME -->
-      <div id="hub-content-security" class="hub-tab-content active">
+      <div id="hub-content-security" class="hub-tab-content" style="display:none;">
         <!-- PIN Belirleme & Değiştirme Kartı -->
         <div class="security-card">
           <div class="security-card-header">
@@ -2143,7 +2143,7 @@
       </div>
 
       <!-- 2. SEKME: OYUN & SÜRE TERCİHLERİ -->
-      <div id="hub-content-gameplay" class="hub-tab-content">
+      <div id="hub-content-gameplay" class="hub-tab-content active">
         <div class="hub-settings-list">
           <div class="hub-setting-row duration-setting-row">
             <div class="setting-labels">
@@ -2427,8 +2427,8 @@
               <div class="subtitle">Ne kadar öne/arkaya eğilince tetiklensin?</div>
             </div>
             <div class="setting-control range-control">
-              <input type="range" id="hub-slider-threshold" min="15" max="45" value="22" class="range-slider">
-              <span id="hub-threshold-value" class="range-badge">22°</span>
+              <input type="range" id="hub-slider-threshold" min="25" max="60" value="42" class="range-slider">
+              <span id="hub-threshold-value" class="range-badge">42°</span>
             </div>
           </div>
 

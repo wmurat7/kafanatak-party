@@ -352,3 +352,4 @@ export const inAppScanner = new InAppScannerController();
 if (typeof window !== 'undefined') {
   window.inAppScanner = inAppScanner;
 }
+

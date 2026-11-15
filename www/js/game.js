@@ -2936,26 +2936,15 @@ class GameApp {
   }
 
   getLockedCategories() {
-    try {
-      const saved = localStorage.getItem(this.lockedCatsKey);
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return ['adult-18']; // Varsayılan olarak Yetişkinler kilitlidir
+    return [];
   }
 
   isCategoryLocked(catId) {
-    return this.getLockedCategories().includes(catId);
+    return false;
   }
 
   setCategoryLock(catId, isLocked) {
-    const list = this.getLockedCategories();
-    let updated;
-    if (isLocked) {
-      updated = Array.from(new Set([...list, catId]));
-    } else {
-      updated = list.filter(id => id !== catId);
-    }
-    localStorage.setItem(this.lockedCatsKey, JSON.stringify(updated));
+    // Kilit sistemi devre dışı bırakıldı
   }
 
   renderCategoryLocksList() {
@@ -3018,9 +3007,11 @@ class GameApp {
     });
 
     filtered.forEach(cat => {
-      const isLocked = this.isCategoryLocked(cat.id);
       const card = document.createElement('div');
       card.className = 'arcade-cat-card';
+      if (cat.gradient) {
+        card.style.setProperty('--card-accent', cat.gradient);
+      }
 
       let cleanTitle = cat.title;
       if (cleanTitle.startsWith(cat.icon)) {
@@ -3030,7 +3021,6 @@ class GameApp {
       card.innerHTML = `
         <div class="arcade-card-top-row">
           <span class="arcade-count-pill">${cat.words.length}+</span>
-          ${isLocked ? '<span class="arcade-status-tag">🔒 Kilitli</span>' : ''}
         </div>
         <div class="arcade-icon-stage">${cat.icon}</div>
         <div class="arcade-card-body">
@@ -3064,14 +3054,6 @@ class GameApp {
   }
 
   selectCategoryAndStart(cat) {
-    if (this.isCategoryLocked(cat.id)) {
-      this.pendingCategory = cat;
-      this.modalPinLock.classList.add('active');
-      this.inputPinCode.value = '';
-      this.pinErrorMsg.style.display = 'none';
-      setTimeout(() => this.inputPinCode.focus(), 150);
-      return;
-    }
     this.checkCameraConsentAndStart(cat);
   }
 
@@ -3347,28 +3329,9 @@ class GameApp {
           return;
         }
       } else {
-        // Normal / Klasik Mod
-        if (this.remainingTime === 10) {
-          try { announcer.onCountdown10(); } catch (e) {}
-        }
-
-        // Panik HUD: Son 10 saniyede ekran kenarlarında atan neon kırmızı nabız & Hızlanan Müzik
-        if (this.remainingTime <= 10 && this.remainingTime > 0) {
-          try { sounds.setMusicUrgent(true); } catch (e) {}
-          if (this.screens && this.screens.round) {
-            this.screens.round.classList.add('panic-pulse-active');
-          }
-        } else {
-          if (this.screens && this.screens.round) {
-            this.screens.round.classList.remove('panic-pulse-active');
-          }
-        }
-
+        // Normal / Klasik Mod (Sessiz oyun - oyuncu ipuçlarını kesmemesi için anons/tik-tak yok)
         if (this.remainingTime <= 5 && this.remainingTime > 0) {
-          try { sounds.playTick(true); } catch (e) {}
           this.triggerHaptic('tick');
-        } else if (this.remainingTime % 10 === 0 && this.remainingTime > 0) {
-          try { sounds.playTick(false); } catch (e) {}
         }
 
         if (this.remainingTime <= 0) {
@@ -4053,7 +4016,7 @@ class GameApp {
     this.renderCategoryLocksList();
   }
 
-  openSettingsHub(tab = 'security') {
+  openSettingsHub(tab = 'gameplay') {
     if (this.modalSettingsHub) {
       this.modalSettingsHub.classList.add('active');
       const card = this.modalSettingsHub.querySelector('.settings-hub-card');

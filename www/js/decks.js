@@ -4,10 +4,9 @@ export const CATEGORIES = [
     "id": "adult-18",
     "title": "🔞 Yetişkinler (+18)",
     "icon": "🔞",
-    "description": "Şifreli Özel Kategori! +18 muzip, cesur ve çılgın parti kelimeleri.",
+    "description": "Muzip, cesur ve çılgın parti kelimeleri.",
     "gradient": "linear-gradient(135deg, #FF0844 0%, #FFB199 100%)",
     "isAdult": true,
-    "pin": "1818",
     "words": [
       "Aşk Merdiveni",
       "Tek Gecelik İlişki",

@@ -3007,9 +3007,11 @@ class GameApp {
     });
 
     filtered.forEach(cat => {
-      const isLocked = this.isCategoryLocked(cat.id);
       const card = document.createElement('div');
       card.className = 'arcade-cat-card';
+      if (cat.gradient) {
+        card.style.setProperty('--card-accent', cat.gradient);
+      }
 
       let cleanTitle = cat.title;
       if (cleanTitle.startsWith(cat.icon)) {

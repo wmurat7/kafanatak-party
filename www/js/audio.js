@@ -468,10 +468,8 @@ class SoundEngine {
   }
 
   playTick(isUrgent = false) {
-    if (this.muted) return;
-    this.unlockAudio();
-    this.vibrate(isUrgent ? 22 : 12);
-    this.synthRealisticTick(isUrgent, false);
+    // Oyun esnasında sessizlik için devre dışı
+    try { if (this.vibrate) this.vibrate(isUrgent ? 22 : 12); } catch (e) {}
   }
 
     // =========================================================================
@@ -602,32 +600,8 @@ class SoundEngine {
   // 6. SAATLİ BOMBA SESLERİ (Gerçekçi Saat Bekleme Döngüsü & Sinematik Patlama)
   // =========================================================================
   startBombTicking(playbackRate = 1.0) {
-    if (this.muted) return;
-    this.unlockAudio();
+    // Oyun esnasında sessizlik için devre dışı bırakıldı
     this.stopBombTicking();
-    if (!this.ctx) return;
-
-    const buffer = this.buffers['bomb_tick'];
-    if (!buffer) return;
-
-    try {
-      const now = this.ctx.currentTime;
-      const src = this.ctx.createBufferSource();
-      src.buffer = buffer;
-      src.loop = true;
-      src.playbackRate.setValueAtTime(playbackRate, now);
-
-      const gain = this.ctx.createGain();
-      gain.gain.setValueAtTime(0.88 * this.sfxVolume, now);
-
-      src.connect(gain);
-      gain.connect(this.getOutputNode());
-
-      src.start(now);
-      this.bombTickingSource = src;
-      this.bombTickingGain = gain;
-      this.activeSources.add(src);
-    } catch (e) {}
   }
 
   stopBombTicking() {
@@ -645,26 +619,15 @@ class SoundEngine {
   }
 
   setBombTickingRate(rate = 1.0) {
-    if (this.bombTickingSource && this.ctx) {
-      try {
-        const now = this.ctx.currentTime;
-        const clampedRate = Math.max(0.7, Math.min(2.2, rate));
-        this.bombTickingSource.playbackRate.linearRampToValueAtTime(clampedRate, now + 0.15);
-      } catch (e) {}
-    }
+    // Devre dışı
   }
 
   playBombTick(remainingSec = 30, totalSec = 30) {
-    if (this.muted) return;
-    // Eğer arka plan döngüsü çalıyorsa hızını dinamik artır
-    if (this.bombTickingSource) {
+    // Oyun esnasında sessizlik için devre dışı bırakıldı
+    try {
       const progress = Math.max(0, Math.min(1, 1 - (remainingSec / (totalSec || 30))));
-      this.setBombTickingRate(1.0 + progress * 0.45);
-      this.vibrate(progress > 0.7 ? 40 : 20);
-      return;
-    }
-    // Döngü yoksa başlat
-    this.startBombTicking();
+      if (this.vibrate) this.vibrate(progress > 0.7 ? 40 : 20);
+    } catch (e) {}
   }
 
   playBombExplosion() {
@@ -1202,197 +1165,9 @@ class SoundEngine {
   }
 
   startPartyBeat() {
-    if (this.muted) return;
-    if (this.musicTheme === 'none') {
-      this.stopPartyBeat();
-      return;
-    }
+    // Oyun esnasinda arka plan muzigi susturuldu (Guessly sessizlik)
     this.stopPartyBeat();
-    this.unlockAudio();
-
-    this.musicPlaying = true;
-    this.musicStep = 0;
-
-    let bpm = 122;
-    if (this.musicTheme === 'party_groove') bpm = this.isUrgent ? 134 : 122;
-    else if (this.musicTheme === 'tv_quiz') bpm = this.isUrgent ? 124 : 110;
-    else if (this.musicTheme === 'suspense') bpm = 84;
-    else if (this.musicTheme === 'ticking_clock') bpm = 90;
-    else if (this.musicTheme === 'noir_mystery') bpm = 76;
-    else if (this.musicTheme === 'minimal_drone') bpm = 68;
-
-    const stepMs = Math.round((60000 / bpm) / 4);
-
-    // Kıpır Kıpır Parti Bas Dizisi (A Minör Funk Akışı - 32 adım / 2 bar)
-    const partyBass = [
-      55.00, 0, 0, 55.00, 0, 0, 65.41, 0, 73.42, 0, 0, 73.42, 0, 0, 82.41, 0,
-      55.00, 0, 0, 55.00, 0, 0, 98.00, 0, 82.41, 0, 73.42, 0, 65.41, 0, 61.74, 0
-    ];
-    // Parti Melodi Çalımı (Off-beat Akor/Puan Işıltısı)
-    const partyLead = [
-      0, 0, 523.25, 0, 0, 0, 659.25, 0, 0, 0, 587.33, 0, 0, 0, 783.99, 0,
-      0, 0, 659.25, 0, 0, 0, 783.99, 0, 0, 0, 880.00, 0, 0, 0, 659.25, 0
-    ];
-
-    // TV Yarışması Marimba Tansiyon Motifi (16 adım döngü)
-    const tvMarimba = [
-      293.66, 0, 349.23, 0, 415.30, 0, 392.00, 0,
-      293.66, 0, 349.23, 0, 466.16, 0, 440.00, 0
-    ];
-
-    // Dedektif Noir Bas
-    const noirNotes = [73.42, 0, 0, 0, 87.31, 0, 0, 0, 82.41, 0, 0, 0, 73.42, 0, 58.27, 55.00];
-
-    this.musicTimer = setInterval(() => {
-      if (!this.musicPlaying || this.muted) return;
-      const step16 = this.musicStep % 16;
-      const step32 = this.musicStep % 32;
-      const now = this.ctx ? this.ctx.currentTime : 0;
-      const target = this.musicGain || this.getOutputNode();
-
-      if (this.musicTheme === 'party_groove') {
-        // 🎉 1. KIPIR KIPIR PARTİ (Canlı Davul, Akıcı Bas & Eğlenceli Disco Synth)
-        // Dört Dörtlük Kick (Dengeli stüdyo seviyesi, konuşmaları bastırmaz)
-        if (step16 === 0 || step16 === 4 || step16 === 8 || step16 === 12) {
-          this.synthDrumKick(now, (step16 === 0 || step16 === 8) ? 0.58 : 0.48);
-        }
-        // Snare / Alkış
-        if (step16 === 4 || step16 === 12) {
-          this.synthDrumSnare(now, 0.52);
-        }
-        // Hi-Hat (Normalde 2, 6, 10, 14; Panikte her tekli adımda coşar)
-        if (step16 === 2 || step16 === 6 || step16 === 10 || step16 === 14) {
-          this.synthHiHat(now, false, 0.22);
-        } else if (this.isUrgent && (step16 % 2 === 1)) {
-          this.synthHiHat(now, false, 0.16);
-        }
-
-        // Bas Groove
-        const bFreq = partyBass[step32];
-        if (bFreq && bFreq > 0) {
-          this.synthBassNote(bFreq, now, this.isUrgent ? 0.09 : 0.13, this.isUrgent ? 0.36 : 0.30);
-        }
-        // Melodi İğnesi
-        const lFreq = partyLead[step32];
-        if (lFreq && lFreq > 0) {
-          this.synthLeadPip(lFreq, now, 0.065, 0.10);
-        }
-
-      } else if (this.musicTheme === 'tv_quiz') {
-        // 📺 2. TV STÜDYO & YARIŞMA (Gerilimli Marimba & Stüdyo Nabzı)
-        // Stüdyo Saati Tıkı
-        if (step16 % 4 === 0) {
-          this.synthHiHat(now, false, 0.18);
-        }
-        // Kalp Nabzı
-        if (step16 === 0 || step16 === 8) {
-          this.synthDrumKick(now, 0.45);
-        }
-        // Marimba Tansiyon Motifi
-        const mFreq = tvMarimba[step16];
-        if (mFreq && mFreq > 0) {
-          this.synthMarimba(this.isUrgent ? mFreq * 1.5 : mFreq, now, 0.15, this.isUrgent ? 0.28 : 0.22);
-        }
-
-      } else if (this.musicTheme === 'suspense') {
-        // 💓 3. KALP ATIŞI NABZI (Derin Lub-Dub Nabzı)
-        if (step16 === 0 || step16 === 2) {
-          const isFirst = (step16 === 0);
-          this.playBuffer('tick', isFirst ? 0.35 : 0.22, isFirst ? 0.65 : 0.60);
-          if (this.ctx) {
-            try {
-              const subOsc = this.ctx.createOscillator();
-              const subGain = this.ctx.createGain();
-              subOsc.type = 'sine';
-              subOsc.frequency.setValueAtTime(isFirst ? 52 : 46, now);
-              subGain.gain.setValueAtTime(isFirst ? 0.28 : 0.18, now);
-              subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
-              subOsc.connect(subGain);
-              subGain.connect(target);
-              this.activeOscillators.add(subOsc);
-              subOsc.onended = () => { if (this.activeOscillators) this.activeOscillators.delete(subOsc); };
-              subOsc.start(now);
-              subOsc.stop(now + 0.15);
-            } catch (e) {}
-          }
-        } else if (step16 === 8) {
-          this.playBuffer('tick', 0.18, 1.15);
-        }
-
-      } else if (this.musicTheme === 'ticking_clock') {
-        // ⏱️ 4. YARIŞMA SAYACI (Tik-Tak Tansiyon)
-        if (step16 % 4 === 0) {
-          this.playBuffer('tick', 0.32, 1.1);
-        } else if (step16 % 4 === 2) {
-          this.playBuffer('tick', 0.18, 0.95);
-        }
-        if (step16 === 0 && (this.musicStep % 32 === 0) && this.ctx) {
-          try {
-            const padOsc = this.ctx.createOscillator();
-            const padGain = this.ctx.createGain();
-            padOsc.type = 'sine';
-            padOsc.frequency.setValueAtTime(65.41, now);
-            padGain.gain.setValueAtTime(0.001, now);
-            padGain.gain.linearRampToValueAtTime(0.08, now + 0.3);
-            padGain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
-            padOsc.connect(padGain);
-            padGain.connect(target);
-            this.activeOscillators.add(padOsc);
-            padOsc.onended = () => { if (this.activeOscillators) this.activeOscillators.delete(padOsc); };
-            padOsc.start(now);
-            padOsc.stop(now + 0.95);
-          } catch (e) {}
-        }
-
-      } else if (this.musicTheme === 'noir_mystery') {
-        // 🕵️ 5. GİZEM & DEDEKTİF (Ağır Caz Bası)
-        const note = noirNotes[step16];
-        if (note && note > 0 && this.ctx) {
-          try {
-            const bOsc = this.ctx.createOscillator();
-            const bGain = this.ctx.createGain();
-            bOsc.type = 'triangle';
-            bOsc.frequency.setValueAtTime(note, now);
-            bGain.gain.setValueAtTime(0.20, now);
-            bGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
-            bOsc.connect(bGain);
-            bGain.connect(target);
-            this.activeOscillators.add(bOsc);
-            bOsc.onended = () => { if (this.activeOscillators) this.activeOscillators.delete(bOsc); };
-            bOsc.start(now);
-            bOsc.stop(now + 0.30);
-          } catch (e) {}
-        }
-        if (step16 === 0 || step16 === 8) {
-          this.playBuffer('tick', 0.2, 0.85);
-        }
-
-      } else if (this.musicTheme === 'minimal_drone') {
-        // 🌌 6. SİNEMATİK ODAKLANMA (Derin Drone)
-        if (step16 === 0 && this.ctx) {
-          try {
-            const dOsc = this.ctx.createOscillator();
-            const dGain = this.ctx.createGain();
-            dOsc.type = 'sine';
-            dOsc.frequency.setValueAtTime(73.42, now);
-            dGain.gain.setValueAtTime(0.001, now);
-            dGain.gain.linearRampToValueAtTime(0.09, now + 0.4);
-            dGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
-            dOsc.connect(dGain);
-            dGain.connect(target);
-            this.activeOscillators.add(dOsc);
-            dOsc.onended = () => { if (this.activeOscillators) this.activeOscillators.delete(dOsc); };
-            dOsc.start(now);
-            dOsc.stop(now + 1.25);
-          } catch (e) {}
-        }
-        if (step16 === 0 || step16 === 8) {
-          this.playBuffer('tick', 0.15, 1.2);
-        }
-      }
-
-      this.musicStep++;
-    }, stepMs);
+    return;
   }
 
   stopPartyBeat() {

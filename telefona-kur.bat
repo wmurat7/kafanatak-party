@@ -29,7 +29,10 @@ if %errorlevel% neq 0 (
 echo.
 echo 3/5. Android APK derleniyor (Gradlew)...
 cd android
-set "JAVA_HOME=C:\Program Files\Android\Android Studio\jbr"
+set "JAVA_HOME=C:\Program Files\Android\Android Studio1\jbr"
+if not exist "%JAVA_HOME%" (
+    set "JAVA_HOME=C:\Program Files\Android\Android Studio\jbr"
+)
 set "PATH=%JAVA_HOME%\bin;%PATH%"
 set "ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk"
 call gradlew.bat assembleDebug
