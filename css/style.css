@@ -203,11 +203,7 @@ body {
 }
 
 .party-mode-sub {
-  font-size: 0.62rem;
-  font-weight: 700;
-  color: #00F0FF;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
+  display: none !important;
 }
 
 /* Orta: Sensör & Kalibrasyon Hub */
@@ -5641,11 +5637,7 @@ input:checked + .slider:before {
 }
 
 .party-mode-sub {
-  font-size: 0.64rem;
-  font-weight: 800;
-  color: #00F5D4;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
+  display: none !important;
 }
 
 /* Sağ Kontroller Docku */

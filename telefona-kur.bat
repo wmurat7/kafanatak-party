@@ -2,7 +2,7 @@
 chcp 65001 > nul
 title Kafana Tak! - Telefona APK Derle ve Kur
 echo ========================================================
-echo 📱 Kafana Tak! Telefona Yükleme Başlatılıyor...
+echo Kafana Tak! Telefona Yukleme Baslatiliyor...
 echo ========================================================
 cd /d "%~dp0"
 
@@ -11,10 +11,11 @@ if not exist "%ADB_PATH%" (
     set "ADB_PATH=adb"
 )
 
-echo 1/5. Web varlıkları paketleniyor (bundle-mobile)...
-node tools/bundle-mobile.cjs
+echo 1/5. Web varliklari paketleniyor (bundle-mobile)...
+call node tools/bundle-mobile.cjs
 if %errorlevel% neq 0 (
-    echo [HATA] Web varlıkları paketlenemedi!
+    echo [HATA] Web varliklari paketlenemedi!
+    pause
     exit /b %errorlevel%
 )
 
@@ -22,23 +23,26 @@ echo.
 echo 2/5. Capacitor Android senkronize ediliyor...
 call npx cap sync android
 if %errorlevel% neq 0 (
-    echo [HATA] Capacitor sync başarısız!
+    echo [HATA] Capacitor sync basarisiz!
+    pause
     exit /b %errorlevel%
 )
 
 echo.
 echo 3/5. Android APK derleniyor (Gradlew)...
 cd android
-set "JAVA_HOME=C:\Program Files\Android\Android Studio1\jbr"
-if not exist "%JAVA_HOME%" (
+if exist "C:\Program Files\Android\Android Studio1\jbr" (
+    set "JAVA_HOME=C:\Program Files\Android\Android Studio1\jbr"
+) else (
     set "JAVA_HOME=C:\Program Files\Android\Android Studio\jbr"
 )
 set "PATH=%JAVA_HOME%\bin;%PATH%"
 set "ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk"
 call gradlew.bat assembleDebug
 if %errorlevel% neq 0 (
-    echo [HATA] Gradle derleme başarısız!
+    echo [HATA] Gradle derleme basarisiz!
     cd ..
+    pause
     exit /b %errorlevel%
 )
 cd ..
@@ -46,20 +50,21 @@ cd ..
 copy /y "android\app\build\outputs\apk\debug\app-debug.apk" "KafanaTak-v1.0.apk" > nul
 
 echo.
-echo 4/5. Telefon bağlantısı kontrol ediliyor ve APK yükleniyor...
+echo 4/5. Telefon baglantisi kontrol ediliyor ve APK yukleniyor...
 "%ADB_PATH%" devices
 "%ADB_PATH%" install -r "KafanaTak-v1.0.apk"
 if %errorlevel% neq 0 (
-    echo [HATA] APK telefona yüklenemedi. Lütfen telefonun USB ile bağlı ve USB Hata Ayıklama (Debugging) açık olduğundan emin olun.
+    echo [HATA] APK telefona yuklenemedi. Lutfen telefonun USB ile bagli ve USB Hata Ayiklama (Debugging) acik oldugundan emin olun.
+    pause
     exit /b %errorlevel%
 )
 
 echo.
-echo 5/5. Uygulama telefonda başlatılıyor...
-"%ADB_PATH%" shell am start -n com.kafanatak.party/.MainActivity
+echo 5/5. Uygulama telefonda baslatiliyor...
+"%ADB_PATH%" shell monkey -p com.kafanatak.party -c android.intent.category.LAUNCHER 1 > nul 2>&1
 
 echo.
 echo ========================================================
-echo 🎉 BAŞARILI! Kafana Tak! güncel haliyle telefona kuruldu ve açıldı.
+echo TEBRIKLER! Kafana Tak! basariyla kuruldu ve acildi.
 echo ========================================================
-
+pause
