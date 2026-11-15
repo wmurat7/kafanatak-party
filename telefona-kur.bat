@@ -54,7 +54,7 @@ echo 4/5. Telefon baglantisi kontrol ediliyor ve APK yukleniyor...
 "%ADB_PATH%" devices
 "%ADB_PATH%" install -r "KafanaTak-v1.0.apk"
 if %errorlevel% neq 0 (
-    echo [HATA] APK telefona yuklenemedi. Lutfen telefonun USB ile bagli ve USB Hata Ayiklama (Debugging) acik oldugundan emin olun.
+    echo [HATA] APK telefona yuklenemedi. Lutfen USB Hata Ayiklamayi kontrol edin.
     pause
     exit /b %errorlevel%
 )
