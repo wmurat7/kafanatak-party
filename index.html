@@ -2709,11 +2709,11 @@
       <p class="exit-modal-desc" style="color:var(--text-dim); font-size:0.88rem; line-height:1.45; margin-bottom:20px;">
         Devam eden oyun sonlandırılacak ve bir önceki menüye dönülecektir. Emin misiniz?
       </p>
-      <div class="modal-actions-stacked" style="display:flex; flex-direction:column; gap:10px;">
-        <button type="button" id="btn-cancel-game-leave" class="btn-main" style="background:rgba(255,255,255,0.1); border:1.5px solid rgba(255,255,255,0.25); color:#FFF; font-weight:800; font-size:0.95rem; padding:12px 18px; border-radius:14px; cursor:pointer;">
+      <div class="modal-actions-stacked">
+        <button type="button" id="btn-cancel-game-leave" class="btn-modal-action-primary">
           ▶️ Oyuna Devam Et
         </button>
-        <button type="button" id="btn-confirm-game-leave" class="btn-main" style="background:linear-gradient(135deg, #EF4444, #B91C1C); border:none; color:#FFF; font-weight:900; font-size:1rem; padding:13px 18px; border-radius:14px; cursor:pointer; box-shadow:0 0 18px rgba(239,68,68,0.45);">
+        <button type="button" id="btn-confirm-game-leave" class="btn-modal-action-danger">
           🚪 Evet, Menüye Dön
         </button>
       </div>
@@ -2787,10 +2787,10 @@
         Kafana Tak! partisinden ayrılmak üzeresiniz. Çıkmak istediğinize emin misiniz?
       </p>
       <div class="modal-actions exit-modal-actions">
-        <button type="button" id="btn-cancel-app-exit" class="btn-modal-cancel">
+        <button type="button" id="btn-cancel-app-exit" class="exit-btn-continue btn-modal-cancel">
           <span>🎮 Oynamaya Devam Et</span>
         </button>
-        <button type="button" id="btn-confirm-app-exit" class="btn-modal-submit btn-modal-exit-submit">
+        <button type="button" id="btn-confirm-app-exit" class="exit-btn-quit btn-modal-submit btn-modal-exit-submit">
           <span>🚪 Çıkış Yap</span>
         </button>
       </div>
