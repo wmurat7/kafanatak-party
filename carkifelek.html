@@ -776,9 +776,31 @@
       `).join('');
     }
 
-    // SSE Canlı Akış + Polling
+    // SSE Canlı Akış + Polling (Ultra Hızlı Gerçek Zamanlı)
     let evtSource = null;
     let pollInterval = null;
+    let inMemoryCarkState = {};
+
+    const applyPathUpdate = (root, path, val) => {
+      if (!root || typeof root !== 'object') root = {};
+      if (!path || path === '/' || path === '') {
+        if (val && typeof val === 'object' && !Array.isArray(val)) return Object.assign(root, val);
+        return val;
+      }
+      const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+      const parts = cleanPath.split('/').filter(Boolean);
+      let curr = root;
+      for (let i = 0; i < parts.length - 1; i++) {
+        const p = parts[i];
+        if (!curr[p] || typeof curr[p] !== 'object') curr[p] = {};
+        curr = curr[p];
+      }
+      const lastKey = parts[parts.length - 1];
+      if (val === null) delete curr[lastKey];
+      else curr[lastKey] = val;
+      return root;
+    };
+
     function startListen() {
       if (!roomId) return;
       if (evtSource) {
@@ -790,13 +812,34 @@
         evtSource.addEventListener('put', (e) => {
           try {
             const data = JSON.parse(e.data);
-            if (data && data.path === '/') {
-              syncState(data.data);
-            } else {
-              fetchState();
+            if (data && data.data !== undefined) {
+              if (!data.path || data.path === '/' || data.path === '') {
+                inMemoryCarkState = data.data || {};
+              } else {
+                applyPathUpdate(inMemoryCarkState, data.path, data.data);
+              }
+              syncState(inMemoryCarkState);
             }
           } catch(err) {}
         });
+        evtSource.addEventListener('patch', (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            if (data && data.data) {
+              if (!data.path || data.path === '/' || data.path === '') {
+                Object.assign(inMemoryCarkState, data.data);
+              } else {
+                const target = applyPathUpdate(inMemoryCarkState, data.path, {});
+                if (target && typeof target === 'object') Object.assign(target, data.data);
+              }
+              syncState(inMemoryCarkState);
+            }
+          } catch(err) {}
+        });
+        evtSource.onerror = () => {
+          try { evtSource.close(); } catch (e) {}
+          setTimeout(() => { if (roomId) startListen(); }, 1200);
+        };
       } catch(e) {}
     }
 
@@ -805,14 +848,17 @@
       try {
         const res = await fetch(`${dbUrl}/kafanatak/carkifelek/${roomId}.json`);
         const room = await res.json();
-        if (room) syncState(room);
+        if (room) {
+          inMemoryCarkState = room;
+          syncState(room);
+        }
       } catch (e) {}
     }
 
     if (roomId) {
       fetchState();
       startListen();
-      pollInterval = setInterval(fetchState, 1200);
+      pollInterval = setInterval(fetchState, 2500);
     }
   </script>
 </body>

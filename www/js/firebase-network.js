@@ -658,6 +658,34 @@ class FirebaseNetworkManager {
     let isPolling = false;
     let lastEventTime = 0;
     let reconnectTimeout = null;
+    let inMemoryRoom = {};
+
+    const applyPathUpdate = (root, path, val) => {
+      if (!root || typeof root !== 'object') root = {};
+      if (!path || path === '/' || path === '') {
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+          return Object.assign(root, val);
+        }
+        return val;
+      }
+      const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+      const parts = cleanPath.split('/').filter(Boolean);
+      let curr = root;
+      for (let i = 0; i < parts.length - 1; i++) {
+        const p = parts[i];
+        if (!curr[p] || typeof curr[p] !== 'object') {
+          curr[p] = {};
+        }
+        curr = curr[p];
+      }
+      const lastKey = parts[parts.length - 1];
+      if (val === null) {
+        delete curr[lastKey];
+      } else {
+        curr[lastKey] = val;
+      }
+      return root;
+    };
 
     const startEventSource = () => {
       if (isDisposed) return;
@@ -679,12 +707,11 @@ class FirebaseNetworkManager {
               const parsed = JSON.parse(e.data);
               if (parsed && parsed.data !== undefined) {
                 if (parsed.path === '/' || parsed.path === '') {
-                  if (onStateChange) onStateChange(parsed.data);
+                  inMemoryRoom = parsed.data || {};
                 } else {
-                  this.getRoom(cleanNs, cleanRoom).then(full => {
-                    if (full && onStateChange && !isDisposed) onStateChange(full);
-                  });
+                  applyPathUpdate(inMemoryRoom, parsed.path, parsed.data);
                 }
+                if (onStateChange && !isDisposed) onStateChange(inMemoryRoom);
               }
             } catch (err) {}
           });
@@ -695,9 +722,15 @@ class FirebaseNetworkManager {
             try {
               const parsed = JSON.parse(e.data);
               if (parsed && parsed.data) {
-                this.getRoom(cleanNs, cleanRoom).then(full => {
-                  if (full && onStateChange && !isDisposed) onStateChange(full);
-                });
+                if (parsed.path === '/' || parsed.path === '') {
+                  Object.assign(inMemoryRoom, parsed.data);
+                } else {
+                  const target = applyPathUpdate(inMemoryRoom, parsed.path, {});
+                  if (target && typeof target === 'object') {
+                    Object.assign(target, parsed.data);
+                  }
+                }
+                if (onStateChange && !isDisposed) onStateChange(inMemoryRoom);
               }
             } catch (err) {}
           });
@@ -705,12 +738,12 @@ class FirebaseNetworkManager {
           eventSource.onerror = () => {
             isSseActive = false;
             try { eventSource.close(); } catch (e) {}
-            // Zaman aşımına uğramaması için 2 saniye sonra otomatik yeniden bağlan
+            // Zaman aşımına uğramaması için 1 saniye sonra otomatik yeniden bağlan
             if (!isDisposed && !reconnectTimeout) {
               reconnectTimeout = setTimeout(() => {
                 reconnectTimeout = null;
                 if (!isDisposed) startEventSource();
-              }, 2200);
+              }, 1000);
             }
           };
         }
@@ -732,6 +765,7 @@ class FirebaseNetworkManager {
       try {
         const room = await this.getRoom(cleanNs, cleanRoom);
         if (room && onStateChange && !isDisposed) {
+          inMemoryRoom = room;
           onStateChange(room);
         }
       } finally {

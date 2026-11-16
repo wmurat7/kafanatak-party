@@ -563,22 +563,66 @@
     peekCard.addEventListener('mouseup', hideRole);
     peekCard.addEventListener('mouseleave', hideRole);
 
+    let inMemoryKoyState = {};
+    const applyPathUpdate = (root, path, val) => {
+      if (!root || typeof root !== 'object') root = {};
+      if (!path || path === '/' || path === '') {
+        if (val && typeof val === 'object' && !Array.isArray(val)) return Object.assign(root, val);
+        return val;
+      }
+      const parts = path.replace(/^\/+|\/+$/g, '').split('/');
+      let curr = root;
+      for (let i = 0; i < parts.length - 1; i++) {
+        const p = parts[i];
+        if (!curr[p] || typeof curr[p] !== 'object') curr[p] = {};
+        curr = curr[p];
+      }
+      const last = parts[parts.length - 1];
+      if (val === null || val === undefined) {
+        delete curr[last];
+      } else {
+        curr[last] = val;
+      }
+      return curr[last];
+    };
+
     function startPolling() {
       if (pollInterval) clearInterval(pollInterval);
       if (networkMode === 'firebase') {
-        // SSE Realtime Push
+        // SSE Realtime Push - 0ms Gecikmeli Bellek İçi Birleştirme
         try {
           if (typeof EventSource !== 'undefined') {
             fbEventSource = new EventSource(`${FIREBASE_DB_URL}/kafanatak/vampire/${currentRoomId}.json`);
             fbEventSource.addEventListener('put', (e) => {
-              fetchGameState();
+              try {
+                const d = JSON.parse(e.data);
+                if (d) {
+                  if (!d.path || d.path === '/') {
+                    inMemoryKoyState = d.data || {};
+                  } else {
+                    applyPathUpdate(inMemoryKoyState, d.path, d.data);
+                  }
+                  processRawFirebaseState(inMemoryKoyState);
+                }
+              } catch (err) {}
             });
             fbEventSource.addEventListener('patch', (e) => {
-              fetchGameState();
+              try {
+                const d = JSON.parse(e.data);
+                if (d && d.data) {
+                  if (!d.path || d.path === '/') {
+                    Object.assign(inMemoryKoyState, d.data);
+                  } else {
+                    const target = applyPathUpdate(inMemoryKoyState, d.path, {});
+                    if (target && typeof target === 'object') Object.assign(target, d.data);
+                  }
+                  processRawFirebaseState(inMemoryKoyState);
+                }
+              } catch (err) {}
             });
           }
         } catch (e) {}
-        pollInterval = setInterval(fetchGameState, 1200);
+        pollInterval = setInterval(fetchGameState, 2500);
       } else {
         pollInterval = setInterval(fetchGameState, 1000);
       }
@@ -664,6 +708,92 @@
       currentRoomId = '';
     };
 
+    function processRawFirebaseState(raw) {
+      if (!raw || typeof raw !== 'object') return;
+
+      // 0. Oda Kapatılma Kontrolü
+      if (raw.isClosed) {
+        handleRoomClosedByHost(raw.closeReason || 'Köy muhtarı tarafından oturum sonlandırıldı.');
+        return;
+      }
+
+      // 1. Oyundan Atılma Kontrolü
+      if (raw.kicked && raw.kicked[myPlayerId]) {
+        handleKickedByHost(raw.kicked[myPlayerId].reason || 'Köy Muhtarı (Host) tarafından oyundan çıkarıldınız.');
+        return;
+      }
+
+      // 2. Aksiyon Kontrolleri (İkaz / Atma / Duyuru)
+      if (raw.actions) {
+        const actions = Object.values(raw.actions);
+        const now = Date.now();
+        actions.forEach(act => {
+          if (!act || (act.timestamp && (now - act.timestamp) > 15000)) return;
+          const actKey = act.id || (act.timestamp + '_' + act.type);
+          if (processedActionKeys.has(actKey)) return;
+          processedActionKeys.add(actKey);
+
+          if (act.type === 'player_kicked' && act.playerId === myPlayerId) {
+            handleKickedByHost(act.reason || 'Köy Muhtarı (Host) tarafından oyundan çıkarıldınız.');
+          } else if (act.type === 'player_warning' && act.playerId === myPlayerId) {
+            handleWarningByHost(act.message || 'Lütfen kurallara uyun ve oyundan ayrılmayın!');
+          } else if (act.type === 'room_announcement') {
+            if (window.firebaseNetwork && firebaseNetwork.showAnnouncementToast) {
+              firebaseNetwork.showAnnouncementToast(act.message || '');
+            }
+          } else if (act.type === 'room_closed') {
+            handleRoomClosedByHost(act.reason || 'Köy muhtarı tarafından oturum sonlandırıldı.');
+          }
+        });
+      }
+
+      // 3. Doğrudan Oda Duyurusu
+      if (raw.announcement && raw.announcement.message) {
+        const annKey = raw.announcement.id || (raw.announcement.timestamp + '_' + raw.announcement.message);
+        if (!processedActionKeys.has(annKey)) {
+          processedActionKeys.add(annKey);
+          if (window.firebaseNetwork && firebaseNetwork.showAnnouncementToast) {
+            firebaseNetwork.showAnnouncementToast(raw.announcement.message);
+          }
+        }
+      }
+
+      // Raw Firebase nesnesini normalize et
+      let playersArr = [];
+      if (raw.players) {
+        if (Array.isArray(raw.players)) {
+          playersArr = raw.players.filter(Boolean);
+        } else if (typeof raw.players === 'object') {
+          playersArr = Object.values(raw.players);
+        }
+      }
+
+      const me = playersArr.find(p => p.id === myPlayerId) || {};
+      if (me.lastWarning && me.lastWarning.time && (!lastHandledWarnTime || me.lastWarning.time > lastHandledWarnTime)) {
+        lastHandledWarnTime = me.lastWarning.time;
+        handleWarningByHost(me.lastWarning.message);
+      }
+
+      const vampires = playersArr.filter(p => p.role === 'vampir' && p.id !== myPlayerId);
+
+      const state = {
+        roomId: raw.roomId || currentRoomId,
+        phase: raw.phase || 'lobby',
+        dayNumber: raw.dayNumber || 1,
+        narratorText: raw.narratorText || '',
+        winner: raw.winner || null,
+        players: playersArr,
+        myPlayerId: myPlayerId,
+        myAlive: me.alive !== false,
+        myRole: me.role || null,
+        vampirePartners: vampires,
+        nightActions: raw.nightActions || {},
+        votes: raw.votes || {}
+      };
+      localGameState = state;
+      renderState(state);
+    }
+
     async function fetchGameState() {
       if (!currentRoomId || !myPlayerId) return;
       try {
@@ -672,88 +802,8 @@
           if (!res.ok) return;
           const raw = await res.json();
           if (!raw) return;
-
-          // 0. Oda Kapatılma Kontrolü
-          if (raw.isClosed) {
-            handleRoomClosedByHost(raw.closeReason || 'Köy muhtarı tarafından oturum sonlandırıldı.');
-            return;
-          }
-
-          // 1. Oyundan Atılma Kontrolü
-          if (raw.kicked && raw.kicked[myPlayerId]) {
-            handleKickedByHost(raw.kicked[myPlayerId].reason || 'Köy Muhtarı (Host) tarafından oyundan çıkarıldınız.');
-            return;
-          }
-
-          // 2. Aksiyon Kontrolleri (İkaz / Atma / Duyuru)
-          if (raw.actions) {
-            const actions = Object.values(raw.actions);
-            const now = Date.now();
-            actions.forEach(act => {
-              if (!act || (act.timestamp && (now - act.timestamp) > 15000)) return;
-              const actKey = act.id || (act.timestamp + '_' + act.type);
-              if (processedActionKeys.has(actKey)) return;
-              processedActionKeys.add(actKey);
-
-              if (act.type === 'player_kicked' && act.playerId === myPlayerId) {
-                handleKickedByHost(act.reason || 'Köy Muhtarı (Host) tarafından oyundan çıkarıldınız.');
-              } else if (act.type === 'player_warning' && act.playerId === myPlayerId) {
-                handleWarningByHost(act.message || 'Lütfen kurallara uyun ve oyundan ayrılmayın!');
-              } else if (act.type === 'room_announcement') {
-                if (window.firebaseNetwork && firebaseNetwork.showAnnouncementToast) {
-                  firebaseNetwork.showAnnouncementToast(act.message || '');
-                }
-              } else if (act.type === 'room_closed') {
-                handleRoomClosedByHost(act.reason || 'Köy muhtarı tarafından oturum sonlandırıldı.');
-              }
-            });
-          }
-
-          // 3. Doğrudan Oda Duyurusu
-          if (raw.announcement && raw.announcement.message) {
-            const annKey = raw.announcement.id || (raw.announcement.timestamp + '_' + raw.announcement.message);
-            if (!processedActionKeys.has(annKey)) {
-              processedActionKeys.add(annKey);
-              if (window.firebaseNetwork && firebaseNetwork.showAnnouncementToast) {
-                firebaseNetwork.showAnnouncementToast(raw.announcement.message);
-              }
-            }
-          }
-
-          // Raw Firebase nesnesini normalize et
-          let playersArr = [];
-          if (raw.players) {
-            if (Array.isArray(raw.players)) {
-              playersArr = raw.players.filter(Boolean);
-            } else if (typeof raw.players === 'object') {
-              playersArr = Object.values(raw.players);
-            }
-          }
-
-          const me = playersArr.find(p => p.id === myPlayerId) || {};
-          if (me.lastWarning && me.lastWarning.time && (!lastHandledWarnTime || me.lastWarning.time > lastHandledWarnTime)) {
-            lastHandledWarnTime = me.lastWarning.time;
-            handleWarningByHost(me.lastWarning.message);
-          }
-
-          const vampires = playersArr.filter(p => p.role === 'vampir' && p.id !== myPlayerId);
-
-          const state = {
-            roomId: raw.roomId || currentRoomId,
-            phase: raw.phase || 'lobby',
-            dayNumber: raw.dayNumber || 1,
-            narratorText: raw.narratorText || '',
-            winner: raw.winner || null,
-            players: playersArr,
-            myPlayerId: myPlayerId,
-            myAlive: me.alive !== false,
-            myRole: me.role || null,
-            vampirePartners: vampires,
-            nightActions: raw.nightActions || {},
-            votes: raw.votes || {}
-          };
-          localGameState = state;
-          renderState(state);
+          inMemoryKoyState = raw;
+          processRawFirebaseState(raw);
         } else {
           const res = await fetch(`/api/vampire/state?room=${currentRoomId}&player=${myPlayerId}`);
           if (!res.ok) return;

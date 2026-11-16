@@ -1640,32 +1640,71 @@
       if (sseSource) { try { sseSource.close(); } catch (e) {} }
       if (sseReconnectTimer) clearTimeout(sseReconnectTimer);
 
+      let inMemoryState = {};
+      const applyPathUpdate = (root, path, val) => {
+        if (!root || typeof root !== 'object') root = {};
+        if (!path || path === '/' || path === '') {
+          if (val && typeof val === 'object' && !Array.isArray(val)) return Object.assign(root, val);
+          return val;
+        }
+        const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+        const parts = cleanPath.split('/').filter(Boolean);
+        let curr = root;
+        for (let i = 0; i < parts.length - 1; i++) {
+          const p = parts[i];
+          if (!curr[p] || typeof curr[p] !== 'object') curr[p] = {};
+          curr = curr[p];
+        }
+        const lastKey = parts[parts.length - 1];
+        if (val === null) delete curr[lastKey];
+        else curr[lastKey] = val;
+        return root;
+      };
+
       try {
         if (typeof EventSource !== 'undefined') {
           sseSource = new EventSource(`${FIREBASE_DB_URL}/kafanatak/spectator/${encodeURIComponent(currentRoom)}.json`);
           sseSource.addEventListener('put', (e) => {
             try {
               const d = JSON.parse(e.data);
-              if (d && d.data) renderState(d.data);
+              if (d && d.data !== undefined) {
+                if (!d.path || d.path === '/' || d.path === '') {
+                  inMemoryState = d.data || {};
+                } else {
+                  applyPathUpdate(inMemoryState, d.path, d.data);
+                }
+                renderState(inMemoryState);
+              }
             } catch (err) {}
           });
-          sseSource.addEventListener('patch', () => {
-            pollState();
+          sseSource.addEventListener('patch', (e) => {
+            try {
+              const d = JSON.parse(e.data);
+              if (d && d.data) {
+                if (!d.path || d.path === '/' || d.path === '') {
+                  Object.assign(inMemoryState, d.data);
+                } else {
+                  const target = applyPathUpdate(inMemoryState, d.path, {});
+                  if (target && typeof target === 'object') Object.assign(target, d.data);
+                }
+                renderState(inMemoryState);
+              }
+            } catch (err) {}
           });
           sseSource.onerror = () => {
             try { sseSource.close(); } catch (e) {}
-            // Zaman aşımına uğramadan 2.5 saniyede otomatik geri bağlan
+            // Zaman aşımına uğramadan 1 saniyede otomatik geri bağlan
             if (isConnected && !isDisposed) {
               sseReconnectTimer = setTimeout(() => {
                 if (isConnected && !isDisposed) initRealtimeStreams();
-              }, 2500);
+              }, 1000);
             }
           };
         }
       } catch (err) {}
 
       clearInterval(pollInterval);
-      pollInterval = setInterval(pollState, 800);
+      pollInterval = setInterval(pollState, 2500);
     }
 
     async function pollState() {
@@ -1682,6 +1721,7 @@
         if (fbRes.ok) {
           const data = await fbRes.json();
           if (data) {
+            inMemoryState = data;
             renderState(data);
             return;
           }

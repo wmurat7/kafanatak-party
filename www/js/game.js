@@ -3359,9 +3359,7 @@ class GameApp {
     this.timerInterval = setInterval(() => {
       this.remainingTime--;
       this.updateTimerDisplay();
-      if (this.remainingTime % 2 === 0) {
-        this.broadcastSpectatorState();
-      }
+      this.broadcastSpectatorState();
 
       // Kamera HUD süresini güncelle
       this.camera.updateHUD({ remainingTime: this.remainingTime });

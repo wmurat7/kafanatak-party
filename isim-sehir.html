@@ -1443,27 +1443,64 @@
         try { fbEventSource.close(); } catch (e) {}
       }
 
-      // 1. Firebase SSE Realtime Push
+      let inMemoryIsimState = {};
+      const applyPathUpdate = (root, path, val) => {
+        if (!root || typeof root !== 'object') root = {};
+        if (!path || path === '/' || path === '') {
+          if (val && typeof val === 'object' && !Array.isArray(val)) return Object.assign(root, val);
+          return val;
+        }
+        const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+        const parts = cleanPath.split('/').filter(Boolean);
+        let curr = root;
+        for (let i = 0; i < parts.length - 1; i++) {
+          const p = parts[i];
+          if (!curr[p] || typeof curr[p] !== 'object') curr[p] = {};
+          curr = curr[p];
+        }
+        const lastKey = parts[parts.length - 1];
+        if (val === null) delete curr[lastKey];
+        else curr[lastKey] = val;
+        return root;
+      };
+
+      // 1. Firebase SSE Realtime Push (Ultra Hızlı Gerçek Zamanlı)
       try {
         if (typeof EventSource !== 'undefined') {
           fbEventSource = new EventSource(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${state.roomId}.json`);
           fbEventSource.addEventListener('put', (e) => {
             try {
               const d = JSON.parse(e.data);
-              if (d && d.data) renderRoomState(d.data);
+              if (d && d.data !== undefined) {
+                if (!d.path || d.path === '/' || d.path === '') {
+                  inMemoryIsimState = d.data || {};
+                } else {
+                  applyPathUpdate(inMemoryIsimState, d.path, d.data);
+                }
+                renderRoomState(inMemoryIsimState);
+              }
             } catch (err) {}
           });
           fbEventSource.addEventListener('patch', (e) => {
             try {
-              pollState();
+              const d = JSON.parse(e.data);
+              if (d && d.data) {
+                if (!d.path || d.path === '/' || d.path === '') {
+                  Object.assign(inMemoryIsimState, d.data);
+                } else {
+                  const target = applyPathUpdate(inMemoryIsimState, d.path, {});
+                  if (target && typeof target === 'object') Object.assign(target, d.data);
+                }
+                renderRoomState(inMemoryIsimState);
+              }
             } catch (err) {}
           });
         }
       } catch (e) {}
 
-      // 2. Periyodik Polling (1.2s)
+      // 2. Periyodik Polling (2.5s güvenlik ağı)
       pollState();
-      pollInterval = setInterval(pollState, 1200);
+      pollInterval = setInterval(pollState, 2500);
 
       // Yerel saat sayacı
       clearInterval(timerTickInterval);
