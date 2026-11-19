@@ -1186,7 +1186,6 @@
         }
 
         if (roomData && roomData.roomId) {
-
           if (roomData.isClosed) {
             errBox.textContent = '🛑 Bu oda yönetici tarafından kapatılmıştır!';
             errBox.style.display = 'block';
@@ -1204,104 +1203,131 @@
             return;
           }
 
-            const cleanName = name.trim().toLowerCase().replace(/[^a-z0-9]/gi, '');
-            let existingId = localStorage.getItem(`kafanatak_pid_isim_sehir_${room}_${cleanName}`) || localStorage.getItem(`kafanatak_pid_isim_sehir_${room}`);
-            if (!existingId && roomData.players) {
-              const found = Object.values(roomData.players).find(p => p && p.name && p.name.trim().toLowerCase() === name.toLowerCase());
-              if (found) existingId = found.id;
-            }
-            state.playerId = existingId || ('p_' + Math.random().toString(36).substring(2, 8) + '_' + Date.now().toString(36));
-            localStorage.setItem(`kafanatak_pid_isim_sehir_${room}`, state.playerId);
-            localStorage.setItem(`kafanatak_pid_isim_sehir_${room}_${cleanName}`, state.playerId);
+          const cleanName = name.trim().toLowerCase().replace(/[^a-z0-9]/gi, '');
+          let existingId = localStorage.getItem(`kafanatak_pid_isim_sehir_${room}_${cleanName}`) || localStorage.getItem(`kafanatak_pid_isim_sehir_${room}`);
+          if (!existingId && roomData.players) {
+            const found = Object.values(roomData.players).find(p => p && p.name && p.name.trim().toLowerCase() === name.toLowerCase());
+            if (found) existingId = found.id;
+          }
+          state.playerId = existingId || ('p_' + Math.random().toString(36).substring(2, 8) + '_' + Date.now().toString(36));
+          localStorage.setItem(`kafanatak_pid_isim_sehir_${room}`, state.playerId);
+          localStorage.setItem(`kafanatak_pid_isim_sehir_${room}_${cleanName}`, state.playerId);
 
-            if ((roomData.kicked && roomData.kicked[state.playerId]) || (roomData.kickedPlayers && roomData.kickedPlayers[state.playerId])) {
-              errBox.textContent = '🚫 Bu odadan yönetici tarafından çıkarıldınız!';
-              errBox.style.display = 'block';
-              btnJoin.disabled = false;
-              btnJoin.textContent = '🚀 OYUNA KATIL';
-              isJoining = false;
-              return;
-            }
-
-            const myPlayer = {
-              id: state.playerId,
-              name: name,
-              avatar: state.playerAvatar,
-              answers: {},
-              submitted: false,
-              totalScore: 0,
-              roundScore: 0,
-              cheatWarnings: 0
-            };
-            // Oyuncuyu Firebase'e kaydet
-            await fetch(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${room}/players/${state.playerId}.json`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(myPlayer)
-            });
-
-            document.getElementById('room-code-badge').style.display = 'inline-flex';
-            document.getElementById('btn-leave-room').style.display = 'inline-flex';
-            document.getElementById('lbl-room-id').textContent = room;
-
-            if (roomData.categories) {
-              renderDynamicCategories(roomData.categories);
-            } else {
-              renderDynamicCategories(DEFAULT_CATEGORIES);
-            }
-
-            showView('view-lobby');
-            startPolling();
-            setTimeout(() => { isJoining = false; }, 1000);
+          if ((roomData.kicked && roomData.kicked[state.playerId]) || (roomData.kickedPlayers && roomData.kickedPlayers[state.playerId])) {
+            errBox.textContent = '🚫 Bu odadan yönetici tarafından çıkarıldınız!';
+            errBox.style.display = 'block';
+            btnJoin.disabled = false;
+            btnJoin.textContent = '🚀 OYUNA KATIL';
+            isJoining = false;
             return;
           }
+
+          const myPlayer = {
+            id: state.playerId,
+            name: name,
+            avatar: state.playerAvatar,
+            answers: {},
+            submitted: false,
+            totalScore: 0,
+            roundScore: 0,
+            cheatWarnings: 0
+          };
+          // Oyuncuyu Firebase'e kaydet
+          await fetch(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${room}/players/${state.playerId}.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(myPlayer)
+          });
+
+          document.getElementById('room-code-badge').style.display = 'inline-flex';
+          document.getElementById('btn-leave-room').style.display = 'inline-flex';
+          document.getElementById('lbl-room-id').textContent = room;
+
+          if (roomData.categories) {
+            renderDynamicCategories(roomData.categories);
+          } else {
+            renderDynamicCategories(DEFAULT_CATEGORIES);
+          }
+
+          showView('view-lobby');
+          startPolling();
+          setTimeout(() => { isJoining = false; }, 1000);
+          return;
+        }
+
+        // Eğer İsim Şehir odasında bulunamadıysa, diğer oyunları tara ve yönlendir!
+        const gameNamespaces = [
+          { ns: 'spectator', file: 'spectator.html', name: 'Seyirci Ekranı' },
+          { ns: 'carkifelek', file: 'carkifelek.html', name: 'Çarkıfelek' },
+          { ns: 'passaparola', file: 'passaparola.html', name: 'Passaparola' },
+          { ns: 'vampire', file: 'koy.html', name: 'Vampir Köylü' },
+          { ns: 'aileler_yarisiyor', file: 'aileler-yarisiyor.html', name: 'Aileler Yarışıyor' },
+          { ns: 'sarki', file: 'sarki-duello.html', name: 'Şarkı Düellosu' },
+          { ns: 'kelime_islem', file: 'kelime-islem.html', name: 'Kelime İşlem' }
+        ];
+
+        for (const g of gameNamespaces) {
+          try {
+            const gRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/${g.ns}/${room}.json?t=${Date.now()}`);
+            if (gRes.ok) {
+              const gData = await gRes.json();
+              if (gData && (gData.roomId || gData.phase || gData.createdAt)) {
+                alert(`🎮 Bu kod ${g.name} odasına ait, o ekrana aktarılıyorsunuz...`);
+                window.location.href = `${g.file}?room=${room}&cloud=1`;
+                return;
+              }
+            }
+          } catch (e) {}
         }
       } catch (err) {
         console.warn('Firebase kontrolü hatası, yerel deneniyor:', err);
       }
 
-      // 2. Yerel Sunucu Yoklaması (Yedek)
-      try {
-        const res = await fetch('/api/isim-sehir/join', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            roomId: room,
-            playerName: name,
-            playerAvatar: state.playerAvatar
-          })
-        });
-        const data = await res.json();
-        if (!res.ok || data.error) {
-          errBox.textContent = data.error || 'Odaya bağlanılamadı!';
-          errBox.style.display = 'block';
-          btnJoin.disabled = false;
-          btnJoin.textContent = '🚀 OYUNA KATIL';
-          isJoining = false;
+      // 2. Yerel Sunucu Yoklaması (Yalnızca yerel ağda / HTTP ortamında)
+      if (location.protocol === 'http:' && !location.hostname.includes('github.io')) {
+        try {
+          const res = await fetch('/api/isim-sehir/join', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              roomId: room,
+              playerName: name,
+              playerAvatar: state.playerAvatar
+            })
+          });
+          const data = await res.json();
+          if (!res.ok || data.error) {
+            errBox.textContent = data.error || 'Odaya bağlanılamadı!';
+            errBox.style.display = 'block';
+            btnJoin.disabled = false;
+            btnJoin.textContent = '🚀 OYUNA KATIL';
+            isJoining = false;
+            return;
+          }
+
+          state.playerId = data.playerId;
+          document.getElementById('room-code-badge').style.display = 'inline-flex';
+          document.getElementById('btn-leave-room').style.display = 'inline-flex';
+          document.getElementById('lbl-room-id').textContent = room;
+
+          if (data.room && data.room.categories) {
+            renderDynamicCategories(data.room.categories);
+          } else {
+            renderDynamicCategories(DEFAULT_CATEGORIES);
+          }
+
+          showView('view-lobby');
+          startPolling();
+          setTimeout(() => { isJoining = false; }, 1000);
           return;
-        }
-
-        state.playerId = data.playerId;
-        document.getElementById('room-code-badge').style.display = 'inline-flex';
-        document.getElementById('btn-leave-room').style.display = 'inline-flex';
-        document.getElementById('lbl-room-id').textContent = room;
-
-        if (data.room && data.room.categories) {
-          renderDynamicCategories(data.room.categories);
-        } else {
-          renderDynamicCategories(DEFAULT_CATEGORIES);
-        }
-
-        showView('view-lobby');
-        startPolling();
-        setTimeout(() => { isJoining = false; }, 1000);
-      } catch (e) {
-        errBox.textContent = 'Odaya bağlanılamadı. Oda kodunu kontrol edin veya internet bağlantınızı doğrulayın!';
-        errBox.style.display = 'block';
-        btnJoin.disabled = false;
-        btnJoin.textContent = '🚀 OYUNA KATIL';
-        isJoining = false;
+        } catch (e) {}
       }
+
+      errBox.textContent = '❌ İsim Şehir odası bulunamadı! Lütfen oda kodunu kontrol edin veya sunucunun oyunu başlattığından emin olun.';
+      errBox.style.display = 'block';
+      btnJoin.disabled = false;
+      btnJoin.textContent = '🚀 OYUNA KATIL';
+      isJoining = false;
     });
 
     // --- ÇIKIŞ ONAYI YÖNETİMİ ---
@@ -1444,14 +1470,13 @@
       }
 
       let inMemoryIsimState = {};
-      const applyPathUpdate = (root, path, val) => {
-        if (!root || typeof root !== 'object') root = {};
+
+      const setDeep = (root, path, val) => {
         if (!path || path === '/' || path === '') {
           if (val && typeof val === 'object' && !Array.isArray(val)) return Object.assign(root, val);
           return val;
         }
-        const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-        const parts = cleanPath.split('/').filter(Boolean);
+        const parts = path.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
         let curr = root;
         for (let i = 0; i < parts.length - 1; i++) {
           const p = parts[i];
@@ -1459,8 +1484,18 @@
           curr = curr[p];
         }
         const lastKey = parts[parts.length - 1];
-        if (val === null) delete curr[lastKey];
+        if (val === null || val === undefined) delete curr[lastKey];
         else curr[lastKey] = val;
+        return root;
+      };
+
+      const handleSsePatch = (root, ssePath, sseData) => {
+        if (!sseData || typeof sseData !== 'object') return root;
+        const basePath = (!ssePath || ssePath === '/') ? '' : ssePath.replace(/\/+$/, '');
+        for (const k of Object.keys(sseData)) {
+          const fullPath = basePath + '/' + k;
+          setDeep(root, fullPath, sseData[k]);
+        }
         return root;
       };
 
@@ -1475,7 +1510,7 @@
                 if (!d.path || d.path === '/' || d.path === '') {
                   inMemoryIsimState = d.data || {};
                 } else {
-                  applyPathUpdate(inMemoryIsimState, d.path, d.data);
+                  setDeep(inMemoryIsimState, d.path, d.data);
                 }
                 renderRoomState(inMemoryIsimState);
               }
@@ -1485,12 +1520,7 @@
             try {
               const d = JSON.parse(e.data);
               if (d && d.data) {
-                if (!d.path || d.path === '/' || d.path === '') {
-                  Object.assign(inMemoryIsimState, d.data);
-                } else {
-                  const target = applyPathUpdate(inMemoryIsimState, d.path, {});
-                  if (target && typeof target === 'object') Object.assign(target, d.data);
-                }
+                handleSsePatch(inMemoryIsimState, d.path, d.data);
                 renderRoomState(inMemoryIsimState);
               }
             } catch (err) {}
@@ -1512,23 +1542,26 @@
 
       // Önce Firebase Bulut yoklaması
       try {
-        const fbRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${state.roomId}.json`);
+        const fbRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${state.roomId}.json?t=${Date.now()}`);
         if (fbRes.ok) {
           const room = await fbRes.json();
           if (room) {
+            inMemoryIsimState = room;
             renderRoomState(room);
             return;
           }
         }
       } catch (e) {}
 
-      // Yerel sunucu yoklaması
-      try {
-        const res = await fetch(`/api/isim-sehir/state?roomId=${state.roomId}&playerId=${state.playerId}`);
-        if (!res.ok) return;
-        const room = await res.json();
-        renderRoomState(room);
-      } catch (e) {}
+      // Yerel sunucu yoklaması (Yalnızca yerel ağda)
+      if (location.protocol === 'http:' && !location.hostname.includes('github.io')) {
+        try {
+          const res = await fetch(`/api/isim-sehir/state?roomId=${state.roomId}&playerId=${state.playerId}`);
+          if (!res.ok) return;
+          const room = await res.json();
+          renderRoomState(room);
+        } catch (e) {}
+      }
     }
 
     // ==========================================

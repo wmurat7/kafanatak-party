@@ -17,8 +17,8 @@
         ".read": false,
         ".write": false,
         "$roomId": {
-          ".read": "$roomId.matches(/^[A-Z0-9_-]{3,12}$/)",
-          ".write": "$roomId.matches(/^[A-Z0-9_-]{3,12}$/)",
+          ".read": "$roomId.matches(/^[a-zA-Z0-9_-]{2,24}$/)",
+          ".write": "$roomId.matches(/^[a-zA-Z0-9_-]{2,24}$/)",
           ".indexOn": ["createdAt", "lastActive"]
         }
       }

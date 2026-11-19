@@ -182,7 +182,7 @@ class FirebaseNetworkManager {
   async getRoom(namespace, roomId) {
     if (!roomId) return null;
     try {
-      const url = this.buildPath(namespace, roomId);
+      const url = this.buildPath(namespace, roomId) + `?t=${Date.now()}`;
       const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
       const timeoutId = controller ? setTimeout(() => controller.abort(), 8000) : null;
 
@@ -490,12 +490,44 @@ class FirebaseNetworkManager {
   }
 
   /**
-   * Katılımcının odaya girip giremeyeceğini denetler (Kilit, Ban, Kapatılma kontrolü)
+   * Katılımcının odaya girip giremeyeceğini denetler (Kilit, Ban, Kapatılma kontrolü + 3x Retry + Çapraz Oyun Yönlendirmesi)
    */
   async verifyJoinEligibility(namespace, roomId, playerId) {
     if (!roomId) return { allowed: false, reason: 'Geçersiz oda kodu!' };
-    const room = await this.getRoom(namespace, roomId);
-    if (!room) return { allowed: false, reason: 'Oda bulunamadı veya henüz açılmamış!' };
+
+    let room = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      room = await this.getRoom(namespace, roomId);
+      if (room && (room.roomId || room.phase || room.createdAt)) break;
+      if (attempt < 3) await new Promise(r => setTimeout(r, 600));
+    }
+
+    if (!room) {
+      // Çapraz oyun kontrolü yap
+      try {
+        const foundOther = await this.findRoomAcrossNamespaces(roomId);
+        if (foundOther && foundOther.namespace !== namespace) {
+          const gameMap = {
+            'spectator': { file: 'spectator.html', name: 'Seyirci Ekranı' },
+            'carkifelek': { file: 'carkifelek.html', name: 'Çarkıfelek' },
+            'passaparola': { file: 'passaparola.html', name: 'Passaparola' },
+            'isim-sehir': { file: 'isim-sehir.html', name: 'İsim Şehir' },
+            'vampire': { file: 'koy.html', name: 'Vampir Köylü' },
+            'aileler_yarisiyor': { file: 'aileler-yarisiyor.html', name: 'Aileler Yarışıyor' },
+            'sarki': { file: 'sarki-duello.html', name: 'Şarkı Düellosu' },
+            'kelime_islem': { file: 'kelime-islem.html', name: 'Kelime İşlem' }
+          };
+          const target = gameMap[foundOther.namespace];
+          if (target && typeof window !== 'undefined') {
+            alert(`🎮 Bu kod ${target.name} odasına ait, o ekrana aktarılıyorsunuz...`);
+            window.location.href = `${target.file}?room=${encodeURIComponent(roomId)}&cloud=1`;
+            return { allowed: false, redirected: true, reason: 'Yönlendiriliyor...' };
+          }
+        }
+      } catch (crossErr) {}
+
+      return { allowed: false, reason: 'Oda bulunamadı veya henüz açılmamış! Lütfen kodu kontrol edin.' };
+    }
 
     if (room.isClosed) {
       return { allowed: false, reason: 'Bu oda yönetici tarafından kapatılmıştır!' };
@@ -660,16 +692,14 @@ class FirebaseNetworkManager {
     let reconnectTimeout = null;
     let inMemoryRoom = {};
 
-    const applyPathUpdate = (root, path, val) => {
-      if (!root || typeof root !== 'object') root = {};
+    const setDeep = (root, path, val) => {
       if (!path || path === '/' || path === '') {
         if (val && typeof val === 'object' && !Array.isArray(val)) {
           return Object.assign(root, val);
         }
         return val;
       }
-      const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-      const parts = cleanPath.split('/').filter(Boolean);
+      const parts = path.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
       let curr = root;
       for (let i = 0; i < parts.length - 1; i++) {
         const p = parts[i];
@@ -679,10 +709,20 @@ class FirebaseNetworkManager {
         curr = curr[p];
       }
       const lastKey = parts[parts.length - 1];
-      if (val === null) {
+      if (val === null || val === undefined) {
         delete curr[lastKey];
       } else {
         curr[lastKey] = val;
+      }
+      return root;
+    };
+
+    const handleSsePatch = (root, ssePath, sseData) => {
+      if (!sseData || typeof sseData !== 'object') return root;
+      const basePath = (!ssePath || ssePath === '/') ? '' : ssePath.replace(/\/+$/, '');
+      for (const k of Object.keys(sseData)) {
+        const fullPath = basePath + '/' + k;
+        setDeep(root, fullPath, sseData[k]);
       }
       return root;
     };
@@ -706,10 +746,10 @@ class FirebaseNetworkManager {
             try {
               const parsed = JSON.parse(e.data);
               if (parsed && parsed.data !== undefined) {
-                if (parsed.path === '/' || parsed.path === '') {
+                if (!parsed.path || parsed.path === '/' || parsed.path === '') {
                   inMemoryRoom = parsed.data || {};
                 } else {
-                  applyPathUpdate(inMemoryRoom, parsed.path, parsed.data);
+                  setDeep(inMemoryRoom, parsed.path, parsed.data);
                 }
                 if (onStateChange && !isDisposed) onStateChange(inMemoryRoom);
               }
@@ -722,14 +762,7 @@ class FirebaseNetworkManager {
             try {
               const parsed = JSON.parse(e.data);
               if (parsed && parsed.data) {
-                if (parsed.path === '/' || parsed.path === '') {
-                  Object.assign(inMemoryRoom, parsed.data);
-                } else {
-                  const target = applyPathUpdate(inMemoryRoom, parsed.path, {});
-                  if (target && typeof target === 'object') {
-                    Object.assign(target, parsed.data);
-                  }
-                }
+                handleSsePatch(inMemoryRoom, parsed.path, parsed.data);
                 if (onStateChange && !isDisposed) onStateChange(inMemoryRoom);
               }
             } catch (err) {}

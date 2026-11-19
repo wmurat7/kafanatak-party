@@ -405,9 +405,47 @@
       localStorage.setItem(`kafanatak_pid_passa_${roomId}`, myPlayerId);
 
       try {
-        const checkRes = await fetch(`${dbUrl}/kafanatak/passaparola/${roomId}.json`);
-        const room = await checkRes.json();
+        let room = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const checkRes = await fetch(`${dbUrl}/kafanatak/passaparola/${roomId}.json?t=${Date.now()}`);
+            if (checkRes.ok) {
+              const data = await checkRes.json();
+              if (data && data.roomId) {
+                room = data;
+                break;
+              }
+            }
+          } catch(e) {}
+          if (attempt < 3) await new Promise(r => setTimeout(r, 600));
+        }
+
+        // Eğer Passaparola odasında bulunamadıysa, diğer oyunları tara ve yönlendir!
         if (!room || !room.roomId) {
+          const gameNamespaces = [
+            { ns: 'spectator', file: 'spectator.html', name: 'Seyirci Ekranı' },
+            { ns: 'carkifelek', file: 'carkifelek.html', name: 'Çarkıfelek' },
+            { ns: 'isim-sehir', file: 'isim-sehir.html', name: 'İsim Şehir' },
+            { ns: 'vampire', file: 'koy.html', name: 'Vampir Köylü' },
+            { ns: 'aileler_yarisiyor', file: 'aileler-yarisiyor.html', name: 'Aileler Yarışıyor' },
+            { ns: 'sarki', file: 'sarki-duello.html', name: 'Şarkı Düellosu' },
+            { ns: 'kelime_islem', file: 'kelime-islem.html', name: 'Kelime İşlem' }
+          ];
+
+          for (const g of gameNamespaces) {
+            try {
+              const gRes = await fetch(`${dbUrl}/kafanatak/${g.ns}/${roomId}.json?t=${Date.now()}`);
+              if (gRes.ok) {
+                const gData = await gRes.json();
+                if (gData && (gData.roomId || gData.phase || gData.createdAt)) {
+                  alert(`🎮 Bu kod ${g.name} odasına ait, o ekrana aktarılıyorsunuz...`);
+                  window.location.href = `${g.file}?room=${roomId}&cloud=1`;
+                  return;
+                }
+              }
+            } catch (e) {}
+          }
+
           alert('❌ Yarışma odası bulunamadı! Lütfen oda kodunu kontrol edin veya sunucunun oyunu başlattığından emin olun.');
           if (btn) { btn.disabled = false; btn.textContent = '🚀 Odaya Katıl'; }
           isRegistering = false;
@@ -587,14 +625,12 @@
     let pollInterval = null;
     let inMemoryPassaState = {};
 
-    const applyPathUpdate = (root, path, val) => {
-      if (!root || typeof root !== 'object') root = {};
+    const setDeep = (root, path, val) => {
       if (!path || path === '/' || path === '') {
         if (val && typeof val === 'object' && !Array.isArray(val)) return Object.assign(root, val);
         return val;
       }
-      const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-      const parts = cleanPath.split('/').filter(Boolean);
+      const parts = path.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
       let curr = root;
       for (let i = 0; i < parts.length - 1; i++) {
         const p = parts[i];
@@ -602,8 +638,18 @@
         curr = curr[p];
       }
       const lastKey = parts[parts.length - 1];
-      if (val === null) delete curr[lastKey];
+      if (val === null || val === undefined) delete curr[lastKey];
       else curr[lastKey] = val;
+      return root;
+    };
+
+    const handleSsePatch = (root, ssePath, sseData) => {
+      if (!sseData || typeof sseData !== 'object') return root;
+      const basePath = (!ssePath || ssePath === '/') ? '' : ssePath.replace(/\/+$/, '');
+      for (const k of Object.keys(sseData)) {
+        const fullPath = basePath + '/' + k;
+        setDeep(root, fullPath, sseData[k]);
+      }
       return root;
     };
 
@@ -622,7 +668,7 @@
               if (!data.path || data.path === '/' || data.path === '') {
                 inMemoryPassaState = data.data || {};
               } else {
-                applyPathUpdate(inMemoryPassaState, data.path, data.data);
+                setDeep(inMemoryPassaState, data.path, data.data);
               }
               syncState(inMemoryPassaState);
             }
@@ -632,12 +678,7 @@
           try {
             const data = JSON.parse(e.data);
             if (data && data.data) {
-              if (!data.path || data.path === '/' || data.path === '') {
-                Object.assign(inMemoryPassaState, data.data);
-              } else {
-                const target = applyPathUpdate(inMemoryPassaState, data.path, {});
-                if (target && typeof target === 'object') Object.assign(target, data.data);
-              }
+              handleSsePatch(inMemoryPassaState, data.path, data.data);
               syncState(inMemoryPassaState);
             }
           } catch(err) {}

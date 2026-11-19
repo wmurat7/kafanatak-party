@@ -409,18 +409,55 @@
       btnJoinRoom.disabled = true;
       btnJoinRoom.textContent = 'Bağlanılıyor...';
 
-      // 1. Önce Firebase Bulut Odayı Kontrol Et (Wi-Fi hotspot gerektirmez)
+      // 1. Önce Firebase Bulut Odayı Kontrol Et (Akıllı 3x Retry & Çapraz Yönlendirme)
       try {
-        const fbRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/vampire/${roomCode}.json`);
-        if (fbRes.ok) {
-          const roomData = await fbRes.json();
-          if (!roomData || (!roomData.roomId && !roomData.phase)) {
-            alert('❌ Köy odası bulunamadı! Lütfen oda kodunu kontrol ediniz veya Köy Muhtarının (Host) oyunu başlattığından emin olunuz.');
-            btnJoinRoom.disabled = false;
-            btnJoinRoom.textContent = 'Köy Halkına Katıl ➔';
-            isJoining = false;
-            return;
+        let roomData = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const fbRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/vampire/${roomCode}.json?t=${Date.now()}`);
+            if (fbRes.ok) {
+              const data = await fbRes.json();
+              if (data && (data.roomId || data.phase)) {
+                roomData = data;
+                break;
+              }
+            }
+          } catch(e) {}
+          if (attempt < 3) await new Promise(r => setTimeout(r, 600));
+        }
+
+        // Eğer Köy odasında bulunamadıysa, diğer oyunları tara ve yönlendir!
+        if (!roomData || (!roomData.roomId && !roomData.phase)) {
+          const gameNamespaces = [
+            { ns: 'spectator', file: 'spectator.html', name: 'Seyirci Ekranı' },
+            { ns: 'carkifelek', file: 'carkifelek.html', name: 'Çarkıfelek' },
+            { ns: 'passaparola', file: 'passaparola.html', name: 'Passaparola' },
+            { ns: 'isim-sehir', file: 'isim-sehir.html', name: 'İsim Şehir' },
+            { ns: 'aileler_yarisiyor', file: 'aileler-yarisiyor.html', name: 'Aileler Yarışıyor' },
+            { ns: 'sarki', file: 'sarki-duello.html', name: 'Şarkı Düellosu' },
+            { ns: 'kelime_islem', file: 'kelime-islem.html', name: 'Kelime İşlem' }
+          ];
+
+          for (const g of gameNamespaces) {
+            try {
+              const gRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/${g.ns}/${roomCode}.json?t=${Date.now()}`);
+              if (gRes.ok) {
+                const gData = await gRes.json();
+                if (gData && (gData.roomId || gData.phase || gData.createdAt)) {
+                  alert(`🎮 Bu kod ${g.name} odasına ait, o ekrana aktarılıyorsunuz...`);
+                  window.location.href = `${g.file}?room=${roomCode}&cloud=1`;
+                  return;
+                }
+              }
+            } catch (e) {}
           }
+
+          alert('❌ Köy odası bulunamadı! Lütfen oda kodunu kontrol ediniz veya Köy Muhtarının (Host) oyunu başlattığından emin olunuz.');
+          btnJoinRoom.disabled = false;
+          btnJoinRoom.textContent = 'Köy Halkına Katıl ➔';
+          isJoining = false;
+          return;
+        }
 
           if (roomData.isClosed) {
             alert('🛑 Bu köy odası kapatılmıştır!');
@@ -564,26 +601,32 @@
     peekCard.addEventListener('mouseleave', hideRole);
 
     let inMemoryKoyState = {};
-    const applyPathUpdate = (root, path, val) => {
-      if (!root || typeof root !== 'object') root = {};
+    const setDeep = (root, path, val) => {
       if (!path || path === '/' || path === '') {
         if (val && typeof val === 'object' && !Array.isArray(val)) return Object.assign(root, val);
         return val;
       }
-      const parts = path.replace(/^\/+|\/+$/g, '').split('/');
+      const parts = path.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
       let curr = root;
       for (let i = 0; i < parts.length - 1; i++) {
         const p = parts[i];
         if (!curr[p] || typeof curr[p] !== 'object') curr[p] = {};
         curr = curr[p];
       }
-      const last = parts[parts.length - 1];
-      if (val === null || val === undefined) {
-        delete curr[last];
-      } else {
-        curr[last] = val;
+      const lastKey = parts[parts.length - 1];
+      if (val === null || val === undefined) delete curr[lastKey];
+      else curr[lastKey] = val;
+      return root;
+    };
+
+    const handleSsePatch = (root, ssePath, sseData) => {
+      if (!sseData || typeof sseData !== 'object') return root;
+      const basePath = (!ssePath || ssePath === '/') ? '' : ssePath.replace(/\/+$/, '');
+      for (const k of Object.keys(sseData)) {
+        const fullPath = basePath + '/' + k;
+        setDeep(root, fullPath, sseData[k]);
       }
-      return curr[last];
+      return root;
     };
 
     function startPolling() {
@@ -600,7 +643,7 @@
                   if (!d.path || d.path === '/') {
                     inMemoryKoyState = d.data || {};
                   } else {
-                    applyPathUpdate(inMemoryKoyState, d.path, d.data);
+                    setDeep(inMemoryKoyState, d.path, d.data);
                   }
                   processRawFirebaseState(inMemoryKoyState);
                 }
@@ -610,12 +653,7 @@
               try {
                 const d = JSON.parse(e.data);
                 if (d && d.data) {
-                  if (!d.path || d.path === '/') {
-                    Object.assign(inMemoryKoyState, d.data);
-                  } else {
-                    const target = applyPathUpdate(inMemoryKoyState, d.path, {});
-                    if (target && typeof target === 'object') Object.assign(target, d.data);
-                  }
+                  handleSsePatch(inMemoryKoyState, d.path, d.data);
                   processRawFirebaseState(inMemoryKoyState);
                 }
               } catch (err) {}

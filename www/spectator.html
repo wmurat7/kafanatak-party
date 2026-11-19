@@ -1436,39 +1436,78 @@
       localStorage.setItem(`kafanatak_pid_spec_${cleanCode}`, spectatorId);
       localStorage.setItem(`kafanatak_pid_spec_${cleanCode}_${cleanName}`, spectatorId);
 
-      // Güvenlik & İzin Kontrolü (Kilit, Kapatılma, Ban)
+      // Güvenlik & İzin Kontrolü (Akıllı 3x Yeniden Deneme & Çapraz Oyun Yönlendirme)
       try {
-        const checkRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/spectator/${encodeURIComponent(cleanCode)}.json`);
-        if (checkRes.ok) {
-          const roomCheck = await checkRes.json();
-          if (!roomCheck) {
-            showToast('❌ Oda bulunamadı veya henüz başlatılmadı! Lütfen oda kodunu kontrol edin.');
-            isConnecting = false;
-            if (btnSubmitConnect) {
-              btnSubmitConnect.disabled = false;
-              btnSubmitConnect.innerHTML = '<span>🚀 Odaya Canlı Bağlan</span>';
+        let roomCheck = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const checkRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/spectator/${encodeURIComponent(cleanCode)}.json?t=${Date.now()}`);
+            if (checkRes.ok) {
+              const data = await checkRes.json();
+              if (data && (data.roomId || data.state || data.category || data.timeLeft !== undefined)) {
+                roomCheck = data;
+                break;
+              }
             }
-            return;
+          } catch (e) {}
+          if (attempt < 3) await new Promise(r => setTimeout(r, 600));
+        }
+
+        // Eğer seyirci odasında bulunamadıysa, diğer oyun odalarını otomatik tara ve yönlendir!
+        if (!roomCheck) {
+          const gameNamespaces = [
+            { ns: 'carkifelek', file: 'carkifelek.html', name: 'Çarkıfelek' },
+            { ns: 'passaparola', file: 'passaparola.html', name: 'Passaparola' },
+            { ns: 'isim-sehir', file: 'isim-sehir.html', name: 'İsim Şehir' },
+            { ns: 'vampire', file: 'koy.html', name: 'Vampir Köylü' },
+            { ns: 'aileler_yarisiyor', file: 'aileler-yarisiyor.html', name: 'Aileler Yarışıyor' },
+            { ns: 'sarki', file: 'sarki-duello.html', name: 'Şarkı Düellosu' },
+            { ns: 'kelime_islem', file: 'kelime-islem.html', name: 'Kelime İşlem' }
+          ];
+
+          for (const g of gameNamespaces) {
+            try {
+              const gRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/${g.ns}/${encodeURIComponent(cleanCode)}.json?t=${Date.now()}`);
+              if (gRes.ok) {
+                const gData = await gRes.json();
+                if (gData && (gData.roomId || gData.phase || gData.createdAt)) {
+                  showToast(`🎮 Bu kod ${g.name} odasına ait, yönlendiriliyorsunuz...`);
+                  setTimeout(() => {
+                    window.location.href = `${g.file}?room=${encodeURIComponent(cleanCode)}&cloud=1`;
+                  }, 400);
+                  return;
+                }
+              }
+            } catch (e) {}
           }
 
-          if (roomCheck.isClosed) {
-            showToast('🛑 Bu oda kapatılmıştır!');
-            isConnecting = false;
-            if (btnSubmitConnect) {
-              btnSubmitConnect.disabled = false;
-              btnSubmitConnect.innerHTML = '<span>🚀 Odaya Canlı Bağlan</span>';
-            }
-            return;
+          showToast('❌ Oda bulunamadı veya henüz başlatılmadı! Lütfen oda kodunu kontrol edin.');
+          isConnecting = false;
+          if (btnSubmitConnect) {
+            btnSubmitConnect.disabled = false;
+            btnSubmitConnect.innerHTML = '<span>🚀 Odaya Canlı Bağlan</span>';
           }
-          if (roomCheck.isLocked) {
-            showToast('🔒 Bu oda yeni girişlere kilitlenmiştir!');
-            isConnecting = false;
-            if (btnSubmitConnect) {
-              btnSubmitConnect.disabled = false;
-              btnSubmitConnect.innerHTML = '<span>🚀 Odaya Canlı Bağlan</span>';
-            }
-            return;
+          return;
+        }
+
+        if (roomCheck.isClosed) {
+          showToast('🛑 Bu oda kapatılmıştır!');
+          isConnecting = false;
+          if (btnSubmitConnect) {
+            btnSubmitConnect.disabled = false;
+            btnSubmitConnect.innerHTML = '<span>🚀 Odaya Canlı Bağlan</span>';
           }
+          return;
+        }
+        if (roomCheck.isLocked) {
+          showToast('🔒 Bu oda yeni girişlere kilitlenmiştir!');
+          isConnecting = false;
+          if (btnSubmitConnect) {
+            btnSubmitConnect.disabled = false;
+            btnSubmitConnect.innerHTML = '<span>🚀 Odaya Canlı Bağlan</span>';
+          }
+          return;
+        }
           if ((roomCheck.kicked && roomCheck.kicked[spectatorId]) || (roomCheck.kickedPlayers && roomCheck.kickedPlayers[spectatorId])) {
             showToast('🚫 Bu odadan çıkarıldınız, tekrar katılamazsınız!');
             isConnecting = false;
@@ -1641,14 +1680,14 @@
       if (sseReconnectTimer) clearTimeout(sseReconnectTimer);
 
       let inMemoryState = {};
-      const applyPathUpdate = (root, path, val) => {
-        if (!root || typeof root !== 'object') root = {};
+      const setDeep = (root, path, val) => {
         if (!path || path === '/' || path === '') {
-          if (val && typeof val === 'object' && !Array.isArray(val)) return Object.assign(root, val);
+          if (val && typeof val === 'object' && !Array.isArray(val)) {
+            return Object.assign(root, val);
+          }
           return val;
         }
-        const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-        const parts = cleanPath.split('/').filter(Boolean);
+        const parts = path.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
         let curr = root;
         for (let i = 0; i < parts.length - 1; i++) {
           const p = parts[i];
@@ -1656,8 +1695,21 @@
           curr = curr[p];
         }
         const lastKey = parts[parts.length - 1];
-        if (val === null) delete curr[lastKey];
-        else curr[lastKey] = val;
+        if (val === null || val === undefined) {
+          delete curr[lastKey];
+        } else {
+          curr[lastKey] = val;
+        }
+        return root;
+      };
+
+      const handleSsePatch = (root, ssePath, sseData) => {
+        if (!sseData || typeof sseData !== 'object') return root;
+        const basePath = (!ssePath || ssePath === '/') ? '' : ssePath.replace(/\/+$/, '');
+        for (const k of Object.keys(sseData)) {
+          const fullPath = basePath + '/' + k;
+          setDeep(root, fullPath, sseData[k]);
+        }
         return root;
       };
 
@@ -1671,7 +1723,7 @@
                 if (!d.path || d.path === '/' || d.path === '') {
                   inMemoryState = d.data || {};
                 } else {
-                  applyPathUpdate(inMemoryState, d.path, d.data);
+                  setDeep(inMemoryState, d.path, d.data);
                 }
                 renderState(inMemoryState);
               }
@@ -1681,12 +1733,7 @@
             try {
               const d = JSON.parse(e.data);
               if (d && d.data) {
-                if (!d.path || d.path === '/' || d.path === '') {
-                  Object.assign(inMemoryState, d.data);
-                } else {
-                  const target = applyPathUpdate(inMemoryState, d.path, {});
-                  if (target && typeof target === 'object') Object.assign(target, d.data);
-                }
+                handleSsePatch(inMemoryState, d.path, d.data);
                 renderState(inMemoryState);
               }
             } catch (err) {}
@@ -1714,7 +1761,7 @@
       const timeoutId = controller ? setTimeout(() => controller.abort(), 3800) : null;
 
       try {
-        const fbRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/spectator/${encodeURIComponent(currentRoom)}.json`, {
+        const fbRes = await fetch(`${FIREBASE_DB_URL}/kafanatak/spectator/${encodeURIComponent(currentRoom)}.json?t=${Date.now()}`, {
           signal: controller ? controller.signal : undefined
         });
         if (timeoutId) clearTimeout(timeoutId);
@@ -1730,19 +1777,24 @@
         if (timeoutId) clearTimeout(timeoutId);
       }
 
-      // Yedek yerel sunucu yoklaması
-      try {
-        const localCtrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-        const localTimeout = localCtrl ? setTimeout(() => localCtrl.abort(), 2000) : null;
-        const res = await fetch(`/api/room/state?room=${encodeURIComponent(currentRoom)}`, {
-          signal: localCtrl ? localCtrl.signal : undefined
-        });
-        if (localTimeout) clearTimeout(localTimeout);
-        if (res.ok) {
-          const data = await res.json();
-          if (data) renderState(data);
-        }
-      } catch (err) {}
+      // Yedek yerel sunucu yoklaması (Sadece yerel HTTP ağındaysa, GitHub Pages HTTPS'de 404 atılmaz)
+      if (location.protocol === 'http:' && !location.hostname.includes('github.io')) {
+        try {
+          const localCtrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+          const localTimeout = localCtrl ? setTimeout(() => localCtrl.abort(), 2000) : null;
+          const res = await fetch(`/api/room/state?room=${encodeURIComponent(currentRoom)}`, {
+            signal: localCtrl ? localCtrl.signal : undefined
+          });
+          if (localTimeout) clearTimeout(localTimeout);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && isConnected) {
+              inMemoryState = data;
+              renderState(data);
+            }
+          }
+        } catch (err) {}
+      }
     }
 
     // Mobil ekran uyanması veya Wi-Fi/Hücresel geri gelmesinde anında yeniden senkronize et
@@ -1924,13 +1976,15 @@
           });
         } catch (e) {}
 
-        try {
-          await fetch('/api/room/cheer', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roomId: currentRoom, ...actionPayload })
-          });
-        } catch (e) {}
+        if (location.protocol === 'http:' && !location.hostname.includes('github.io')) {
+          try {
+            await fetch('/api/room/cheer', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ roomId: currentRoom, ...actionPayload })
+            });
+          } catch (e) {}
+        }
       });
     });
 
@@ -1961,13 +2015,15 @@
           });
         } catch (e) {}
 
-        try {
-          await fetch('/api/room/cheer', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roomId: currentRoom, ...actionPayload })
-          });
-        } catch (e) {}
+        if (location.protocol === 'http:' && !location.hostname.includes('github.io')) {
+          try {
+            await fetch('/api/room/cheer', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ roomId: currentRoom, ...actionPayload })
+            });
+          } catch (e) {}
+        }
       });
     }
 

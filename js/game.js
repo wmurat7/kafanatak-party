@@ -4695,31 +4695,33 @@ class GameApp {
       }
     });
 
-    // 2. Yerel Sunucu Yoklaması
-    this.cheerPollTimer = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/room/drain-cheers?room=${encodeURIComponent(this.spectatorRoomId)}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.cheers && data.cheers.length > 0) {
-            if (!this.processedCheerIds) this.processedCheerIds = new Set();
-            data.cheers.forEach(c => {
-              const actId = c.id || (c.timestamp + '_' + c.cheer);
-              if (!this.processedCheerIds.has(actId)) {
-                this.processedCheerIds.add(actId);
-                if (c.cheer === 'buzzer') {
-                  this.triggerBuzzerAlert(c.sender || 'İkinci Telefon (Zil)');
-                } else {
-                  sounds.playCheerSound(c.cheer);
-                  const emoji = c.cheer === 'horn' ? '🎺 Vuvuzela!' : (c.cheer === 'bell' ? '🔔 Çan!' : (c.cheer === 'boo' ? '😱 Abooov!' : (c.cheer === 'party' ? '🎉 Coşku!' : '👏 Alkış!')));
-                  this.showToast(`📣 ${c.sender || 'Seyirci'}: ${emoji}`);
+    // 2. Yerel Sunucu Yoklaması (Yalnızca yerel HTTP ortamında)
+    if (location.protocol === 'http:' && !window.Capacitor?.isNativePlatform?.() && !location.hostname.includes('github.io')) {
+      this.cheerPollTimer = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/room/drain-cheers?room=${encodeURIComponent(this.spectatorRoomId)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.cheers && data.cheers.length > 0) {
+              if (!this.processedCheerIds) this.processedCheerIds = new Set();
+              data.cheers.forEach(c => {
+                const actId = c.id || (c.timestamp + '_' + c.cheer);
+                if (!this.processedCheerIds.has(actId)) {
+                  this.processedCheerIds.add(actId);
+                  if (c.cheer === 'buzzer') {
+                    this.triggerBuzzerAlert(c.sender || 'İkinci Telefon (Zil)');
+                  } else {
+                    sounds.playCheerSound(c.cheer);
+                    const emoji = c.cheer === 'horn' ? '🎺 Vuvuzela!' : (c.cheer === 'bell' ? '🔔 Çan!' : (c.cheer === 'boo' ? '😱 Abooov!' : (c.cheer === 'party' ? '🎉 Coşku!' : '👏 Alkış!')));
+                    this.showToast(`📣 ${c.sender || 'Seyirci'}: ${emoji}`);
+                  }
                 }
-              }
-            });
+              });
+            }
           }
-        }
-      } catch (e) {}
-    }, 1200);
+        } catch (e) {}
+      }, 1200);
+    }
   }
 
   renderConnectedSpectators(players) {
@@ -5410,6 +5412,15 @@ SADECE geçerli bir JSON array döndür. Başka hiçbir açıklama veya markdown
         };
       }
     } catch (e) {}
+
+    // Firebase üzerinde seyirci odasını uygulama açılır açılmaz oluştur ve dinlemeye başla
+    try {
+      this.broadcastSpectatorState('idle');
+      this.startCheerPolling();
+      this.startSpectatorHeartbeat();
+    } catch (err) {
+      console.warn('Spectator room auto-init error:', err);
+    }
   }
 
   triggerBuzzerAlert(sender = 'İkinci Telefon') {
