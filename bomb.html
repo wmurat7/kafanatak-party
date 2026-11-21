@@ -50,11 +50,12 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      text-decoration: none;
+      transition: all 0.2s;
     }
-    .header-logo { font-size: 2.2rem; display: inline-block; filter: drop-shadow(0 0 15px rgba(0, 245, 212, 0.6)); }
-    h1 { font-size: 1.45rem; font-weight: 900; background: linear-gradient(135deg, #FFF, var(--primary), var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .room-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 800; padding: 4px 14px; border-radius: 999px; background: rgba(0, 245, 212, 0.15); border: 1px solid var(--primary); color: var(--primary); margin-top: 4px; }
+    .btn-leave-header:active { transform: scale(0.95); background: rgba(239, 68, 68, 0.3); }
+    .header-logo { font-size: 2.2rem; display: inline-block; filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.6)); }
+    h1 { font-size: 1.45rem; font-weight: 900; background: linear-gradient(135deg, #FFF, #EF4444, var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .room-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 800; padding: 4px 14px; border-radius: 999px; background: rgba(239, 68, 68, 0.15); border: 1px solid #EF4444; color: #FCA5A5; margin-top: 4px; }
 
     .card {
       background: var(--card-bg);
@@ -123,9 +124,45 @@
       box-shadow: 0 4px 20px rgba(0, 245, 212, 0.4);
     }
     .btn-main.danger {
-      background: linear-gradient(135deg, #EF4444, #B91C1C);
+      background: linear-gradient(135deg, #FF0844, #FF4E50);
       color: #FFF;
-      box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+      box-shadow: 0 0 25px rgba(255, 8, 68, 0.6);
+    }
+    .btn-main:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none !important;
+    }
+
+    /* Çıkış Onay Modalı */
+    .confirm-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+      z-index: 9999;
+    }
+    .confirm-modal-card {
+      background: #161B2E;
+      border: 1.5px solid rgba(239, 68, 68, 0.4);
+      border-radius: 22px;
+      padding: 24px 20px;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+      animation: popIn 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+    @keyframes popIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
     }
   </style>
 </head>
@@ -133,7 +170,7 @@
   <div class="container">
     <header>
       <div class="header-top-row">
-        <a href="index.html" class="btn-leave-header">🚪 Çıkış</a>
+        <button type="button" id="btn-leave-header" class="btn-leave-header">🚪 Çıkış</button>
         <div class="header-logo">💣</div>
         <div style="width:60px;"></div>
       </div>
@@ -171,28 +208,60 @@
 
     <!-- 2. Canlı Oyun -->
     <div id="stage-playing" class="card" style="display:none;">
-      <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.06); padding:8px 14px; border-radius:12px; margin-bottom:14px;">
-        <span id="lbl-my-identity" style="font-size:0.85rem; font-weight:900; color:var(--gold);">👤 Ben</span>
-        <span id="lbl-bomb-holder" style="font-size:0.85rem; font-weight:900; color:#EF4444;">💣 Bomba: Bekleniyor</span>
+      <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.06); padding:8px 14px; border-radius:12px; margin-bottom:14px; font-size:0.82rem;">
+        <span id="lbl-my-identity" style="font-weight:900; color:var(--gold);">👤 Ben</span>
+        <span id="lbl-bomb-pass-count" style="font-weight:800; color:var(--primary);">0 Paslaşma</span>
+      </div>
+
+      <!-- Bomba Kimde Bildirimi -->
+      <div id="holder-alert-box" style="padding:10px 14px; border-radius:14px; margin-bottom:12px; font-size:0.88rem; font-weight:900; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.12);">
+        <span id="lbl-bomb-holder">💣 Bomba: Bekleniyor</span>
       </div>
 
       <!-- Bomba Görseli -->
-      <div id="bomb-visual-box" style="margin:20px auto; width:120px; height:120px; display:flex; align-items:center; justify-content:center; font-size:4.5rem; transition:transform 0.1s ease;">
+      <div id="bomb-visual-box" style="margin:14px auto 10px; width:110px; height:110px; display:flex; align-items:center; justify-content:center; font-size:4.2rem; transition:transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28); filter:drop-shadow(0 0 25px rgba(239,68,68,0.6));">
         💣
       </div>
 
-      <div id="prompt-box" style="background:rgba(0,0,0,0.45); border:1.5px solid rgba(255,255,255,0.15); border-radius:16px; padding:16px; margin-bottom:16px;">
-        <span style="font-size:0.75rem; color:var(--gold); font-weight:900; text-transform:uppercase; display:block; margin-bottom:4px;">GÖREV:</span>
-        <p id="lbl-bomb-prompt" style="font-size:1.05rem; font-weight:900; color:#FFF; line-height:1.4;">Bomba hazırlanıyor...</p>
+      <!-- Görev Kutusu -->
+      <div id="prompt-box" style="background:rgba(0,0,0,0.45); border:1.5px solid rgba(255,46,147,0.4); border-radius:18px; padding:16px; margin-bottom:16px;">
+        <span style="font-size:0.75rem; color:var(--gold); font-weight:900; text-transform:uppercase; display:block; margin-bottom:4px;">KELİME GÖREVİ:</span>
+        <p id="lbl-bomb-prompt" style="font-size:1.15rem; font-weight:900; color:#FFF; line-height:1.35;">Bomba hazırlanıyor...</p>
       </div>
 
-      <button type="button" id="btn-pass-bomb" class="btn-main danger" style="padding:16px; font-size:1.1rem;">
-        💣 BİLDİM, SIRADAKİNE PASLA!
+      <!-- DEV PASLA BUTONU -->
+      <button type="button" id="btn-pass-bomb" class="btn-main danger" style="padding:18px; font-size:1.25rem; min-height:85px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;">
+        <span style="font-size:1.3rem;">💥 SÖYLEDİM!</span>
+        <span style="font-size:0.95rem; font-weight:900; letter-spacing:1px;">👉 SIRADAKİNE PASLA! ➔</span>
       </button>
 
-      <div id="boom-overlay" style="display:none; margin-top:16px; background:rgba(239,68,68,0.25); border:2px solid #EF4444; border-radius:16px; padding:14px;">
-        <div style="font-size:2.5rem;">💥 BOOOM!</div>
-        <div id="lbl-exploded-who" style="font-size:1.1rem; font-weight:900; color:#FFF; margin-top:4px;">Bomba Patladı!</div>
+      <!-- Patlama / Ceza Ekranı -->
+      <div id="boom-overlay" style="display:none; margin-top:16px; background:rgba(239,68,68,0.2); border:2px solid #EF4444; border-radius:16px; padding:16px;">
+        <div style="font-size:2.8rem; line-height:1;">💥 BOOOM!</div>
+        <div id="lbl-exploded-who" style="font-size:1.15rem; font-weight:900; color:#FFF; margin-top:6px;">Bomba Patladı!</div>
+        <div id="lbl-exploded-penalty-box" style="margin-top:10px; background:rgba(0,0,0,0.5); padding:10px 12px; border-radius:12px; border:1px solid rgba(239,68,68,0.4);">
+          <div style="font-size:0.75rem; color:#F87171; font-weight:900; text-transform:uppercase;">🎭 CEZA GÖREVİ:</div>
+          <div id="lbl-exploded-penalty" style="font-size:0.92rem; font-weight:800; color:#FFF; margin-top:2px;">-</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Çıkış Onay Modalı -->
+  <div id="modal-confirm-exit" class="confirm-modal-overlay" style="display:none;">
+    <div class="confirm-modal-card">
+      <div style="font-size:2.4rem; margin-bottom:8px;">🚪</div>
+      <h3 style="font-size:1.15rem; font-weight:900; color:#FFF; margin-bottom:6px;">Oyundan Çıkılsın mı?</h3>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:18px;">
+        Odadan ayrılmak üzeresiniz. Tekrar bağlanmak için oda kodunu yeniden girmeniz gerekebilir.
+      </p>
+      <div style="display:flex; gap:10px;">
+        <button type="button" id="btn-modal-cancel" class="btn-main" style="flex:1; background:rgba(255,255,255,0.1); color:#FFF; box-shadow:none; padding:10px 14px; font-size:0.88rem;">
+          Vazgeç
+        </button>
+        <button type="button" id="btn-modal-confirm" class="btn-main danger" style="flex:1; padding:10px 14px; font-size:0.88rem;">
+          Çıkış Yap
+        </button>
       </div>
     </div>
   </div>
@@ -202,8 +271,11 @@
 
     const AVATARS = ['🦁', '🦊', '🐼', '🐯', '🦄', '🐸', '🐶', '🐱'];
     let selectedAvatar = '🦁';
-    let myPlayerId = 'p_' + Math.random().toString(36).substr(2, 6);
+    let myPlayerId = '';
+    let myPlayerName = '';
     let roomId = (new URLSearchParams(window.location.search).get('room') || '').trim().toUpperCase();
+    let isHoldingBomb = false;
+    let isExploded = false;
 
     if (roomId) {
       document.getElementById('inp-room-code').value = roomId;
@@ -224,17 +296,60 @@
       avContainer.appendChild(btn);
     });
 
-    document.getElementById('btn-join-room').onclick = async () => {
+    // Çıkış Modalı Dinleyicileri
+    const btnLeaveHeader = document.getElementById('btn-leave-header');
+    const modalConfirmExit = document.getElementById('modal-confirm-exit');
+    const btnModalCancel = document.getElementById('btn-modal-cancel');
+    const btnModalConfirm = document.getElementById('btn-modal-confirm');
+
+    btnLeaveHeader.onclick = () => {
+      modalConfirmExit.style.display = 'flex';
+    };
+
+    btnModalCancel.onclick = () => {
+      modalConfirmExit.style.display = 'none';
+    };
+
+    btnModalConfirm.onclick = async () => {
+      if (roomId && myPlayerId) {
+        try {
+          await firebaseNetwork.removePlayer('bomb', roomId, myPlayerId, myPlayerName);
+        } catch (e) {}
+      }
+      window.location.href = 'index.html';
+    };
+
+    // Odaya Katıl
+    const btnJoin = document.getElementById('btn-join-room');
+    btnJoin.onclick = async () => {
       const code = (document.getElementById('inp-room-code').value || roomId).trim().toUpperCase();
       const name = (document.getElementById('inp-player-name').value || 'Oyuncu').trim();
       if (!code) return alert('Lütfen oda kodunu girin!');
+
+      btnJoin.disabled = true;
+      btnJoin.textContent = 'Bağlanılıyor...';
+
       roomId = code;
+      myPlayerName = name;
+      myPlayerId = firebaseNetwork.getOrCreatePlayerId('bomb', roomId, name);
+
+      // Uygunluk Kontrolü
+      const check = await firebaseNetwork.verifyJoinEligibility('bomb', roomId, myPlayerId);
+      if (!check.allowed) {
+        if (!check.redirected) {
+          alert('❌ ' + (check.reason || 'Odaya katılamazsınız!'));
+        }
+        btnJoin.disabled = false;
+        btnJoin.textContent = '🚀 Bombaya Katıl';
+        return;
+      }
+
       document.getElementById('lbl-room-id').textContent = roomId;
-      document.getElementById('lbl-my-identity').textContent = `${selectedAvatar} ${name}`;
+      document.getElementById('lbl-my-identity').textContent = `${selectedAvatar} ${myPlayerName}`;
 
       await firebaseNetwork.setPlayer('bomb', roomId, {
         id: myPlayerId,
-        name,
+        name: myPlayerName,
         avatar: selectedAvatar,
         joinedAt: Date.now()
       });
@@ -244,22 +359,102 @@
 
       firebaseNetwork.listenRoom('bomb', roomId, (room) => {
         if (!room) return;
-        if (room.prompt) document.getElementById('lbl-bomb-prompt').textContent = room.prompt;
-        if (room.currentHolderName) {
-          document.getElementById('lbl-bomb-holder').textContent = `💣 Bomba: ${room.currentHolderName}`;
+
+        // Moderasyon & Güvenlik
+        firebaseNetwork.handleClientSecurity(room, myPlayerId, {
+          onRoomClosed: (msg) => { alert('🛑 ' + msg); window.location.href = 'index.html'; },
+          onKicked: (reason) => { alert('🚫 ' + reason); window.location.href = 'index.html'; },
+          onWarning: (msg) => { alert('⚠️ ' + msg); }
+        });
+
+        // Görev Metni
+        if (room.prompt) {
+          document.getElementById('lbl-bomb-prompt').textContent = room.prompt;
         }
-        if (room.exploded) {
+
+        // Pas Sayısı
+        if (typeof room.passCount !== 'undefined') {
+          document.getElementById('lbl-bomb-pass-count').textContent = `${room.passCount} Paslaşma`;
+        }
+
+        const btnPass = document.getElementById('btn-pass-bomb');
+        const holderEl = document.getElementById('lbl-bomb-holder');
+        const holderBox = document.getElementById('holder-alert-box');
+        const bombBox = document.getElementById('bomb-visual-box');
+
+        isExploded = Boolean(room.exploded || room.phase === 'exploded');
+
+        if (isExploded) {
           document.getElementById('boom-overlay').style.display = 'block';
-          document.getElementById('lbl-exploded-who').textContent = `Bomba ${room.explodedPlayerName || 'birinde'} patladı!`;
+          const loser = room.explodedPlayerName || 'Birinde';
+          document.getElementById('lbl-exploded-who').textContent = `Bomba ${loser} Patladı!`;
+          if (room.penalty) {
+            document.getElementById('lbl-exploded-penalty').textContent = room.penalty;
+          }
+          btnPass.disabled = true;
+          btnPass.textContent = '💥 Bomba Patladı!';
+          btnPass.style.background = 'rgba(239, 68, 68, 0.4)';
+          btnPass.style.boxShadow = 'none';
+          holderBox.style.background = 'rgba(239, 68, 68, 0.25)';
+          holderBox.style.borderColor = '#EF4444';
+          holderEl.innerHTML = `<span style="color:#FCA5A5;">Bomba patladı! Host yeni turu başlatınca devam edecek.</span>`;
+          return;
         } else {
           document.getElementById('boom-overlay').style.display = 'none';
+        }
+
+        // Bomba kimde?
+        const isMyTurn = (room.currentHolderId === myPlayerId);
+        isHoldingBomb = isMyTurn;
+
+        if (isMyTurn) {
+          holderBox.style.background = 'linear-gradient(135deg, rgba(255,8,68,0.25), rgba(255,78,80,0.35))';
+          holderBox.style.borderColor = '#FF0844';
+          holderBox.style.boxShadow = '0 0 20px rgba(255,8,68,0.4)';
+          holderEl.innerHTML = `<span style="color:#FF0844; font-size:1rem; font-weight:900;">🔥 BOMBA SENDE! ÇABUK KELİMEYİ SÖYLE!</span>`;
+          bombBox.style.transform = 'scale(1.2)';
+
+          btnPass.disabled = false;
+          btnPass.style.background = 'linear-gradient(135deg, #FF0844, #FF4E50)';
+          btnPass.style.boxShadow = '0 0 35px rgba(255,8,68,0.7)';
+          btnPass.innerHTML = `
+            <span style="font-size:1.35rem; line-height:1;">💥 SÖYLEDİM!</span>
+            <span style="font-size:0.95rem; font-weight:900; letter-spacing:1px;">👉 SIRADAKİNE PASLA! ➔</span>
+          `;
+        } else {
+          const whoName = room.currentHolderName || 'Masa (Host)';
+          holderBox.style.background = 'rgba(0,0,0,0.4)';
+          holderBox.style.borderColor = 'rgba(255,255,255,0.12)';
+          holderBox.style.boxShadow = 'none';
+          holderEl.innerHTML = `<span>💣 Bomba şu an: <strong style="color:var(--gold);">${whoName}</strong>'de</span>`;
+          bombBox.style.transform = 'scale(1)';
+
+          btnPass.disabled = true;
+          btnPass.style.background = 'rgba(255,255,255,0.08)';
+          btnPass.style.boxShadow = 'none';
+          btnPass.innerHTML = `
+            <span style="font-size:1.05rem; opacity:0.8;">⏳ Sıra ${whoName}'de</span>
+            <span style="font-size:0.8rem; font-weight:700; opacity:0.6;">Bomba sana gelince buton açılacak...</span>
+          `;
         }
       });
     };
 
-    document.getElementById('btn-pass-bomb').onclick = async () => {
+    const btnPassBomb = document.getElementById('btn-pass-bomb');
+    btnPassBomb.onclick = async () => {
+      if (isExploded || btnPassBomb.disabled) return;
+
+      if (navigator.vibrate) {
+        try { navigator.vibrate([60, 40, 60]); } catch (e) {}
+      }
+
+      btnPassBomb.disabled = true;
+      btnPassBomb.innerHTML = `<span style="font-size:1.1rem;">✅ Paslandı! Sıradakine Geçti...</span>`;
+
       await firebaseNetwork.sendAction('bomb', roomId, 'pass_bomb', {
-        fromPlayerId: myPlayerId
+        fromPlayerId: myPlayerId,
+        playerName: myPlayerName,
+        avatar: selectedAvatar
       });
     };
   </script>

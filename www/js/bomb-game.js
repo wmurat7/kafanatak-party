@@ -138,13 +138,6 @@ export const BOMB_PENALTIES = [
 ];
 
 export class BombGameEngine {
-  bindSetup() {
-    if (this.multiHelper) {
-      this.multiHelper.bindEvents((mode) => {
-        console.log('[BombGame] Mod değişti:', mode);
-      });
-    }
-  }
   constructor(game) {
     this.game = game;
     this.state = 'idle'; // idle, running, exploded
@@ -154,12 +147,51 @@ export class BombGameEngine {
     this.tickInterval = null;
     this.roundCount = 1;
     this.passCount = 0;
+    this.currentHolderIndex = 0;
+    this.currentHolder = { id: 'host', name: 'Masa (Host)', avatar: '👑' };
+
     this.multiHelper = new PartyMultiDeviceHelper({
       namespace: 'bomb',
       title: 'Saatli Bomba Masası',
       subtitle: '☁️ Bomba telefonlar arasında canlı elden ele geçer, patlayan elenir!',
-      prefix: 'bomb'
+      prefix: 'bomb',
+      onAction: (act, room) => this.handlePlayerAction(act, room)
     });
+  }
+
+  bindSetup() {
+    if (this.multiHelper) {
+      this.multiHelper.bindEvents((mode) => {
+        console.log('[BombGame] Mod değişti:', mode);
+        if (mode === 'wifi') {
+          this.syncWithCloud();
+        }
+      });
+    }
+  }
+
+  getParticipants() {
+    const list = [];
+    // 1. Ana telefon (Host)
+    list.push({ id: 'host', name: 'Masa (Host)', avatar: '👑' });
+    // 2. Bağlı diğer telefonlar
+    if (this.multiHelper && this.multiHelper.connectedPlayers) {
+      this.multiHelper.connectedPlayers.forEach(p => {
+        if (p && p.id && p.id !== 'host') {
+          list.push({ id: p.id, name: p.name || 'Oyuncu', avatar: p.avatar || '💣' });
+        }
+      });
+    }
+    return list;
+  }
+
+  handlePlayerAction(act, room) {
+    if (!act || this.state !== 'running') return;
+    if (act.type === 'pass_bomb' || act.type === 'buzz_word' || act.type === 'buzzer') {
+      const pId = act.fromPlayerId || act.playerId;
+      const pName = act.playerName || (pId && room && room.players && room.players[pId] ? room.players[pId].name : 'Bir oyuncu');
+      this.passTurn(pName);
+    }
   }
 
   startRound() {
@@ -170,16 +202,13 @@ export class BombGameEngine {
     this.remainingTime = this.totalDuration;
     this.currentPrompt = BOMB_PROMPTS[Math.floor(Math.random() * BOMB_PROMPTS.length)];
 
+    const participants = this.getParticipants();
+    this.currentHolderIndex = participants.length > 1 ? 1 : 0;
+    this.currentHolder = participants[this.currentHolderIndex] || participants[0];
+
     sounds.startBombTicking();
-    if (this.multiHelper) {
-      this.multiHelper.updateRoomState({
-        phase: 'running',
-        prompt: this.currentPrompt,
-        currentHolderName: 'Ana Ekran (Masa)',
-        exploded: false
-      });
-    }
     this.renderBombScreen();
+    this.syncWithCloud();
 
     if (this.tickInterval) clearInterval(this.tickInterval);
     this.tickInterval = setInterval(() => {
@@ -197,13 +226,40 @@ export class BombGameEngine {
     }, 1000);
   }
 
-  passTurn() {
+  passTurn(passedByName = null) {
     if (this.state !== 'running') return;
     this.passCount++;
     sounds.playCorrect();
-    // Yeni kural/soru
+
+    // Yeni kural/soru seç
     this.currentPrompt = BOMB_PROMPTS[Math.floor(Math.random() * BOMB_PROMPTS.length)];
+
+    // Katılımcılar arasında bombayı sıradakine devret
+    const participants = this.getParticipants();
+    if (participants.length > 1) {
+      this.currentHolderIndex = (this.currentHolderIndex + 1) % participants.length;
+      this.currentHolder = participants[this.currentHolderIndex];
+    } else if (participants.length === 1) {
+      this.currentHolder = participants[0];
+    }
+
     this.updateBombDisplay();
+    this.syncWithCloud();
+  }
+
+  syncWithCloud() {
+    if (!this.multiHelper || this.multiHelper.mode !== 'wifi') return;
+    this.multiHelper.updateRoomState({
+      phase: this.state,
+      prompt: this.currentPrompt,
+      currentHolderId: this.currentHolder ? this.currentHolder.id : 'host',
+      currentHolderName: this.currentHolder ? this.currentHolder.name : 'Masa',
+      currentHolderAvatar: this.currentHolder ? this.currentHolder.avatar : '💣',
+      passCount: this.passCount,
+      remainingTime: this.remainingTime,
+      exploded: (this.state === 'exploded'),
+      lastActive: Date.now()
+    }).catch(err => console.warn('[BombGame] sync error:', err));
   }
 
   explodeBomb() {
@@ -211,7 +267,24 @@ export class BombGameEngine {
     sounds.stopAll();
     sounds.playBombExplosion();
 
+    if (navigator.vibrate) {
+      navigator.vibrate([100, 50, 100, 50, 400]);
+    }
+
     const penalty = BOMB_PENALTIES[Math.floor(Math.random() * BOMB_PENALTIES.length)];
+    const loserName = this.currentHolder ? this.currentHolder.name : 'Elinde tutan kişi';
+
+    if (this.multiHelper && this.multiHelper.mode === 'wifi') {
+      this.multiHelper.updateRoomState({
+        phase: 'exploded',
+        exploded: true,
+        explodedPlayerId: this.currentHolder ? this.currentHolder.id : 'host',
+        explodedPlayerName: loserName,
+        penalty: penalty,
+        lastActive: Date.now()
+      }).catch(() => {});
+    }
+
     const container = document.getElementById('bomb-game-content');
     if (!container) return;
 
@@ -220,10 +293,10 @@ export class BombGameEngine {
         <div style="font-size:4.5rem; margin-bottom:8px; animation:bounce 0.4s ease infinite alternate;">💥</div>
         <h2 style="font-size:2rem; font-weight:900; color:#EF4444; margin-bottom:6px;">BOOOOOM!</h2>
         <div style="font-size:1.15rem; font-weight:900; color:#FFF; margin-bottom:12px;">
-          BOMBA ELİNDE PATLADI!
+          BOMBA ${loserName.toUpperCase()} ELİNDE PATLADI!
         </div>
         <p style="font-size:0.86rem; color:#FDA4AF; line-height:1.4; margin-bottom:16px;">
-          Telefon şu an kimin elindeyse bu turu kaybetti! Ceza görevini yerine getirmek zorunda:
+          <strong>${loserName}</strong> bu turu kaybetti! Ceza görevini yerine getirmek zorunda:
         </p>
 
         <div style="background:rgba(239,68,68,0.15); border:1.5px solid #EF4444; border-radius:16px; padding:16px; margin-bottom:20px; text-align:left;">
@@ -231,13 +304,13 @@ export class BombGameEngine {
           <div style="font-size:1.05rem; font-weight:900; color:#FFF; line-height:1.4;">${penalty}</div>
         </div>
 
-        <button type="button" id="btn-bomb-restart" class="btn-main primary" style="font-size:1.1rem; padding:14px;">
+        <button type="button" id="btn-bomb-restart" class="btn-main primary" style="font-size:1.1rem; padding:14px; cursor:pointer;">
           💣 Sıradaki Turu Başlat (Tur ${this.roundCount + 1})
         </button>
       </div>
     `;
 
-    document.getElementById('btn-bomb-restart').addEventListener('click', () => {
+    document.getElementById('btn-bomb-restart')?.addEventListener('click', () => {
       this.roundCount++;
       this.startRound();
     });
@@ -247,6 +320,8 @@ export class BombGameEngine {
     const container = document.getElementById('bomb-game-content');
     if (!container) return;
 
+    const holderText = this.currentHolder ? this.currentHolder.name : 'Masa (Host)';
+
     container.innerHTML = `
       <div class="card" style="text-align:center; max-width:440px; margin:0 auto; padding:20px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -254,12 +329,17 @@ export class BombGameEngine {
             TUR ${this.roundCount}
           </span>
           <span style="font-size:0.8rem; color:#A78BFA; font-weight:800;">
-            Paslaşma: <span id="bomb-pass-num">0</span>
+            Paslaşma: <span id="bomb-pass-num">${this.passCount}</span>
           </span>
         </div>
 
+        <!-- Bomba Kimde Rozeti -->
+        <div id="bomb-holder-badge" style="display:inline-block; font-size:0.85rem; font-weight:800; color:#EF4444; background:rgba(239,68,68,0.15); border:1px solid #EF4444; padding:4px 14px; border-radius:999px; margin-bottom:6px;">
+          💣 Bomba: ${holderText}
+        </div>
+
         <!-- Nabız Gibi Atan Bomba -->
-        <div id="bomb-visual" style="font-size:5rem; margin:14px 0 10px; transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); filter:drop-shadow(0 0 25px rgba(239,68,68,0.6));">
+        <div id="bomb-visual" style="font-size:5rem; margin:10px 0 6px; transition:transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); filter:drop-shadow(0 0 25px rgba(239,68,68,0.6));">
           💣
         </div>
 
@@ -268,39 +348,34 @@ export class BombGameEngine {
         </div>
 
         <!-- Kural / Görev Kutusu -->
-        <div style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(255,46,147,0.4); border-radius:18px; padding:18px; margin-bottom:20px; box-shadow:0 8px 24px rgba(0,0,0,0.5);">
+        <div style="background:rgba(0,0,0,0.4); border:1.5px solid rgba(255,46,147,0.4); border-radius:18px; padding:18px; margin-bottom:16px; box-shadow:0 8px 24px rgba(0,0,0,0.5);">
           <div style="font-size:0.78rem; font-weight:800; color:#00F5D4; text-transform:uppercase; margin-bottom:6px;">KELİME GÖREVİ:</div>
           <div id="bomb-prompt-text" style="font-size:1.3rem; font-weight:900; color:#FFF; line-height:1.35;">
             ${this.currentPrompt}
           </div>
         </div>
 
-        <!-- DEVA SAATLİ BOMBA PASLA BUTONU (Madde 7) -->
-        <button type="button" id="btn-bomb-pass" class="btn-main" style="width:100%; min-height:125px; background:linear-gradient(135deg, #FF0844, #FF4E50); color:#FFFFFF; font-size:1.85rem; font-weight:900; padding:20px 16px; box-shadow:0 0 35px rgba(255,8,68,0.7), inset 0 2px 10px rgba(255,255,255,0.5); border:3.5px solid #FFFFFF; border-radius:26px; letter-spacing:1px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer; touch-action:manipulation; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; transition:transform 0.1s, box-shadow 0.1s; margin-bottom:12px;">
+        <!-- DEV SAATLİ BOMBA PASLA BUTONU -->
+        <button type="button" id="btn-bomb-pass" class="btn-main" style="width:100%; min-height:115px; background:linear-gradient(135deg, #FF0844, #FF4E50); color:#FFFFFF; font-size:1.85rem; font-weight:900; padding:18px 16px; box-shadow:0 0 35px rgba(255,8,68,0.7), inset 0 2px 10px rgba(255,255,255,0.5); border:3.5px solid #FFFFFF; border-radius:26px; letter-spacing:1px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer; touch-action:manipulation; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; transition:transform 0.1s, box-shadow 0.1s; margin-bottom:12px;">
           <span style="font-size:2.2rem; line-height:1; filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4));">💥 SÖYLEDİM!</span>
-          <span style="font-size:1.3rem; color:#FFE4E6; font-weight:900; letter-spacing:2px;">👉 SIRADAKİNE PASLA! ➔</span>
+          <span style="font-size:1.25rem; color:#FFE4E6; font-weight:900; letter-spacing:1.5px;">👉 SIRADAKİNE PASLA! ➔</span>
         </button>
 
-        <p style="font-size:0.78rem; color:var(--text-muted); margin-top:14px; line-height:1.4;">
-          Kelimeyi yüksek sesle söyle, hemen <strong>PASLA</strong>'ya bas ve telefonu yanındakine ver!
+        <p style="font-size:0.78rem; color:var(--text-muted); margin-top:12px; line-height:1.4;">
+          Kelimeyi yüksek sesle söyle, hemen <strong>PASLA</strong>'ya bas ve bomba sıradakine geçsin!
         </p>
       </div>
     `;
 
     const btnPass = document.getElementById('btn-bomb-pass');
     if (btnPass) {
-      let isPassing = false;
-      const doPass = (e) => {
-        if (e && e.cancelable && e.type === 'pointerdown') e.preventDefault();
-        if (isPassing) return;
-        isPassing = true;
+      btnPass.onclick = () => {
+        sounds.playClick();
         try { navigator.vibrate?.([60, 40, 60]); } catch (err) {}
         btnPass.style.transform = 'scale(0.93)';
-        setTimeout(() => { btnPass.style.transform = 'scale(1)'; isPassing = false; }, 140);
+        setTimeout(() => { if (btnPass) btnPass.style.transform = 'scale(1)'; }, 140);
         this.passTurn();
       };
-      btnPass.addEventListener('pointerdown', doPass);
-      btnPass.addEventListener('click', doPass);
     }
   }
 
@@ -308,9 +383,13 @@ export class BombGameEngine {
     const promptEl = document.getElementById('bomb-prompt-text');
     const passNum = document.getElementById('bomb-pass-num');
     const bombVis = document.getElementById('bomb-visual');
+    const holderBadge = document.getElementById('bomb-holder-badge');
 
     if (promptEl) promptEl.textContent = this.currentPrompt;
     if (passNum) passNum.textContent = this.passCount;
+    if (holderBadge && this.currentHolder) {
+      holderBadge.textContent = `💣 Bomba: ${this.currentHolder.name}`;
+    }
     if (bombVis) {
       // Bomba süre azaldıkça büyür ve kızarır
       const scale = 1 + (1 - (this.remainingTime / this.totalDuration)) * 0.45;

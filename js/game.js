@@ -2440,6 +2440,9 @@ class GameApp {
         sounds.playClick();
         if (this.bombEngine.tickInterval) clearInterval(this.bombEngine.tickInterval);
         sounds.stopAll();
+        if (this.bombEngine.multiHelper) {
+          this.bombEngine.multiHelper.stopRoom();
+        }
         this.showScreen('partyGames');
       });
     }
