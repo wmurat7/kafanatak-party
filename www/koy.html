@@ -484,13 +484,37 @@
             currentRoomId = roomCode;
 
             const cleanName = playerName.trim().toLowerCase().replace(/[^a-z0-9]/gi, '');
-            let existingId = localStorage.getItem(`kafanatak_pid_vampire_${roomCode}_${cleanName}`) || localStorage.getItem(`kafanatak_pid_vampire_${roomCode}`);
-            if (!existingId && roomData.players) {
+            const localPid = localStorage.getItem(`kafanatak_pid_vampire_${roomCode}_${cleanName}`) || localStorage.getItem(`kafanatak_pid_vampire_${roomCode}`);
+
+            // Mükerrer / Çift Giriş Kontrolü
+            const normName = playerName.trim().toLowerCase();
+            if (roomData.players) {
               const pList = Array.isArray(roomData.players) ? roomData.players : Object.values(roomData.players);
-              const found = pList.find(p => p && p.name && p.name.trim().toLowerCase() === playerName.toLowerCase());
-              if (found) existingId = found.id;
+              const duplicate = pList.find(p => p && p.name && p.name.trim().toLowerCase() === normName);
+              if (duplicate) {
+                if (!localPid || duplicate.id !== localPid) {
+                  const now = Date.now();
+                  const isRecent = duplicate.lastSeen 
+                    ? (now - duplicate.lastSeen < 40000) 
+                    : (duplicate.joinedAt ? (now - duplicate.joinedAt < 45000) : false);
+
+                  if (isRecent) {
+                    alert(`❌ "${playerName}" ismiyle bir oyuncu zaten köyde aktif! Lütfen farklı bir isim veya lakap seçiniz.`);
+                    btnJoinRoom.disabled = false;
+                    btnJoinRoom.textContent = 'Köy Halkına Katıl ➔';
+                    isJoining = false;
+                    return;
+                  } else {
+                    // Stale hayalet oyuncu kaydını sil
+                    try {
+                      fetch(`${FIREBASE_DB_URL}/kafanatak/vampire/${roomCode}/players/${duplicate.id}.json`, { method: 'DELETE' });
+                    } catch (e) {}
+                  }
+                }
+              }
             }
-            myPlayerId = existingId || ('p_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 4));
+
+            myPlayerId = localPid || ('p_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 4));
             localStorage.setItem(`kafanatak_pid_vampire_${roomCode}`, myPlayerId);
             localStorage.setItem(`kafanatak_pid_vampire_${roomCode}_${cleanName}`, myPlayerId);
 
@@ -508,13 +532,35 @@
               avatar: selectedAvatar,
               alive: true,
               role: null,
-              joinedAt: Date.now()
+              joinedAt: Date.now(),
+              lastSeen: Date.now()
             };
 
             await fetch(`${FIREBASE_DB_URL}/kafanatak/vampire/${roomCode}/players/${myPlayerId}.json`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(playerObj)
+            });
+
+            // Periyodik Kalp Atışı (Heartbeat - her 20 sn)
+            if (window.vampireHeartbeatTimer) clearInterval(window.vampireHeartbeatTimer);
+            window.vampireHeartbeatTimer = setInterval(() => {
+              if (currentRoomId && myPlayerId && networkMode === 'firebase') {
+                fetch(`${FIREBASE_DB_URL}/kafanatak/vampire/${currentRoomId}/players/${myPlayerId}/lastSeen.json`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(Date.now())
+                }).catch(() => {});
+              }
+            }, 20000);
+
+            window.addEventListener('beforeunload', () => {
+              if (currentRoomId && myPlayerId && networkMode === 'firebase') {
+                fetch(`${FIREBASE_DB_URL}/kafanatak/vampire/${currentRoomId}/players/${myPlayerId}.json`, {
+                  method: 'DELETE',
+                  keepalive: true
+                }).catch(() => {});
+              }
             });
 
             document.getElementById('room-badge').textContent = 'BULUT ODA: ' + currentRoomId;

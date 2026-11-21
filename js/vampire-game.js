@@ -655,16 +655,39 @@ export class VampireGameEngine {
   handleRemoteRoomUpdate(room) {
     if (!room) return;
     
-    // Normalleştir
-    let pList = [];
+    // Normalleştir & Tekilleştir (Mükerrer ve hayalet oyuncuları önle)
+    let rawList = [];
     if (room.players) {
       if (Array.isArray(room.players)) {
-        pList = room.players.filter(Boolean);
+        rawList = room.players.filter(Boolean);
       } else if (typeof room.players === 'object') {
-        pList = Object.values(room.players);
+        rawList = Object.entries(room.players).map(([k, v]) => ({ id: k, ...v }));
       }
     }
-    this.players = pList;
+    const uniqueByName = new Map();
+    rawList.forEach(p => {
+      if (!p) return;
+      const norm = (p.name || '').trim().toLowerCase();
+      if (!norm) return;
+      const existing = uniqueByName.get(norm);
+      if (!existing) {
+        uniqueByName.set(norm, p);
+      } else {
+        const pTime = p.lastSeen || p.joinedAt || 0;
+        const exTime = existing.lastSeen || existing.joinedAt || 0;
+        if (pTime > exTime) {
+          if (existing.id && this.roomId) {
+            firebaseNetwork.removePlayer('vampire', this.roomId, existing.id, existing.name).catch(() => {});
+          }
+          uniqueByName.set(norm, p);
+        } else {
+          if (p.id && this.roomId) {
+            firebaseNetwork.removePlayer('vampire', this.roomId, p.id, p.name).catch(() => {});
+          }
+        }
+      }
+    });
+    this.players = Array.from(uniqueByName.values());
 
     if (room.nightActions) {
       this.nightActions = { ...this.nightActions, ...room.nightActions };

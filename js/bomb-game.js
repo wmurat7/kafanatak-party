@@ -172,15 +172,17 @@ export class BombGameEngine {
 
   getParticipants() {
     const list = [];
-    // 1. Ana telefon (Host)
-    list.push({ id: 'host', name: 'Masa (Host)', avatar: '👑' });
-    // 2. Bağlı diğer telefonlar
-    if (this.multiHelper && this.multiHelper.connectedPlayers) {
+    if (this.multiHelper && this.multiHelper.connectedPlayers && this.multiHelper.connectedPlayers.length > 0) {
       this.multiHelper.connectedPlayers.forEach(p => {
         if (p && p.id && p.id !== 'host') {
           list.push({ id: p.id, name: p.name || 'Oyuncu', avatar: p.avatar || '💣' });
         }
       });
+      if (list.length === 0) {
+        list.push({ id: 'host', name: 'Masa (Host)', avatar: '👑' });
+      }
+    } else {
+      list.push({ id: 'host', name: 'Masa (Host)', avatar: '👑' });
     }
     return list;
   }
@@ -203,8 +205,8 @@ export class BombGameEngine {
     this.currentPrompt = BOMB_PROMPTS[Math.floor(Math.random() * BOMB_PROMPTS.length)];
 
     const participants = this.getParticipants();
-    this.currentHolderIndex = participants.length > 1 ? 1 : 0;
-    this.currentHolder = participants[this.currentHolderIndex] || participants[0];
+    this.currentHolderIndex = 0;
+    this.currentHolder = participants[0] || { id: 'host', name: 'Masa (Host)', avatar: '👑' };
 
     sounds.startBombTicking();
     this.renderBombScreen();
@@ -240,7 +242,10 @@ export class BombGameEngine {
       this.currentHolderIndex = (this.currentHolderIndex + 1) % participants.length;
       this.currentHolder = participants[this.currentHolderIndex];
     } else if (participants.length === 1) {
+      this.currentHolderIndex = 0;
       this.currentHolder = participants[0];
+    } else {
+      this.currentHolder = { id: 'host', name: 'Masa (Host)', avatar: '👑' };
     }
 
     this.updateBombDisplay();

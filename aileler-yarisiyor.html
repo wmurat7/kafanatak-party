@@ -548,8 +548,8 @@
 
       myPlayerId = firebaseNetwork.getOrCreatePlayerId('aileler_yarisiyor', roomIn, nameIn);
 
-      // Güvenlik & İzin Kontrolü
-      const check = await firebaseNetwork.verifyJoinEligibility('aileler_yarisiyor', roomIn, myPlayerId);
+      // Güvenlik & İzin Kontrolü (Mükerrer isim ve kilit engeli)
+      const check = await firebaseNetwork.verifyJoinEligibility('aileler_yarisiyor', roomIn, myPlayerId, nameIn);
       if (!check.allowed) {
         alert('⚠️ ' + check.reason);
         btnJoin.disabled = false;
@@ -584,6 +584,20 @@
         name: playerName,
         team: playerTeam,
         joinedAt: Date.now()
+      });
+
+      // Periyodik Kalp Atışı (Heartbeat - her 20 sn)
+      if (window.ayHeartbeatTimer) clearInterval(window.ayHeartbeatTimer);
+      window.ayHeartbeatTimer = setInterval(() => {
+        if (currentRoomId && myPlayerId) {
+          firebaseNetwork.updateHeartbeat('aileler_yarisiyor', currentRoomId, myPlayerId);
+        }
+      }, 20000);
+
+      window.addEventListener('beforeunload', () => {
+        if (currentRoomId && myPlayerId) {
+          firebaseNetwork.removePlayer('aileler_yarisiyor', currentRoomId, myPlayerId, playerName);
+        }
       });
 
       roomUnsubscribe = firebaseNetwork.listenRoom('aileler_yarisiyor', currentRoomId, (roomData) => {

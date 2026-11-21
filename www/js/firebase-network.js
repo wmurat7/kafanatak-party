@@ -284,7 +284,21 @@ class FirebaseNetworkManager {
     if (!roomId || !player || !player.id) return false;
     const cleanNs = String(namespace || '').trim().toLowerCase();
     const cleanRoom = String(roomId || '').trim().toUpperCase();
+
+    player.lastSeen = Date.now();
+
     try {
+      // 1. Aynı isimde eski terkedilmiş veya mükerrer ID varsa temizle
+      const existingRoom = await this.getRoom(cleanNs, cleanRoom);
+      if (existingRoom && existingRoom.players) {
+        const cleanName = String(player.name || '').trim().toLowerCase();
+        Object.values(existingRoom.players).forEach(p => {
+          if (p && p.id !== player.id && p.name && p.name.trim().toLowerCase() === cleanName) {
+            this.removePlayer(cleanNs, cleanRoom, p.id).catch(() => {});
+          }
+        });
+      }
+
       const url = this.buildPath(cleanNs, cleanRoom, `players/${player.id}`);
       const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
       const timeoutId = controller ? setTimeout(() => controller.abort(), 4000) : null;
@@ -309,6 +323,26 @@ class FirebaseNetworkManager {
       return true;
     } catch (err) {
       console.warn(`[FirebaseNetwork] setPlayer hatası:`, err.message);
+      return false;
+    }
+  }
+
+  /**
+   * Oyuncunun canlı olduğunu bildiren periyodik kalp atışı (Heartbeat)
+   */
+  async updateHeartbeat(namespace, roomId, playerId) {
+    if (!roomId || !playerId) return false;
+    const cleanNs = String(namespace || '').trim().toLowerCase();
+    const cleanRoom = String(roomId || '').trim().toUpperCase();
+    try {
+      const url = this.buildPath(cleanNs, cleanRoom, `players/${playerId}/lastSeen`);
+      await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Date.now())
+      });
+      return true;
+    } catch (e) {
       return false;
     }
   }
@@ -499,9 +533,9 @@ class FirebaseNetworkManager {
   }
 
   /**
-   * Katılımcının odaya girip giremeyeceğini denetler (Kilit, Ban, Kapatılma kontrolü + 3x Retry + Çapraz Oyun Yönlendirmesi)
+   * Katılımcının odaya girip giremeyeceğini denetler (Kilit, Ban, Kapatılma kontrolü + Mükerrer/Çift İsim Engeli + 3x Retry + Çapraz Oyun Yönlendirmesi)
    */
-  async verifyJoinEligibility(namespace, roomId, playerId) {
+  async verifyJoinEligibility(namespace, roomId, playerId, playerName = '') {
     if (!roomId) return { allowed: false, reason: 'Geçersiz oda kodu!' };
 
     let room = null;
@@ -551,6 +585,36 @@ class FirebaseNetworkManager {
     }
     if (room.kicked && playerId && room.kicked[playerId]) {
       return { allowed: false, reason: 'Bu odadan çıkarıldınız, tekrar katılamazsınız!' };
+    }
+
+    // Mükerrer / Çift Giriş Kontrolü (Aynı isimde aktif başka biri var mı?)
+    if (playerName && room.players) {
+      const cleanName = String(playerName).trim().toLowerCase();
+      const pList = Object.values(room.players);
+      const now = Date.now();
+
+      const duplicate = pList.find(p => p && p.name && p.name.trim().toLowerCase() === cleanName);
+      if (duplicate) {
+        // Eğer aynı ID ise (sayfa yenileyen aynı oyuncu), devam et
+        if (duplicate.id === playerId) {
+          return { allowed: true, room };
+        }
+
+        // Eğer farklı ID ise: O oyuncu odada hala aktif mi? (son 40 sn içinde lastSeen veya joinedAt)
+        const isRecent = duplicate.lastSeen 
+          ? (now - duplicate.lastSeen < 40000) 
+          : (duplicate.joinedAt ? (now - duplicate.joinedAt < 45000) : false);
+
+        if (isRecent) {
+          return {
+            allowed: false,
+            reason: `"${playerName}" ismiyle bir oyuncu zaten odada aktif! Lütfen farklı bir isim veya rumuz seçiniz.`
+          };
+        } else {
+          // Eski terkedilmiş/hayalet oturum -> temizle
+          this.removePlayer(namespace, roomId, duplicate.id).catch(() => {});
+        }
+      }
     }
 
     return { allowed: true, room };

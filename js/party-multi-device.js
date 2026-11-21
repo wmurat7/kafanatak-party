@@ -215,7 +215,43 @@ export class PartyMultiDeviceHelper {
     this.stopListening();
     this.unsub = firebaseNetwork.listenRoom(this.namespace, this.roomId, (room) => {
       if (!room) return;
-      const pList = room.players ? Object.values(room.players) : [];
+      
+      // room.players hem nesne hem dizi olabilir
+      let rawList = [];
+      if (room.players) {
+        if (Array.isArray(room.players)) {
+          rawList = room.players.filter(Boolean);
+        } else if (typeof room.players === 'object') {
+          rawList = Object.entries(room.players).map(([k, v]) => ({ id: k, ...v }));
+        }
+      }
+
+      // Tekilleştirme & Hayalet (Ghost) / Mükerrer Oyuncu Temizliği
+      const uniqueByName = new Map();
+      rawList.forEach(p => {
+        if (!p) return;
+        const normName = (p.name || '').trim().toLowerCase();
+        if (!normName) return;
+        const existing = uniqueByName.get(normName);
+        if (!existing) {
+          uniqueByName.set(normName, p);
+        } else {
+          // En günceli tut, eskisini Firebase'den temizle
+          const pTime = p.lastSeen || p.joinedAt || 0;
+          const exTime = existing.lastSeen || existing.joinedAt || 0;
+          if (pTime > exTime) {
+            if (existing.id && this.roomId) {
+              firebaseNetwork.removePlayer(this.namespace, this.roomId, existing.id, existing.name).catch(() => {});
+            }
+            uniqueByName.set(normName, p);
+          } else {
+            if (p.id && this.roomId) {
+              firebaseNetwork.removePlayer(this.namespace, this.roomId, p.id, p.name).catch(() => {});
+            }
+          }
+        }
+      });
+      const pList = Array.from(uniqueByName.values());
       this.connectedPlayers = pList;
 
       const badge = document.getElementById(`${this.prefix}-player-count-badge`);

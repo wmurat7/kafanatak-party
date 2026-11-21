@@ -221,6 +221,14 @@
       const name = (document.getElementById('inp-player-name').value || 'Oyuncu').trim();
       if (!code) return alert('Lütfen oda kodunu girin!');
       roomId = code;
+      myPlayerId = firebaseNetwork.getOrCreatePlayerId('bottle', roomId, name);
+
+      const check = await firebaseNetwork.verifyJoinEligibility('bottle', roomId, myPlayerId, name);
+      if (!check.allowed) {
+        if (!check.redirected) alert('❌ ' + (check.reason || 'Odaya katılamazsınız!'));
+        return;
+      }
+
       document.getElementById('lbl-room-id').textContent = roomId;
 
       await firebaseNetwork.setPlayer('bottle', roomId, {
@@ -228,6 +236,15 @@
         name,
         avatar: selectedAvatar,
         joinedAt: Date.now()
+      });
+
+      if (window.bottleHeartbeatTimer) clearInterval(window.bottleHeartbeatTimer);
+      window.bottleHeartbeatTimer = setInterval(() => {
+        if (roomId && myPlayerId) firebaseNetwork.updateHeartbeat('bottle', roomId, myPlayerId);
+      }, 20000);
+
+      window.addEventListener('beforeunload', () => {
+        if (roomId && myPlayerId) firebaseNetwork.removePlayer('bottle', roomId, myPlayerId, name);
       });
 
       document.getElementById('stage-lobby').style.display = 'none';

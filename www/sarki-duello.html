@@ -371,8 +371,8 @@
 
       myPlayerId = firebaseNetwork.getOrCreatePlayerId('sarki', roomInp, nameInp);
 
-      // Güvenlik & İzin Kontrolü
-      const check = await firebaseNetwork.verifyJoinEligibility('sarki', roomInp, myPlayerId);
+      // Güvenlik & İzin Kontrolü (Mükerrer isim ve kilit engeli)
+      const check = await firebaseNetwork.verifyJoinEligibility('sarki', roomInp, myPlayerId, nameInp);
       if (!check.allowed) {
         alert('⚠️ ' + check.reason);
         btnJoin.disabled = false;
@@ -398,6 +398,20 @@
       } catch (e) {
         console.warn('setPlayer fallback:', e);
       }
+
+      // Periyodik Kalp Atışı (Heartbeat - her 20 sn)
+      if (window.sarkiHeartbeatTimer) clearInterval(window.sarkiHeartbeatTimer);
+      window.sarkiHeartbeatTimer = setInterval(() => {
+        if (currentRoomId && myPlayerId) {
+          firebaseNetwork.updateHeartbeat('sarki', currentRoomId, myPlayerId);
+        }
+      }, 20000);
+
+      window.addEventListener('beforeunload', () => {
+        if (currentRoomId && myPlayerId) {
+          firebaseNetwork.removePlayer('sarki', currentRoomId, myPlayerId, myName);
+        }
+      });
 
       document.getElementById('join-view').style.display = 'none';
       document.getElementById('game-view').style.display = 'block';

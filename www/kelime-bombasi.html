@@ -327,8 +327,8 @@
       myPlayerName = name;
       myPlayerId = firebaseNetwork.getOrCreatePlayerId('kelimebombasi', roomId, name);
 
-      // Katılım Uygunluğu Kontrolü (Oda kapalı mı, banlı mı, çapraz oda mı?)
-      const check = await firebaseNetwork.verifyJoinEligibility('kelimebombasi', roomId, myPlayerId);
+      // Katılım Uygunluğu Kontrolü (Oda kapalı mı, banlı mı, mükerrer isim var mı?)
+      const check = await firebaseNetwork.verifyJoinEligibility('kelimebombasi', roomId, myPlayerId, name);
       if (!check.allowed) {
         if (!check.redirected) {
           alert('❌ ' + (check.reason || 'Odaya katılamazsınız!'));
@@ -346,6 +346,20 @@
         name: myPlayerName,
         avatar: selectedAvatar,
         joinedAt: Date.now()
+      });
+
+      // Periyodik Kalp Atışı (Heartbeat - her 20 sn)
+      if (window.kbHeartbeatTimer) clearInterval(window.kbHeartbeatTimer);
+      window.kbHeartbeatTimer = setInterval(() => {
+        if (roomId && myPlayerId) {
+          firebaseNetwork.updateHeartbeat('kelimebombasi', roomId, myPlayerId);
+        }
+      }, 20000);
+
+      window.addEventListener('beforeunload', () => {
+        if (roomId && myPlayerId) {
+          firebaseNetwork.removePlayer('kelimebombasi', roomId, myPlayerId, myPlayerName);
+        }
       });
 
       document.getElementById('stage-lobby').style.display = 'none';

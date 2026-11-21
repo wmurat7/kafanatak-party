@@ -333,8 +333,8 @@
       myPlayerName = name;
       myPlayerId = firebaseNetwork.getOrCreatePlayerId('bomb', roomId, name);
 
-      // Uygunluk Kontrolü
-      const check = await firebaseNetwork.verifyJoinEligibility('bomb', roomId, myPlayerId);
+      // Uygunluk Kontrolü (Mükerrer isim ve kilit denetimi)
+      const check = await firebaseNetwork.verifyJoinEligibility('bomb', roomId, myPlayerId, name);
       if (!check.allowed) {
         if (!check.redirected) {
           alert('❌ ' + (check.reason || 'Odaya katılamazsınız!'));
@@ -352,6 +352,20 @@
         name: myPlayerName,
         avatar: selectedAvatar,
         joinedAt: Date.now()
+      });
+
+      // Periyodik Kalp Atışı (Heartbeat - her 20 sn)
+      if (window.bombHeartbeatTimer) clearInterval(window.bombHeartbeatTimer);
+      window.bombHeartbeatTimer = setInterval(() => {
+        if (roomId && myPlayerId) {
+          firebaseNetwork.updateHeartbeat('bomb', roomId, myPlayerId);
+        }
+      }, 20000);
+
+      window.addEventListener('beforeunload', () => {
+        if (roomId && myPlayerId) {
+          firebaseNetwork.removePlayer('bomb', roomId, myPlayerId, myPlayerName);
+        }
       });
 
       document.getElementById('stage-lobby').style.display = 'none';
@@ -429,12 +443,13 @@
           holderEl.innerHTML = `<span>💣 Bomba şu an: <strong style="color:var(--gold);">${whoName}</strong>'de</span>`;
           bombBox.style.transform = 'scale(1)';
 
-          btnPass.disabled = true;
-          btnPass.style.background = 'rgba(255,255,255,0.08)';
+          // Buton kilitlenmez; takılma veya gecikme anında oyuncu sırayı sorunsuz devredebilir
+          btnPass.disabled = false;
+          btnPass.style.background = 'rgba(255,255,255,0.1)';
           btnPass.style.boxShadow = 'none';
           btnPass.innerHTML = `
-            <span style="font-size:1.05rem; opacity:0.8;">⏳ Sıra ${whoName}'de</span>
-            <span style="font-size:0.8rem; font-weight:700; opacity:0.6;">Bomba sana gelince buton açılacak...</span>
+            <span style="font-size:1.05rem; opacity:0.9;">⏳ Sıra: ${whoName}</span>
+            <span style="font-size:0.85rem; font-weight:800; color:var(--primary);">👉 SIRADAKİNE PASLA ➔</span>
           `;
         }
       });
@@ -456,6 +471,13 @@
         playerName: myPlayerName,
         avatar: selectedAvatar
       });
+
+      // 600ms sonra butonu tekrar aktif et (asla kilitlenip donup kalmaz)
+      setTimeout(() => {
+        if (!isExploded) {
+          btnPassBomb.disabled = false;
+        }
+      }, 600);
     };
   </script>
 </body>

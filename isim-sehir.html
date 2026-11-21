@@ -1210,12 +1210,38 @@
           }
 
           const cleanName = name.trim().toLowerCase().replace(/[^a-z0-9]/gi, '');
-          let existingId = localStorage.getItem(`kafanatak_pid_isim_sehir_${room}_${cleanName}`) || localStorage.getItem(`kafanatak_pid_isim_sehir_${room}`);
-          if (!existingId && roomData.players) {
-            const found = Object.values(roomData.players).find(p => p && p.name && p.name.trim().toLowerCase() === name.toLowerCase());
-            if (found) existingId = found.id;
+          const localPid = localStorage.getItem(`kafanatak_pid_isim_sehir_${room}_${cleanName}`) || localStorage.getItem(`kafanatak_pid_isim_sehir_${room}`);
+
+          // Mükerrer / Çift Giriş Kontrolü
+          const normName = name.trim().toLowerCase();
+          if (roomData.players) {
+            const pList = Array.isArray(roomData.players) ? roomData.players : Object.values(roomData.players);
+            const duplicate = pList.find(p => p && p.name && p.name.trim().toLowerCase() === normName);
+            if (duplicate) {
+              if (!localPid || duplicate.id !== localPid) {
+                const now = Date.now();
+                const isRecent = duplicate.lastSeen 
+                  ? (now - duplicate.lastSeen < 40000) 
+                  : (duplicate.joinedAt ? (now - duplicate.joinedAt < 45000) : false);
+
+                if (isRecent) {
+                  errBox.textContent = `❌ "${name}" ismiyle bir oyuncu zaten odada aktif! Lütfen farklı bir isim veya rumuz seçiniz.`;
+                  errBox.style.display = 'block';
+                  btnJoin.disabled = false;
+                  btnJoin.textContent = '🚀 OYUNA KATIL';
+                  isJoining = false;
+                  return;
+                } else {
+                  // Stale hayalet oyuncu kaydını sil
+                  try {
+                    fetch(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${room}/players/${duplicate.id}.json`, { method: 'DELETE' });
+                  } catch (e) {}
+                }
+              }
+            }
           }
-          state.playerId = existingId || ('p_' + Math.random().toString(36).substring(2, 8) + '_' + Date.now().toString(36));
+
+          state.playerId = localPid || ('p_' + Math.random().toString(36).substring(2, 8) + '_' + Date.now().toString(36));
           localStorage.setItem(`kafanatak_pid_isim_sehir_${room}`, state.playerId);
           localStorage.setItem(`kafanatak_pid_isim_sehir_${room}_${cleanName}`, state.playerId);
 
@@ -1236,13 +1262,36 @@
             submitted: false,
             totalScore: 0,
             roundScore: 0,
-            cheatWarnings: 0
+            cheatWarnings: 0,
+            joinedAt: Date.now(),
+            lastSeen: Date.now()
           };
           // Oyuncuyu Firebase'e kaydet
           await fetch(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${room}/players/${state.playerId}.json`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(myPlayer)
+          });
+
+          // Periyodik Kalp Atışı (Heartbeat - her 20 sn)
+          if (window.isHeartbeatTimer) clearInterval(window.isHeartbeatTimer);
+          window.isHeartbeatTimer = setInterval(() => {
+            if (state.roomId && state.playerId) {
+              fetch(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${state.roomId}/players/${state.playerId}/lastSeen.json`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(Date.now())
+              }).catch(() => {});
+            }
+          }, 20000);
+
+          window.addEventListener('beforeunload', () => {
+            if (state.roomId && state.playerId) {
+              fetch(`${FIREBASE_DB_URL}/kafanatak/isim-sehir/${state.roomId}/players/${state.playerId}.json`, {
+                method: 'DELETE',
+                keepalive: true
+              }).catch(() => {});
+            }
           });
 
           document.getElementById('room-code-badge').style.display = 'inline-flex';
