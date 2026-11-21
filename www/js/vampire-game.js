@@ -733,15 +733,15 @@ export class VampireGameEngine {
           </div>
 
           <div style="background:rgba(0,0,0,0.35); border-radius:18px; padding:14px; margin-bottom:14px; border:1px solid rgba(255,255,255,0.1);">
-            <div style="font-size:0.78rem; font-weight:800; color:var(--text-dim); text-transform:uppercase;">KATILIM KODU</div>
-            <div style="display:flex; justify-content:center; align-items:center; gap:10px; margin:6px 0;">
-              <span style="font-size:2.5rem; font-weight:900; letter-spacing:6px; color:#FFF; font-family:monospace;">${state.roomId}</span>
-              <button type="button" id="btn-vampire-copy-code" class="btn-secondary" style="font-size:0.8rem; padding:6px 12px; border-radius:10px; cursor:pointer;" title="Kodu Kopyala">
-                📋 Kopyala
+            <div style="font-size:0.78rem; font-weight:800; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px;">KÖY ODA KODU</div>
+            <div style="font-size:2.5rem; font-weight:900; letter-spacing:6px; color:var(--gold); font-family:monospace; margin:4px 0 8px;">${state.roomId}</div>
+            <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap;">
+              <button type="button" id="btn-vampire-copy-code" class="btn-secondary" style="font-size:0.78rem; padding:6px 14px; border-radius:999px; cursor:pointer;" title="Oda Kodunu Kopyala">
+                🔑 Kodu Kopyala
               </button>
-            </div>
-            <div style="font-size:0.78rem; color:var(--text-dim);">
-              veya <strong style="color:var(--primary); word-break:break-all;">${clientUrl}</strong>
+              <button type="button" id="btn-vampire-copy-link" style="background:rgba(0,245,212,0.15); border:1px solid var(--primary); color:#00F5D4; font-size:0.78rem; font-weight:800; padding:6px 14px; border-radius:999px; cursor:pointer;" title="Katılım Bağlantısını Kopyala">
+                📋 Bağlantıyı Kopyala
+              </button>
             </div>
           </div>
 
@@ -783,8 +783,27 @@ export class VampireGameEngine {
       document.getElementById('btn-vampire-copy-code')?.addEventListener('click', () => {
         if (window.sounds && window.sounds.playClick) window.sounds.playClick();
         navigator.clipboard?.writeText(state.roomId);
-        if (window.game && window.game.showToast) window.game.showToast(`📋 Oda kodu kopyalandı: ${state.roomId}`);
-        else alert(`📋 Oda kodu kopyalandı: ${state.roomId}`);
+        if (window.game && window.game.showToast) window.game.showToast(`🔑 Oda kodu kopyalandı: ${state.roomId}`);
+        else alert(`🔑 Oda kodu kopyalandı: ${state.roomId}`);
+      });
+
+      document.getElementById('btn-vampire-copy-link')?.addEventListener('click', async () => {
+        if (window.sounds && window.sounds.playClick) window.sounds.playClick();
+        const btnLink = document.getElementById('btn-vampire-copy-link');
+        try {
+          if (navigator.clipboard) {
+            await navigator.clipboard.writeText(clientUrl);
+          } else {
+            prompt('Katılım Bağlantısı:', clientUrl);
+          }
+          if (btnLink) {
+            btnLink.textContent = '✅ Kopyalandı!';
+            setTimeout(() => { if (btnLink) btnLink.textContent = '📋 Bağlantıyı Kopyala'; }, 2000);
+          }
+          if (window.game && window.game.showToast) window.game.showToast('📋 Katılım bağlantısı panoya kopyalandı!');
+        } catch (e) {
+          prompt('Katılım Bağlantısı:', clientUrl);
+        }
       });
 
       document.getElementById('btn-vamp-mod-open')?.addEventListener('click', (e) => {
@@ -945,7 +964,6 @@ export class VampireGameEngine {
         }
       };
     });
-  }
   }
 
   async startMultiGame() {

@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+  <script>
+    if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
+      const cleanPath = window.location.pathname.replace(/^\/[^\/]+/, '');
+      window.location.replace('https://kafanatak-party.web.app' + cleanPath + window.location.search + window.location.hash);
+    }
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Kafana Tak! - Kameralı Parti Oyunu (Guess Up & Tabu)</title>
@@ -2598,7 +2604,7 @@
         <canvas id="qr-apk-download-canvas" width="220" height="220"></canvas>
       </div>
 
-      <div class="apk-download-link-box" style="font-size:0.7rem; color:var(--text-dim); margin-bottom:12px; word-break:break-all; padding:6px 10px; background:rgba(0,0,0,0.35); border-radius:8px; border:1px solid rgba(255,255,255,0.08);">
+      <div class="apk-download-link-box" style="display:none;">
         <span id="apk-download-url-text">https://kafanatak-party.web.app/KafanaTak-v1.0.apk</span>
       </div>
 

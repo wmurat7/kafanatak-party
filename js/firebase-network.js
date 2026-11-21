@@ -57,19 +57,25 @@ class FirebaseNetworkManager {
   getWebAppUrl() {
     let url = localStorage.getItem(this.storageKeyWeb);
     if (url && (url.includes('pluswalnut') || url.includes('wmurat7') || url.includes('github.io'))) {
-      localStorage.removeItem(this.storageKeyWeb);
+      try { localStorage.removeItem(this.storageKeyWeb); } catch (e) {}
       url = null;
     }
     if (!url) {
       if (typeof window !== 'undefined' && window.location && window.location.origin) {
         const origin = window.location.origin.toLowerCase();
-        const isLocal = origin.includes('localhost') || origin.includes('127.0.0.1') || origin.startsWith('capacitor:') || origin.startsWith('file:');
-        if (!isLocal) {
+        const isExcluded = origin.includes('localhost') || 
+                           origin.includes('127.0.0.1') || 
+                           origin.startsWith('capacitor:') || 
+                           origin.startsWith('file:') ||
+                           origin.includes('wmurat7') ||
+                           origin.includes('github.io') ||
+                           origin.includes('pluswalnut');
+        if (!isExcluded) {
           url = window.location.origin;
         }
       }
     }
-    if (!url) {
+    if (!url || url.includes('wmurat7') || url.includes('github.io') || url.includes('pluswalnut')) {
       url = DEFAULT_FIREBASE_CONFIG.webAppUrl;
     }
     if (url.endsWith('/')) url = url.slice(0, -1);
@@ -79,9 +85,12 @@ class FirebaseNetworkManager {
   setWebAppUrl(url) {
     if (!url) return;
     let clean = url.trim();
+    if (clean.includes('wmurat7') || clean.includes('github.io') || clean.includes('pluswalnut')) {
+      clean = DEFAULT_FIREBASE_CONFIG.webAppUrl;
+    }
     if (clean.endsWith('/')) clean = clean.slice(0, -1);
     this.webAppUrl = clean;
-    localStorage.setItem(this.storageKeyWeb, clean);
+    try { localStorage.setItem(this.storageKeyWeb, clean); } catch (e) {}
   }
 
   getNetworkMode() {

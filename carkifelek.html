@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+  <script>
+    if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
+      const cleanPath = window.location.pathname.replace(/^\/[^\/]+/, '');
+      window.location.replace('https://kafanatak-party.web.app' + cleanPath + window.location.search + window.location.hash);
+    }
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>🎡 Klasik Çarkıfelek | Canlı Yarışmacı & Seyirci Panosu</title>
