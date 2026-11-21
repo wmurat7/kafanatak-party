@@ -515,7 +515,12 @@ class FirebaseNetworkManager {
             'vampire': { file: 'koy.html', name: 'Vampir Köylü' },
             'aileler_yarisiyor': { file: 'aileler-yarisiyor.html', name: 'Aileler Yarışıyor' },
             'sarki': { file: 'sarki-duello.html', name: 'Şarkı Düellosu' },
-            'kelime_islem': { file: 'kelime-islem.html', name: 'Kelime İşlem' }
+            'kelime_islem': { file: 'kelime-islem.html', name: 'Kelime İşlem' },
+            'kelimebombasi': { file: 'kelime-bombasi.html', name: 'Kelime Bombası' },
+            'kelime-bombasi': { file: 'kelime-bombasi.html', name: 'Kelime Bombası' },
+            'bomb': { file: 'bomb.html', name: 'Saatli Bomba' },
+            'bottle': { file: 'bottle.html', name: 'Şişe Çevirmece' },
+            'tersses': { file: 'ters-ses.html', name: 'Ters Ses' }
           };
           const target = gameMap[foundOther.namespace];
           if (target && typeof window !== 'undefined') {

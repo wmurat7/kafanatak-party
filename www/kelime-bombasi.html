@@ -45,7 +45,9 @@
       align-items: center;
       gap: 4px;
       text-decoration: none;
+      transition: all 0.2s;
     }
+    .btn-leave-header:active { transform: scale(0.95); background: rgba(239, 68, 68, 0.3); }
     .header-logo { font-size: 2.2rem; display: inline-block; filter: drop-shadow(0 0 15px rgba(0, 245, 212, 0.6)); }
     h1 { font-size: 1.45rem; font-weight: 900; background: linear-gradient(135deg, #FFF, var(--primary), var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     .room-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 800; padding: 4px 14px; border-radius: 999px; background: rgba(0, 245, 212, 0.15); border: 1px solid var(--primary); color: var(--primary); margin-top: 4px; }
@@ -121,13 +123,49 @@
       color: #FFF;
       box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
     }
+    .btn-main:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none !important;
+    }
+
+    /* Çıkış Onay Modalı */
+    .confirm-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+      z-index: 9999;
+    }
+    .confirm-modal-card {
+      background: #161B2E;
+      border: 1.5px solid rgba(239, 68, 68, 0.4);
+      border-radius: 22px;
+      padding: 24px 20px;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+      animation: popIn 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+    @keyframes popIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
       <div class="header-top-row">
-        <a href="index.html" class="btn-leave-header">🚪 Çıkış</a>
+        <button type="button" id="btn-leave-header" class="btn-leave-header">🚪 Çıkış</button>
         <div class="header-logo">💥</div>
         <div style="width:60px;"></div>
       </div>
@@ -138,6 +176,7 @@
       </div>
     </header>
 
+    <!-- 1. Katılım / Lobi Aşaması -->
     <div id="stage-lobby" class="card">
       <h2 style="font-size:1.3rem; font-weight:900; color:var(--gold); margin-bottom:6px;">Oyuna Katıl!</h2>
       <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">Kategori ve harfi canlı takip et, kelimeyi ilk söyleyen ol!</p>
@@ -162,20 +201,56 @@
       </button>
     </div>
 
+    <!-- 2. Canlı Oyun Aşaması -->
     <div id="stage-playing" class="card" style="display:none;">
+      <!-- Oyuncu Kimliği -->
+      <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.05); padding:8px 14px; border-radius:12px; margin-bottom:12px; font-size:0.82rem;">
+        <span id="lbl-my-identity" style="font-weight:900; color:var(--primary);">🦁 Oyuncu</span>
+        <span id="lbl-kb-pass" style="font-weight:800; color:var(--gold);">0 Pas</span>
+      </div>
+
+      <!-- Kategori Kutusu -->
       <div style="background:linear-gradient(135deg, rgba(255,46,147,0.2), rgba(121,40,202,0.3)); border:2px solid #FF2E93; border-radius:16px; padding:16px; margin-bottom:14px;">
         <span style="font-size:0.75rem; color:#FFF; font-weight:900; text-transform:uppercase; display:block; margin-bottom:2px;">KATEGORİ:</span>
         <div id="lbl-kb-category" style="font-size:1.25rem; font-weight:900; color:var(--gold);">Yükleniyor...</div>
       </div>
 
+      <!-- Harf Kutusu -->
       <div style="background:rgba(0,0,0,0.45); border:2px solid var(--primary); border-radius:20px; padding:20px; margin-bottom:16px;">
         <span style="font-size:0.75rem; color:var(--text-muted); font-weight:800; display:block; margin-bottom:4px;">BAŞLANGIÇ HARFİ:</span>
-        <div id="lbl-kb-letter" style="font-size:3.5rem; font-weight:900; color:#00F5D4; line-height:1;">A</div>
+        <div id="lbl-kb-letter" style="font-size:3.8rem; font-weight:900; color:#00F5D4; line-height:1;">A</div>
       </div>
 
+      <!-- Patlama Bildirimi (Oturum patladığında görünür) -->
+      <div id="kb-exploded-banner" style="display:none; background:rgba(239,68,68,0.25); border:2px solid #EF4444; border-radius:16px; padding:14px; margin-bottom:14px;">
+        <div style="font-size:2.2rem; line-height:1;">💥 BOOOM!</div>
+        <div style="font-size:1.05rem; font-weight:900; color:#FFF; margin-top:6px;">Bomba Patladı!</div>
+        <div style="font-size:0.82rem; color:var(--text-muted); margin-top:2px;">Host yeni turu başlattığında oyun devam edecek.</div>
+      </div>
+
+      <!-- Zil / Pas Butonu -->
       <button type="button" id="btn-kb-buzzer" class="btn-main cyan" style="padding:16px; font-size:1.15rem; font-weight:900;">
         🎯 KELİMEYİ BİLDİM!
       </button>
+    </div>
+  </div>
+
+  <!-- Çıkış Onay Modalı -->
+  <div id="modal-confirm-exit" class="confirm-modal-overlay" style="display:none;">
+    <div class="confirm-modal-card">
+      <div style="font-size:2.4rem; margin-bottom:8px;">🚪</div>
+      <h3 style="font-size:1.15rem; font-weight:900; color:#FFF; margin-bottom:6px;">Oyundan Çıkılsın mı?</h3>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:18px;">
+        Odadan ayrılmak üzeresiniz. Tekrar bağlanmak için oda kodunu yeniden girmeniz gerekebilir.
+      </p>
+      <div style="display:flex; gap:10px;">
+        <button type="button" id="btn-modal-cancel" class="btn-main" style="flex:1; background:rgba(255,255,255,0.1); color:#FFF; box-shadow:none; padding:10px 14px; font-size:0.88rem;">
+          Vazgeç
+        </button>
+        <button type="button" id="btn-modal-confirm" class="btn-main danger" style="flex:1; padding:10px 14px; font-size:0.88rem;">
+          Çıkış Yap
+        </button>
+      </div>
     </div>
   </div>
 
@@ -184,14 +259,17 @@
 
     const AVATARS = ['🦁', '🦊', '🐼', '🐯', '🦄', '🐸', '🐶', '🐱'];
     let selectedAvatar = '🦁';
-    let myPlayerId = 'p_' + Math.random().toString(36).substr(2, 6);
+    let myPlayerId = '';
+    let myPlayerName = '';
     let roomId = (new URLSearchParams(window.location.search).get('room') || '').trim().toUpperCase();
+    let isExplodedState = false;
 
     if (roomId) {
       document.getElementById('inp-room-code').value = roomId;
       document.getElementById('lbl-room-id').textContent = roomId;
     }
 
+    // Avatar seçici
     const avContainer = document.getElementById('avatar-grid');
     AVATARS.forEach(av => {
       const btn = document.createElement('button');
@@ -206,16 +284,60 @@
       avContainer.appendChild(btn);
     });
 
-    document.getElementById('btn-join-room').onclick = async () => {
+    // Çıkış Modalı Dinleyicileri
+    const btnLeaveHeader = document.getElementById('btn-leave-header');
+    const modalConfirmExit = document.getElementById('modal-confirm-exit');
+    const btnModalCancel = document.getElementById('btn-modal-cancel');
+    const btnModalConfirm = document.getElementById('btn-modal-confirm');
+
+    btnLeaveHeader.onclick = () => {
+      modalConfirmExit.style.display = 'flex';
+    };
+
+    btnModalCancel.onclick = () => {
+      modalConfirmExit.style.display = 'none';
+    };
+
+    btnModalConfirm.onclick = async () => {
+      if (roomId && myPlayerId) {
+        try {
+          await firebaseNetwork.removePlayer('kelimebombasi', roomId, myPlayerId, myPlayerName);
+        } catch (e) {}
+      }
+      window.location.href = 'index.html';
+    };
+
+    // Odaya Katıl
+    const btnJoin = document.getElementById('btn-join-room');
+    btnJoin.onclick = async () => {
       const code = (document.getElementById('inp-room-code').value || roomId).trim().toUpperCase();
       const name = (document.getElementById('inp-player-name').value || 'Oyuncu').trim();
       if (!code) return alert('Lütfen oda kodunu girin!');
+      
+      btnJoin.disabled = true;
+      btnJoin.textContent = 'Bağlanılıyor...';
+
       roomId = code;
+      myPlayerName = name;
+      myPlayerId = firebaseNetwork.getOrCreatePlayerId('kelimebombasi', roomId, name);
+
+      // Katılım Uygunluğu Kontrolü (Oda kapalı mı, banlı mı, çapraz oda mı?)
+      const check = await firebaseNetwork.verifyJoinEligibility('kelimebombasi', roomId, myPlayerId);
+      if (!check.allowed) {
+        if (!check.redirected) {
+          alert('❌ ' + (check.reason || 'Odaya katılamazsınız!'));
+        }
+        btnJoin.disabled = false;
+        btnJoin.textContent = '🚀 Bombaya Katıl';
+        return;
+      }
+
       document.getElementById('lbl-room-id').textContent = roomId;
+      document.getElementById('lbl-my-identity').textContent = `${selectedAvatar} ${myPlayerName}`;
 
       await firebaseNetwork.setPlayer('kelimebombasi', roomId, {
         id: myPlayerId,
-        name,
+        name: myPlayerName,
         avatar: selectedAvatar,
         joinedAt: Date.now()
       });
@@ -223,19 +345,83 @@
       document.getElementById('stage-lobby').style.display = 'none';
       document.getElementById('stage-playing').style.display = 'block';
 
+      // Canlı Oda Dinlemesi
       firebaseNetwork.listenRoom('kelimebombasi', roomId, (room) => {
         if (!room) return;
-        if (room.category) document.getElementById('lbl-kb-category').textContent = room.category;
-        if (room.letter) document.getElementById('lbl-kb-letter').textContent = room.letter;
+
+        // Moderasyon ve Güvenlik
+        firebaseNetwork.handleClientSecurity(room, myPlayerId, {
+          onRoomClosed: (msg) => {
+            alert('🛑 ' + msg);
+            window.location.href = 'index.html';
+          },
+          onKicked: (reason) => {
+            alert('🚫 ' + reason);
+            window.location.href = 'index.html';
+          },
+          onWarning: (msg) => {
+            alert('⚠️ ' + msg);
+          }
+        });
+
+        // Kategori ve Harf Güncellemesi
+        if (room.category) {
+          document.getElementById('lbl-kb-category').textContent = room.category;
+        }
+        if (room.letter) {
+          document.getElementById('lbl-kb-letter').textContent = room.letter;
+        }
+        if (typeof room.passCount !== 'undefined') {
+          document.getElementById('lbl-kb-pass').textContent = `${room.passCount} Pas`;
+        }
+
+        // Patlama Durumu
+        const isExploded = Boolean(room.isExploded || room.phase === 'exploded');
+        isExplodedState = isExploded;
+
+        const expBanner = document.getElementById('kb-exploded-banner');
+        const buzzerBtn = document.getElementById('btn-kb-buzzer');
+
+        if (isExploded) {
+          expBanner.style.display = 'block';
+          buzzerBtn.disabled = true;
+          buzzerBtn.textContent = '💥 BOMBA PATLADI!';
+          buzzerBtn.style.background = 'rgba(239, 68, 68, 0.4)';
+          buzzerBtn.style.color = '#FFF';
+        } else {
+          expBanner.style.display = 'none';
+          buzzerBtn.disabled = false;
+          buzzerBtn.textContent = '🎯 KELİMEYİ BİLDİM!';
+          buzzerBtn.style.background = '';
+          buzzerBtn.style.color = '';
+        }
       });
     };
 
-    document.getElementById('btn-kb-buzzer').onclick = async () => {
-      await firebaseNetwork.sendAction('kelimebombasi', roomId, 'buzz_word', { playerId: myPlayerId });
-      document.getElementById('btn-kb-buzzer').textContent = '✅ Cevaplandı!';
+    // Zil / Pas Butonu Dinleyicisi
+    const btnBuzzer = document.getElementById('btn-kb-buzzer');
+    btnBuzzer.onclick = async () => {
+      if (isExplodedState || btnBuzzer.disabled) return;
+
+      if (navigator.vibrate) {
+        try { navigator.vibrate([60, 40, 80]); } catch (e) {}
+      }
+
+      btnBuzzer.disabled = true;
+      btnBuzzer.textContent = '✅ Bildin! Paslandı...';
+
+      await firebaseNetwork.sendAction('kelimebombasi', roomId, 'buzz_word', {
+        playerId: myPlayerId,
+        playerName: myPlayerName,
+        avatar: selectedAvatar
+      });
+
       setTimeout(() => {
-        document.getElementById('btn-kb-buzzer').textContent = '🎯 KELİMEYİ BİLDİM!';
-      }, 2000);
+        if (!isExplodedState) {
+          btnBuzzer.disabled = false;
+          btnBuzzer.textContent = '🎯 KELİMEYİ BİLDİM!';
+        }
+      }, 1500);
     };
   </script>
 </body>

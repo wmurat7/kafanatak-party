@@ -38,7 +38,8 @@ export class KelimeBombasiEngine {
       namespace: 'kelimebombasi',
       title: 'Kelime Bombası Masası',
       subtitle: '☁️ Harf ve kategori canlı akar, kelimeyi bilen zili çalar!',
-      prefix: 'kelime'
+      prefix: 'kelime',
+      onAction: (act, room) => this.handlePlayerAction(act, room)
     });
   }
 
@@ -47,9 +48,20 @@ export class KelimeBombasiEngine {
     if (this.multiHelper) {
       this.multiHelper.bindEvents((mode) => {
         console.log('[KelimeBombasi] Mod değişti:', mode);
+        if (mode === 'wifi') {
+          this.syncWithCloud();
+        }
       });
     }
     this.newRound();
+  }
+
+  handlePlayerAction(act, room) {
+    if (!act || this.isExploded) return;
+    if (act.type === 'buzz_word' || act.type === 'buzzer') {
+      const pName = act.playerName || (act.playerId && room && room.players && room.players[act.playerId] ? room.players[act.playerId].name : 'Bir oyuncu');
+      this.handlePass(pName);
+    }
   }
 
   bindEvents() {
@@ -68,6 +80,9 @@ export class KelimeBombasiEngine {
       btnBack.onclick = () => {
         clearInterval(this.timerInterval);
         try { sounds.stopPartyBeat(); } catch (e) {}
+        if (this.multiHelper) {
+          this.multiHelper.stopRoom();
+        }
         this.game.showScreen('partyGames');
       };
     }
@@ -84,14 +99,20 @@ export class KelimeBombasiEngine {
     this.category = KELIME_CATEGORIES[Math.floor(Math.random() * KELIME_CATEGORIES.length)];
     this.letter = KELIME_LETTERS[Math.floor(Math.random() * KELIME_LETTERS.length)];
 
-    document.getElementById('kelime-cat-title').textContent = this.category;
-    document.getElementById('kelime-letter-badge').textContent = `HARF: ${this.letter}`;
-    document.getElementById('kelime-pass-count').textContent = `0 Pas (15s Süre)`;
+    const catEl = document.getElementById('kelime-cat-title');
+    if (catEl) catEl.textContent = this.category;
+    const letterEl = document.getElementById('kelime-letter-badge');
+    if (letterEl) letterEl.textContent = `HARF: ${this.letter}`;
+    const passEl = document.getElementById('kelime-pass-count');
+    if (passEl) passEl.textContent = `0 Pas (15s Süre)`;
 
-    document.getElementById('kelime-active-stage').style.display = 'block';
-    document.getElementById('kelime-exploded-stage').style.display = 'none';
+    const actStage = document.getElementById('kelime-active-stage');
+    if (actStage) actStage.style.display = 'block';
+    const expStage = document.getElementById('kelime-exploded-stage');
+    if (expStage) expStage.style.display = 'none';
 
     this.startTimer();
+    this.syncWithCloud();
   }
 
   startTimer() {
@@ -145,15 +166,18 @@ export class KelimeBombasiEngine {
     }
   }
 
-  handlePass() {
+  handlePass(passedByName = null) {
     if (this.isExploded) return;
     this.passCount++;
     sounds.playCorrect();
 
     // 15 saniye kuralı: Her pas yeni oyuncuya 15 saniye tanır
     this.baseSeconds = 15.0;
-    document.getElementById('kelime-pass-count').textContent = `${this.passCount} Pas (15s Süre)`;
+    const passText = passedByName ? `${this.passCount} Pas (${passedByName})` : `${this.passCount} Pas (15s Süre)`;
+    const countEl = document.getElementById('kelime-pass-count');
+    if (countEl) countEl.textContent = passText;
     this.startTimer();
+    this.syncWithCloud();
   }
 
   explode() {
@@ -166,8 +190,25 @@ export class KelimeBombasiEngine {
       navigator.vibrate([100, 50, 100, 50, 400]);
     }
 
-    document.getElementById('kelime-active-stage').style.display = 'none';
-    document.getElementById('kelime-exploded-stage').style.display = 'block';
-    document.getElementById('kelime-exploded-desc').textContent = `${this.passCount} pas sonrasında süre doldu ve bomba elinde patladı!`;
+    const actStage = document.getElementById('kelime-active-stage');
+    if (actStage) actStage.style.display = 'none';
+    const expStage = document.getElementById('kelime-exploded-stage');
+    if (expStage) expStage.style.display = 'block';
+    const expDesc = document.getElementById('kelime-exploded-desc');
+    if (expDesc) expDesc.textContent = `${this.passCount} pas sonrasında süre doldu ve bomba elinde patladı!`;
+
+    this.syncWithCloud();
+  }
+
+  syncWithCloud() {
+    if (!this.multiHelper || this.multiHelper.mode !== 'wifi') return;
+    this.multiHelper.updateRoomState({
+      category: this.category,
+      letter: this.letter,
+      phase: this.isExploded ? 'exploded' : 'playing',
+      isExploded: this.isExploded,
+      passCount: this.passCount,
+      lastActive: Date.now()
+    }).catch(err => console.warn('[KelimeBombasi] sync error:', err));
   }
 }

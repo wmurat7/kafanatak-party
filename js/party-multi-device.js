@@ -25,6 +25,8 @@ export class PartyMultiDeviceHelper {
     this.prefix = config.prefix || config.namespace.replace(/[^a-z0-9]/gi, '');
     this.getJoinUrl = config.getJoinUrl || ((code) => firebaseNetwork.getGameUrl(this.namespace, code));
     this.onPlayerCountChange = config.onPlayerCountChange || null;
+    this.onAction = config.onAction || null;
+    this.processedActionIds = new Set();
 
     this.mode = 'local'; // 'local' | 'wifi'
     this.roomId = null;
@@ -234,6 +236,25 @@ export class PartyMultiDeviceHelper {
       if (this.onPlayerCountChange) {
         this.onPlayerCountChange(pList.length, pList);
       }
+
+      // Odaya gelen yeni aksiyonları dinle ve onAction geri çağrımına ilet (örn: buzz_word, buzzer)
+      if (this.onAction && room.actions) {
+        const now = Date.now();
+        Object.entries(room.actions).forEach(([actId, act]) => {
+          if (!act || this.processedActionIds.has(actId)) return;
+          // 20 saniyeden eski aksiyonları yok say
+          if (act.timestamp && (now - act.timestamp > 20000)) {
+            this.processedActionIds.add(actId);
+            return;
+          }
+          this.processedActionIds.add(actId);
+          try {
+            this.onAction(act, room);
+          } catch (e) {
+            console.error('[PartyMultiDeviceHelper] onAction error:', e);
+          }
+        });
+      }
     });
 
     return this.roomId;
@@ -258,6 +279,7 @@ export class PartyMultiDeviceHelper {
     }
     this.roomId = null;
     this.connectedPlayers = [];
+    this.processedActionIds.clear();
   }
 }
 
