@@ -1778,7 +1778,7 @@
       }
 
       // Yedek yerel sunucu yoklaması (Sadece yerel HTTP ağındaysa, GitHub Pages HTTPS'de 404 atılmaz)
-      if (location.protocol === 'http:' && !location.hostname.includes('github.io')) {
+      if (location.protocol === 'http:' && !location.hostname.includes('github.io') && !location.hostname.includes('web.app')) {
         try {
           const localCtrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
           const localTimeout = localCtrl ? setTimeout(() => localCtrl.abort(), 2000) : null;
@@ -1976,7 +1976,7 @@
           });
         } catch (e) {}
 
-        if (location.protocol === 'http:' && !location.hostname.includes('github.io')) {
+        if (location.protocol === 'http:' && !location.hostname.includes('github.io') && !location.hostname.includes('web.app')) {
           try {
             await fetch('/api/room/cheer', {
               method: 'POST',
@@ -2015,7 +2015,7 @@
           });
         } catch (e) {}
 
-        if (location.protocol === 'http:' && !location.hostname.includes('github.io')) {
+        if (location.protocol === 'http:' && !location.hostname.includes('github.io') && !location.hostname.includes('web.app')) {
           try {
             await fetch('/api/room/cheer', {
               method: 'POST',

@@ -210,8 +210,8 @@
     <div id="screen-join" class="card">
       <h2 style="font-size:1.25rem; font-weight:900; margin-bottom:12px;">Köy Meydanına Giriş</h2>
       <div class="form-group">
-        <label for="input-room-code">Oda Kodu (4 Harf)</label>
-        <input type="text" id="input-room-code" class="input-field" maxlength="4" placeholder="Örn: KOY1" style="text-transform:uppercase; letter-spacing:3px; text-align:center;">
+        <label for="input-room-code">Oda Kodu (4 Haneli)</label>
+        <input type="text" id="input-room-code" class="input-field" maxlength="8" placeholder="Örn: 4F9K" style="text-transform:uppercase; letter-spacing:3px; text-align:center;">
       </div>
       <div class="form-group">
         <label for="input-player-name">Adınız / Lakabınız</label>
@@ -519,45 +519,40 @@
             startPolling();
             setTimeout(() => { isJoining = false; }, 1000);
             return;
-          }
-        }
       } catch (err) {
         console.warn('Firebase bulut kontrolü hatası, yerel deneniyor:', err);
       }
 
-      // 2. Yedek: Yerel Node.js sunucu (Aynı Wi-Fi Modu)
-      try {
-        const res = await fetch('/api/vampire/join', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomId: roomCode, name: playerName, avatar: selectedAvatar })
-        });
-        const data = await res.json();
-        if (!res.ok || data.error) {
-          alert(data.error || 'Odaya katılırken bir hata oluştu!');
-          btnJoinRoom.disabled = false;
-          btnJoinRoom.textContent = 'Köy Halkına Katıl ➔';
-          isJoining = false;
-          return;
-        }
+      // 2. Yedek: Yerel Node.js sunucu (Yalnızca yerel HTTP ortamında)
+      if (location.protocol === 'http:' && !location.hostname.includes('web.app') && !location.hostname.includes('github.io')) {
+        try {
+          const res = await fetch('/api/vampire/join', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomId: roomCode, name: playerName, avatar: selectedAvatar })
+          });
+          const data = await res.json();
+          if (data && data.roomId) {
+            networkMode = 'local';
+            currentRoomId = data.roomId;
+            myPlayerId = data.playerId;
+            document.getElementById('room-badge').textContent = 'ODA: ' + currentRoomId;
+            document.getElementById('btn-leave-room').style.display = 'inline-flex';
 
-        networkMode = 'local';
-        currentRoomId = data.roomId;
-        myPlayerId = data.playerId;
-        document.getElementById('room-badge').textContent = 'ODA: ' + currentRoomId;
-        document.getElementById('btn-leave-room').style.display = 'inline-flex';
+            document.getElementById('screen-join').style.display = 'none';
+            document.getElementById('screen-lobby').style.display = 'block';
 
-        document.getElementById('screen-join').style.display = 'none';
-        document.getElementById('screen-lobby').style.display = 'block';
-
-        startPolling();
-        setTimeout(() => { isJoining = false; }, 1000);
-      } catch (e) {
-        alert('Odaya bağlanılamadı! Oda kodunu kontrol edin veya internet bağlantınızı kontrol edin.');
-        btnJoinRoom.disabled = false;
-        btnJoinRoom.textContent = 'Köy Halkına Katıl ➔';
-        isJoining = false;
+            startPolling();
+            setTimeout(() => { isJoining = false; }, 1000);
+            return;
+          }
+        } catch (e) {}
       }
+
+      alert('❌ Köy odası bulunamadı! Lütfen oda kodunu kontrol ediniz veya Köy Muhtarının (Host) oyunu başlattığından emin olunuz.');
+      btnJoinRoom.disabled = false;
+      btnJoinRoom.textContent = 'Köy Halkına Katıl ➔';
+      isJoining = false;
     });
 
     // --- ÇIKIŞ ONAYI YÖNETİMİ ---
@@ -842,7 +837,7 @@
           if (!raw) return;
           inMemoryKoyState = raw;
           processRawFirebaseState(raw);
-        } else {
+        } else if (location.protocol === 'http:' && !location.hostname.includes('web.app') && !location.hostname.includes('github.io')) {
           const res = await fetch(`/api/vampire/state?room=${currentRoomId}&player=${myPlayerId}`);
           if (!res.ok) return;
           const state = await res.json();

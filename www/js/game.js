@@ -6103,7 +6103,7 @@ SADECE geçerli bir JSON array döndür. Başka hiçbir açıklama veya markdown
   // ==========================================
   getApkDownloadUrl(source = null) {
     const activeSource = source || this.currentApkSource || localStorage.getItem('kafanatak_apk_source') || 'cloud';
-    const defaultCloudUrl = 'https://github.com/wmurat7/kafanatak-party/releases/latest/download/KafanaTak-v1.0.apk';
+    const defaultCloudUrl = 'https://kafanatak-party.web.app/KafanaTak-v1.0.apk';
     const customCloudUrl = localStorage.getItem('kafanatak_custom_apk_url');
 
     if (activeSource === 'cloud') {

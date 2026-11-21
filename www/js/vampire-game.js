@@ -690,49 +690,102 @@ export class VampireGameEngine {
     const clientUrl = firebaseNetwork.getKoyUrl(state.roomId);
 
     if (state.phase === 'lobby') {
-      container.innerHTML = `
-        <div class="card" style="text-align:center; max-width:480px; margin:0 auto; padding:22px; border:2px solid var(--primary); box-shadow:0 12px 35px rgba(0,245,212,0.2);">
-          <div style="font-size:0.78rem; font-weight:800; color:var(--primary); text-transform:uppercase; letter-spacing:1px;">🌐 ÇEVRİMİÇİ BULUT ODASI AÇIK</div>
-          <h2 style="font-size:2.4rem; font-weight:900; letter-spacing:6px; color:#FFF; margin:6px 0;">ODA: <span style="color:var(--primary);">${state.roomId}</span></h2>
-          <p style="font-size:0.86rem; color:var(--text-dim); margin-bottom:14px;">
-            Arkadaşlarınız kendi telefonlarından aşağıdaki QR kodu okutarak veya kodu girerek odaya katılabilir:
-          </p>
+      const existingLobby = document.getElementById('vampire-lobby-card');
+      if (existingLobby && this.lastRenderedLobbyRoomId === state.roomId) {
+        // Zaten lobi çizili! Sadece dinamik kısımları güncelle, DOM'u ve QR kodunu asla silip baştan çizme!
+        const countBadge = document.getElementById('vampire-connected-count-badge');
+        if (countBadge) countBadge.textContent = `${state.players.length} Köylü Meydanda`;
 
-          <div id="vampire-qr-box" style="background:#FFF; padding:10px; border-radius:18px; display:inline-block; margin-bottom:14px; box-shadow:0 8px 30px rgba(0,245,212,0.4);">
+        const countTitle = document.getElementById('vampire-lobby-count-title');
+        if (countTitle) countTitle.textContent = `Toplanan Köylüler (${state.players.length}):`;
+
+        const startBtn = document.getElementById('btn-multi-start-game');
+        if (startBtn) {
+          startBtn.innerHTML = `🚀 Oyunu Başlat & Rolleri Dağıt (${state.players.length} Oyuncu)`;
+          startBtn.style.opacity = state.players.length >= 3 ? '1' : '0.6';
+        }
+
+        const pillsContainer = document.getElementById('vampire-connected-players-list');
+        if (pillsContainer) {
+          pillsContainer.innerHTML = state.players.length === 0
+            ? '<span style="font-size:0.82rem; color:var(--text-dim);">Henüz kimse katılmadı. QR kodu okutun!</span>'
+            : state.players.map(p => `
+                <div class="player-pill" style="background:rgba(0,245,212,0.15); border:1.5px solid var(--primary); display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px; margin:3px; font-weight:800; font-size:0.85rem;">
+                  <span>${p.avatar || '🧑‍🌾'}</span>
+                  <span>${p.name}</span>
+                  <button type="button" class="btn-vampire-warn" data-id="${p.id}" data-name="${p.name}" style="background:rgba(251,191,36,0.2); border:1px solid #FBBF24; color:#FDE047; font-size:0.68rem; font-weight:900; border-radius:6px; padding:2px 6px; cursor:pointer;" title="İkaz Gönder">⚠️ İkaz</button>
+                  <button type="button" class="btn-vampire-kick" data-id="${p.id}" data-name="${p.name}" style="background:rgba(239,68,68,0.2); border:1px solid #EF4444; color:#FCA5A5; font-size:0.68rem; font-weight:900; border-radius:6px; padding:2px 6px; cursor:pointer;" title="Oyundan At">🚫 At</button>
+                </div>
+              `).join('');
+          this.bindLobbyPlayerActions(pillsContainer, state.roomId);
+        }
+        return;
+      }
+
+      this.lastRenderedLobbyRoomId = state.roomId;
+      this.currentRenderedPhase = 'lobby';
+
+      container.innerHTML = `
+        <div id="vampire-lobby-card" class="card" style="text-align:center; max-width:480px; margin:0 auto; padding:22px; border:2px solid var(--primary); box-shadow:0 12px 35px rgba(0,245,212,0.2);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-size:0.75rem; font-weight:900; color:var(--primary); letter-spacing:1px; background:rgba(0,245,212,0.12); padding:4px 10px; border-radius:999px;">🌐 BULUT ODASI AÇIK</span>
+            <span id="vampire-connected-count-badge" style="font-size:0.75rem; font-weight:900; color:#FF8E53; background:rgba(255,142,83,0.15); padding:4px 10px; border-radius:999px;">${state.players.length} Köylü Meydanda</span>
+          </div>
+
+          <div style="background:rgba(0,0,0,0.35); border-radius:18px; padding:14px; margin-bottom:14px; border:1px solid rgba(255,255,255,0.1);">
+            <div style="font-size:0.78rem; font-weight:800; color:var(--text-dim); text-transform:uppercase;">KATILIM KODU</div>
+            <div style="display:flex; justify-content:center; align-items:center; gap:10px; margin:6px 0;">
+              <span style="font-size:2.5rem; font-weight:900; letter-spacing:6px; color:#FFF; font-family:monospace;">${state.roomId}</span>
+              <button type="button" id="btn-vampire-copy-code" class="btn-secondary" style="font-size:0.8rem; padding:6px 12px; border-radius:10px; cursor:pointer;" title="Kodu Kopyala">
+                📋 Kopyala
+              </button>
+            </div>
+            <div style="font-size:0.78rem; color:var(--text-dim);">
+              veya <strong style="color:var(--primary); word-break:break-all;">${clientUrl}</strong>
+            </div>
+          </div>
+
+          <div id="vampire-qr-box" style="background:#FFF; padding:10px; border-radius:18px; display:inline-block; margin-bottom:14px; box-shadow:0 8px 30px rgba(0,245,212,0.35);">
             <canvas id="vampire-qr-canvas" width="220" height="220" style="display:block; max-width:100%; border-radius:10px;"></canvas>
           </div>
 
-          <div style="font-size:0.82rem; color:var(--text-dim); margin-bottom:10px; word-break:break-all;">
-            Veya adresi açın: <strong style="color:var(--primary); font-size:0.85rem;">${clientUrl}</strong>
-          </div>
+          <p style="font-size:0.84rem; color:var(--text-dim); margin-bottom:14px; line-height:1.4;">
+            Arkadaşlarınız telefon kameralarından yukarıdaki QR kodu okutarak katılabilir. Uygulama yüklemek gerekmez!
+          </p>
 
           <div style="background:rgba(0,0,0,0.4); border-radius:14px; padding:12px; margin-bottom:16px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <span style="font-size:0.82rem; font-weight:800; color:var(--primary);">Toplanan Köylüler (${state.players.length}):</span>
+              <span id="vampire-lobby-count-title" style="font-size:0.82rem; font-weight:800; color:var(--primary);">Toplanan Köylüler (${state.players.length}):</span>
               <button type="button" class="btn-host-moderation-badge" id="btn-vamp-mod-open" style="padding:2px 8px; font-size:0.72rem; vertical-align:middle;">
                 <span class="pulse-dot"></span> 🛡️ Muhtarlık Masası
               </button>
             </div>
-            <div class="player-pills" style="justify-content:center; min-height:40px; gap:6px;">
+            <div id="vampire-connected-players-list" class="player-pills" style="justify-content:center; min-height:40px; gap:6px;">
               ${state.players.length === 0 ? '<span style="font-size:0.82rem; color:var(--text-dim);">Henüz kimse katılmadı. QR kodu okutun!</span>' : state.players.map(p => `
-                <div class="player-pill" style="background:rgba(0,245,212,0.15); border:1px solid var(--primary); display:inline-flex; align-items:center; gap:6px; padding:4px 10px;">
+                <div class="player-pill" style="background:rgba(0,245,212,0.15); border:1.5px solid var(--primary); display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px; margin:3px; font-weight:800; font-size:0.85rem;">
                   <span>${p.avatar || '🧑‍🌾'}</span>
                   <span>${p.name}</span>
-                  <button type="button" class="btn-vampire-warn" data-id="${p.id}" data-name="${p.name}" style="background:rgba(251,191,36,0.2); border:1px solid #FBBF24; color:#FDE047; font-size:0.68rem; font-weight:900; border-radius:6px; padding:1px 5px; cursor:pointer;" title="İkaz Gönder">⚠️ İkaz</button>
-                  <button type="button" class="btn-vampire-kick" data-id="${p.id}" data-name="${p.name}" style="background:rgba(239,68,68,0.2); border:1px solid #EF4444; color:#FCA5A5; font-size:0.68rem; font-weight:900; border-radius:6px; padding:1px 5px; cursor:pointer;" title="Oyundan At">🚫 At</button>
+                  <button type="button" class="btn-vampire-warn" data-id="${p.id}" data-name="${p.name}" style="background:rgba(251,191,36,0.2); border:1px solid #FBBF24; color:#FDE047; font-size:0.68rem; font-weight:900; border-radius:6px; padding:2px 6px; cursor:pointer;" title="İkaz Gönder">⚠️ İkaz</button>
+                  <button type="button" class="btn-vampire-kick" data-id="${p.id}" data-name="${p.name}" style="background:rgba(239,68,68,0.2); border:1px solid #EF4444; color:#FCA5A5; font-size:0.68rem; font-weight:900; border-radius:6px; padding:2px 6px; cursor:pointer;" title="Oyundan At">🚫 At</button>
                 </div>
               `).join('')}
             </div>
           </div>
 
-          <button type="button" id="btn-multi-start-game" class="btn-main primary" style="font-size:1.15rem; padding:15px; width:100%;">
+          <button type="button" id="btn-multi-start-game" class="btn-main primary" style="font-size:1.15rem; padding:15px; width:100%; opacity:${state.players.length >= 3 ? '1' : '0.6'};">
             🚀 Oyunu Başlat & Rolleri Dağıt (${state.players.length} Oyuncu)
           </button>
         </div>
       `;
 
-      // QR Kod çiz (Kütüphanesiz veya QRCode Canvas ile)
       this.drawQRCode('vampire-qr-canvas', clientUrl);
+
+      document.getElementById('btn-vampire-copy-code')?.addEventListener('click', () => {
+        if (window.sounds && window.sounds.playClick) window.sounds.playClick();
+        navigator.clipboard?.writeText(state.roomId);
+        if (window.game && window.game.showToast) window.game.showToast(`📋 Oda kodu kopyalandı: ${state.roomId}`);
+        else alert(`📋 Oda kodu kopyalandı: ${state.roomId}`);
+      });
 
       document.getElementById('btn-vamp-mod-open')?.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -743,36 +796,12 @@ export class VampireGameEngine {
         });
       });
 
-      // Muhtar İkaz & Atma Dinleyicileri
-      container.querySelectorAll('.btn-vampire-warn').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const pId = btn.dataset.id;
-          const pName = btn.dataset.name;
-          const reason = prompt(`⚠️ ${pName} adlı köylüye gönderilecek ikaz mesajı:`, 'Lütfen kurallara uyun ve oyundan ayrılmayın!');
-          if (reason && reason.trim()) {
-            firebaseNetwork.warnPlayer('vampire', state.roomId, pId, reason.trim());
-            alert(`⚠️ ${pName} ikaz edildi.`);
-          }
-        };
-      });
-
-      container.querySelectorAll('.btn-vampire-kick').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const pId = btn.dataset.id;
-          const pName = btn.dataset.name;
-          if (confirm(`🚫 ${pName} adlı oyuncuyu oyundan atmak istediğinize emin misiniz?`)) {
-            firebaseNetwork.kickPlayer('vampire', state.roomId, pId, 'Köy Muhtarı (Host) tarafından oyundan çıkarıldınız.');
-            this.players = this.players.filter(x => x.id !== pId);
-            this.renderMultiHostScreen({ ...state, players: this.players });
-          }
-        };
-      });
+      const pillsList = document.getElementById('vampire-connected-players-list');
+      if (pillsList) this.bindLobbyPlayerActions(pillsList, state.roomId);
 
       document.getElementById('btn-multi-start-game').addEventListener('click', async () => {
-        if (state.players.length < 3) {
-          alert('Oyunu başlatmak için en az 3 oyuncu katılmalıdır!');
+        if (this.players.length < 3) {
+          alert('Vampir - Köylü başlatmak için en az 3 (tercihen 4+) oyuncu katılmalıdır!');
           return;
         }
         await this.startMultiGame();
@@ -781,8 +810,43 @@ export class VampireGameEngine {
     }
 
     // Oyun Fazı (Host Büyük Ekran / TV Panosu)
+    this.lastRenderedLobbyRoomId = null;
+
+    if (this.currentRenderedPhase === state.phase && document.getElementById('vampire-game-card')) {
+      // Faz değişmemiş; sadece canlı sayaçları güncelle!
+      const nightBox = document.getElementById('vampire-night-actions-box');
+      if (nightBox && state.phase === 'night') {
+        nightBox.innerHTML = `
+          <div style="font-weight:800; color:#FF8E53; margin-bottom:4px;">🌙 Gece Eylemleri:</div>
+          <div>🧛 Vampir: <strong>${this.nightActions.vampireTarget ? 'Hedef Seçildi ✓' : 'Bekleniyor...'}</strong></div>
+          ${this.settings.hasDoctor ? `<div>🩺 Doktor: <strong>${this.nightActions.doctorTarget ? 'Seçildi ✓' : 'Bekleniyor...'}</strong></div>` : ''}
+          ${this.settings.hasDetective ? `<div>🕵️ Komiser: <strong>${this.nightActions.detectiveTarget ? 'Seçildi ✓' : 'Bekleniyor...'}</strong></div>` : ''}
+        `;
+      }
+      const voteBox = document.getElementById('vampire-live-vote-box');
+      if (voteBox && state.phase === 'voting') {
+        voteBox.innerHTML = `
+          <div style="font-size:0.82rem; font-weight:800; color:#FCA5A5; text-transform:uppercase; margin-bottom:8px;">🗳️ CANLI SANDIK DURUMU:</div>
+          <p style="font-size:0.85rem; color:#CBD5E1; margin:0;">
+            Oy Verenler: <strong style="color:var(--primary); font-size:1.05rem;">${Object.keys(this.votes).length} / ${state.players.filter(p => p.alive).length}</strong>
+          </p>
+        `;
+      }
+      const pListContainer = document.getElementById('vampire-game-players-pills');
+      if (pListContainer) {
+        pListContainer.innerHTML = state.players.map(p => `
+          <div class="player-pill ${p.alive ? '' : 'dead'}" style="${!p.alive ? 'opacity:0.4; text-decoration:line-through; background:rgba(239,68,68,0.1);' : ''}">
+            <span>${p.avatar || '🧑‍🌾'}</span> <span>${p.name}</span> ${!p.alive ? '☠️' : ''}
+          </div>
+        `).join('');
+      }
+      return;
+    }
+
+    this.currentRenderedPhase = state.phase;
+
     container.innerHTML = `
-      <div class="card" style="text-align:center; max-width:480px; margin:0 auto; padding:22px; border:2px solid rgba(255,46,147,0.4); box-shadow:0 12px 35px rgba(255,46,147,0.2);">
+      <div id="vampire-game-card" class="card" style="text-align:center; max-width:480px; margin:0 auto; padding:22px; border:2px solid rgba(255,46,147,0.4); box-shadow:0 12px 35px rgba(255,46,147,0.2);">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
           <span style="font-size:0.82rem; font-weight:800; color:var(--primary); background:rgba(0,245,212,0.15); padding:3px 10px; border-radius:999px;">ODA: ${state.roomId}</span>
           <span style="font-size:0.82rem; font-weight:800; color:#FF2E93; background:rgba(255,46,147,0.15); padding:3px 10px; border-radius:999px;">${state.dayNumber}. ${state.phase.toUpperCase()}</span>
@@ -798,7 +862,7 @@ export class VampireGameEngine {
 
         <!-- Canlı Eylem ve Sandık Göstergesi -->
         ${state.phase === 'night' ? `
-          <div style="background:rgba(255,46,147,0.12); border:1.5px solid rgba(255,46,147,0.3); border-radius:14px; padding:12px; margin-bottom:14px; text-align:left; font-size:0.84rem;">
+          <div id="vampire-night-actions-box" style="background:rgba(255,46,147,0.12); border:1.5px solid rgba(255,46,147,0.3); border-radius:14px; padding:12px; margin-bottom:14px; text-align:left; font-size:0.84rem;">
             <div style="font-weight:800; color:#FF8E53; margin-bottom:4px;">🌙 Gece Eylemleri:</div>
             <div>🧛 Vampir: <strong>${this.nightActions.vampireTarget ? 'Hedef Seçildi ✓' : 'Bekleniyor...'}</strong></div>
             ${this.settings.hasDoctor ? `<div>🩺 Doktor: <strong>${this.nightActions.doctorTarget ? 'Seçildi ✓' : 'Bekleniyor...'}</strong></div>` : ''}
@@ -807,17 +871,17 @@ export class VampireGameEngine {
         ` : ''}
 
         ${state.phase === 'voting' ? `
-          <div style="background:rgba(239,68,68,0.15); border:1.5px solid #EF4444; border-radius:16px; padding:14px; margin-bottom:16px; text-align:left;">
+          <div id="vampire-live-vote-box" style="background:rgba(239,68,68,0.15); border:1.5px solid #EF4444; border-radius:16px; padding:14px; margin-bottom:16px; text-align:left;">
             <div style="font-size:0.82rem; font-weight:800; color:#FCA5A5; text-transform:uppercase; margin-bottom:8px;">🗳️ CANLI SANDIK DURUMU:</div>
-            <p style="font-size:0.8rem; color:#CBD5E1; margin:0;">
-              Oy Verenler: <strong>${Object.keys(this.votes).length} / ${state.players.filter(p => p.alive).length}</strong>
+            <p style="font-size:0.85rem; color:#CBD5E1; margin:0;">
+              Oy Verenler: <strong style="color:var(--primary); font-size:1.05rem;">${Object.keys(this.votes).length} / ${state.players.filter(p => p.alive).length}</strong>
             </p>
           </div>
         ` : ''}
 
         <div style="background:rgba(0,0,0,0.4); border-radius:14px; padding:12px; margin-bottom:16px; text-align:left;">
           <div style="font-size:0.78rem; font-weight:800; color:var(--text-dim); text-transform:uppercase; margin-bottom:8px;">Köy Halkı Durumu:</div>
-          <div class="player-pills" style="justify-content:flex-start;">
+          <div id="vampire-game-players-pills" class="player-pills" style="justify-content:flex-start;">
             ${state.players.map(p => `
               <div class="player-pill ${p.alive ? '' : 'dead'}" style="${!p.alive ? 'opacity:0.4; text-decoration:line-through; background:rgba(239,68,68,0.1);' : ''}">
                 <span>${p.avatar || '🧑‍🌾'}</span> <span>${p.name}</span> ${!p.alive ? '☠️' : ''}
@@ -851,6 +915,37 @@ export class VampireGameEngine {
         await this.resetMultiGame();
       });
     }
+  }
+
+  bindLobbyPlayerActions(container, roomId) {
+    if (!container) return;
+    container.querySelectorAll('.btn-vampire-warn').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const pId = btn.dataset.id;
+        const pName = btn.dataset.name;
+        const reason = prompt(`⚠️ ${pName} adlı köylüye gönderilecek ikaz mesajı:`, 'Lütfen kurallara uyun ve oyundan ayrılmayın!');
+        if (reason && reason.trim()) {
+          firebaseNetwork.warnPlayer('vampire', roomId, pId, reason.trim());
+          if (window.game && window.game.showToast) window.game.showToast(`⚠️ ${pName} ikaz edildi.`);
+          else alert(`⚠️ ${pName} ikaz edildi.`);
+        }
+      };
+    });
+
+    container.querySelectorAll('.btn-vampire-kick').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const pId = btn.dataset.id;
+        const pName = btn.dataset.name;
+        if (confirm(`🚫 ${pName} adlı oyuncuyu oyundan atmak istediğinize emin misiniz?`)) {
+          firebaseNetwork.kickPlayer('vampire', roomId, pId, 'Köy Muhtarı (Host) tarafından oyundan çıkarıldınız.');
+          this.players = this.players.filter(x => x.id !== pId);
+          this.renderMultiHostScreen({ roomId, phase: 'lobby', dayNumber: 1, players: this.players, narratorText: '' });
+        }
+      };
+    });
+  }
   }
 
   async startMultiGame() {

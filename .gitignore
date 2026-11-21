@@ -6,3 +6,4 @@ android/build/
 *.png
 scratch/
 .system_generated/
+.firebase/

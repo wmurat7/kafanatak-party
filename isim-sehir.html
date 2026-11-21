@@ -1284,7 +1284,7 @@
       }
 
       // 2. Yerel Sunucu Yoklaması (Yalnızca yerel ağda / HTTP ortamında)
-      if (location.protocol === 'http:' && !location.hostname.includes('github.io')) {
+      if (location.protocol === 'http:' && !location.hostname.includes('github.io') && !location.hostname.includes('web.app')) {
         try {
           const res = await fetch('/api/isim-sehir/join', {
             method: 'POST',
@@ -1554,7 +1554,7 @@
       } catch (e) {}
 
       // Yerel sunucu yoklaması (Yalnızca yerel ağda)
-      if (location.protocol === 'http:' && !location.hostname.includes('github.io')) {
+      if (location.protocol === 'http:' && !location.hostname.includes('github.io') && !location.hostname.includes('web.app')) {
         try {
           const res = await fetch(`/api/isim-sehir/state?roomId=${state.roomId}&playerId=${state.playerId}`);
           if (!res.ok) return;

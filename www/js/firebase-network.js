@@ -6,7 +6,7 @@ export const DEFAULT_FIREBASE_CONFIG = {
   // Varsayılan Firebase Realtime Database Endpoint'i (Kafana Tak Party Resmi RTDB)
   dbUrl: 'https://kafanatak-party-default-rtdb.europe-west1.firebasedatabase.app',
   // İkinci telefonların internet üzerinden açacağı web sayfası adresi
-  webAppUrl: 'https://wmurat7.github.io/kafanatak-party'
+  webAppUrl: 'https://kafanatak-party.web.app'
 };
 
 class FirebaseNetworkManager {
@@ -18,7 +18,7 @@ class FirebaseNetworkManager {
     // Eski veya geçersiz kayıtları temizle
     if (typeof localStorage !== 'undefined') {
       const savedWeb = localStorage.getItem(this.storageKeyWeb);
-      if (savedWeb && savedWeb.includes('pluswalnut')) {
+      if (savedWeb && (savedWeb.includes('pluswalnut') || savedWeb.includes('wmurat7') || savedWeb.includes('github.io'))) {
         localStorage.removeItem(this.storageKeyWeb);
       }
       const savedDb = localStorage.getItem(this.storageKeyDb);
@@ -56,7 +56,7 @@ class FirebaseNetworkManager {
 
   getWebAppUrl() {
     let url = localStorage.getItem(this.storageKeyWeb);
-    if (url && url.includes('pluswalnut')) {
+    if (url && (url.includes('pluswalnut') || url.includes('wmurat7') || url.includes('github.io'))) {
       localStorage.removeItem(this.storageKeyWeb);
       url = null;
     }
