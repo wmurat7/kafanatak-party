@@ -39,7 +39,10 @@ export class KelimeBombasiEngine {
       title: 'Kelime Bombası Masası',
       subtitle: '☁️ Harf ve kategori canlı akar, kelimeyi bilen zili çalar!',
       prefix: 'kelime',
-      onAction: (act, room) => this.handlePlayerAction(act, room)
+      onAction: (act, room) => this.handlePlayerAction(act, room),
+      onRoomRefresh: (newRoomId) => {
+        this.syncWithCloud();
+      }
     });
   }
 

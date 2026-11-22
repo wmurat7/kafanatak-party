@@ -179,10 +179,22 @@ export class IsimSehirGameEngine {
       };
     }
 
-    // Odayı ve Sistemi Sıfırla
+    // Odayı ve Sistemi Sıfırla / Yenile
     const btnReset = document.getElementById('btn-isim-reset-room');
     if (btnReset) {
-      btnReset.onclick = () => this.resetRoom();
+      btnReset.onclick = async () => {
+        sounds.playClick();
+        btnReset.disabled = true;
+        btnReset.innerHTML = '<span>⏳ Yenileniyor...</span>';
+        await this.resetRoom();
+        btnReset.innerHTML = '<span>✅ Yenilendi!</span>';
+        setTimeout(() => {
+          if (btnReset) {
+            btnReset.disabled = false;
+            btnReset.innerHTML = '<span>🔄 Odayı / QR Yenile</span>';
+          }
+        }, 1500);
+      };
     }
 
     // Katılıma Kilitle / Aç

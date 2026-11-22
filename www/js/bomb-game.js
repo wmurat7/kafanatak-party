@@ -155,7 +155,10 @@ export class BombGameEngine {
       title: 'Saatli Bomba Masası',
       subtitle: '☁️ Bomba telefonlar arasında canlı elden ele geçer, patlayan elenir!',
       prefix: 'bomb',
-      onAction: (act, room) => this.handlePlayerAction(act, room)
+      onAction: (act, room) => this.handlePlayerAction(act, room),
+      onRoomRefresh: (newRoomId) => {
+        this.syncWithCloud();
+      }
     });
   }
 

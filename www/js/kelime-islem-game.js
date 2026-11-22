@@ -739,9 +739,12 @@ export class KelimeIslemEngine {
                 ODA: ${this.roomId || '----'}
               </div>
               <div id="ki-qr-canvas-box" style="margin:0 auto 10px; display:inline-block; background:#FFF; padding:6px; border-radius:12px;"></div>
-              <div style="display:flex; justify-content:center; gap:8px;">
+              <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap;">
                 <button type="button" id="btn-ki-copy-link" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#FFF; font-size:0.78rem; font-weight:800; padding:6px 12px; border-radius:10px; cursor:pointer;">
                   📋 Bağlantıyı Kopyala
+                </button>
+                <button type="button" id="btn-ki-refresh-room" style="background:linear-gradient(135deg, rgba(239,68,68,0.25), rgba(185,28,28,0.35)); border:1.5px solid #EF4444; color:#FCA5A5; font-size:0.78rem; font-weight:900; padding:6px 12px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 0 12px rgba(239,68,68,0.25);">
+                  🔄 Odayı / QR Yenile
                 </button>
               </div>
               <div id="ki-connected-players-box" style="margin-top:10px; text-align:left;"></div>
@@ -799,6 +802,14 @@ export class KelimeIslemEngine {
     });
 
     document.getElementById('btn-toggle-ki-multi')?.addEventListener('click', () => this.toggleMultiDevice());
+    document.getElementById('btn-ki-refresh-room')?.addEventListener('click', async () => {
+      const btn = document.getElementById('btn-ki-refresh-room');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Yenileniyor...';
+      }
+      await this.refreshMultiRoom();
+    });
     document.getElementById('btn-ki-copy-link')?.addEventListener('click', () => {
       if (!this.roomId) return;
       const url = firebaseNetwork.getKelimeIslemUrl(this.roomId);
@@ -964,6 +975,25 @@ export class KelimeIslemEngine {
         });
       }
     });
+  }
+
+  async refreshMultiRoom() {
+    sounds.playClick();
+    if (this.roomId) {
+      try { await firebaseNetwork.closeRoom('kelime_islem', this.roomId); } catch (e) {}
+    }
+    if (this.unsubscribeRoom) {
+      try { this.unsubscribeRoom(); } catch (e) {}
+      this.unsubscribeRoom = null;
+    }
+    this.roomId = firebaseNetwork.generateRoomCode();
+    this.connectedPlayers = [];
+    this.playerSubmissions = [];
+    await this.initMultiRoom();
+    this.renderScreen();
+    if (this.game && this.game.showToast) {
+      this.game.showToast(`✅ Yeni Kelime İşlem Odası: ${this.roomId}`);
+    }
   }
 
   handleIncomingAction(action) {

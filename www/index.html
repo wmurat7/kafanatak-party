@@ -662,7 +662,7 @@
         <!-- MERKEZİ ODA YÖNETİM BUTONLARI (Tek Merkezden Kontrol & Sıfırlama) -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
           <button type="button" id="btn-isim-reset-room" style="background:linear-gradient(135deg, rgba(239,68,68,0.25), rgba(185,28,28,0.35)); border:1.5px solid #EF4444; color:#FCA5A5; font-size:0.82rem; font-weight:900; border-radius:10px; padding:10px 6px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow:0 0 12px rgba(239,68,68,0.2);">
-            <span>🔄 Odayı Sıfırla</span>
+            <span>🔄 Odayı / QR Yenile</span>
           </button>
           <button type="button" id="btn-isim-toggle-lock" style="background:rgba(0,245,212,0.15); border:1.5px solid var(--primary); color:#00F5D4; font-size:0.82rem; font-weight:900; border-radius:10px; padding:10px 6px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
             <span>🔓 Katılıma Açık</span>
@@ -837,9 +837,12 @@
       <div style="font-size:1.15rem; font-weight:900; color:var(--gold); margin-top:4px;">
         ODA KODU: <span id="lbl-kelime-room-code" style="letter-spacing:3px;">----</span>
       </div>
-      <div style="display:flex; justify-content:center; gap:8px; margin-top:8px;">
+      <div style="display:flex; justify-content:center; gap:8px; margin-top:8px; flex-wrap:wrap;">
         <button type="button" id="btn-copy-kelime-link" style="background:rgba(0,245,212,0.15); border:1px solid var(--primary); color:#00F5D4; font-size:0.75rem; font-weight:800; padding:6px 12px; border-radius:999px; cursor:pointer;">
           📋 Bağlantıyı Kopyala
+        </button>
+        <button type="button" id="btn-kelime-refresh-room" style="background:linear-gradient(135deg, rgba(239,68,68,0.25), rgba(185,28,28,0.35)); border:1.5px solid #EF4444; color:#FCA5A5; font-size:0.75rem; font-weight:900; padding:6px 12px; border-radius:999px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 0 12px rgba(239,68,68,0.25);">
+          🔄 Odayı / QR Yenile
         </button>
         <button type="button" id="btn-kelime-mod-open" style="background:rgba(251,191,36,0.15); border:1px solid #FBBF24; color:#FBBF24; font-size:0.75rem; font-weight:800; padding:6px 12px; border-radius:999px; cursor:pointer;">
           🛡️ Hakem / Oda Yönetimi
@@ -1332,9 +1335,12 @@
       <div style="font-size:1.15rem; font-weight:900; color:var(--gold); margin-top:4px;">
         ODA KODU: <span id="lbl-bomb-room-code" style="letter-spacing:3px;">----</span>
       </div>
-      <div style="display:flex; justify-content:center; gap:8px; margin-top:8px;">
+      <div style="display:flex; justify-content:center; gap:8px; margin-top:8px; flex-wrap:wrap;">
         <button type="button" id="btn-copy-bomb-link" style="background:rgba(0,245,212,0.15); border:1px solid var(--primary); color:#00F5D4; font-size:0.75rem; font-weight:800; padding:6px 12px; border-radius:999px; cursor:pointer;">
           📋 Bağlantıyı Kopyala
+        </button>
+        <button type="button" id="btn-bomb-refresh-room" style="background:linear-gradient(135deg, rgba(239,68,68,0.25), rgba(185,28,28,0.35)); border:1.5px solid #EF4444; color:#FCA5A5; font-size:0.75rem; font-weight:900; padding:6px 12px; border-radius:999px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 0 12px rgba(239,68,68,0.25);">
+          🔄 Odayı / QR Yenile
         </button>
         <button type="button" id="btn-bomb-mod-open" style="background:rgba(251,191,36,0.15); border:1px solid #FBBF24; color:#FBBF24; font-size:0.75rem; font-weight:800; padding:6px 12px; border-radius:999px; cursor:pointer;">
           🛡️ Hakem / Oda Yönetimi
@@ -1392,9 +1398,12 @@
       <div style="font-size:1.15rem; font-weight:900; color:var(--gold); margin-top:4px;">
         ODA KODU: <span id="lbl-bottle-room-code" style="letter-spacing:3px;">----</span>
       </div>
-      <div style="display:flex; justify-content:center; gap:8px; margin-top:8px;">
+      <div style="display:flex; justify-content:center; gap:8px; margin-top:8px; flex-wrap:wrap;">
         <button type="button" id="btn-copy-bottle-link" style="background:rgba(0,245,212,0.15); border:1px solid var(--primary); color:#00F5D4; font-size:0.75rem; font-weight:800; padding:6px 12px; border-radius:999px; cursor:pointer;">
           📋 Bağlantıyı Kopyala
+        </button>
+        <button type="button" id="btn-bottle-refresh-room" style="background:linear-gradient(135deg, rgba(239,68,68,0.25), rgba(185,28,28,0.35)); border:1.5px solid #EF4444; color:#FCA5A5; font-size:0.75rem; font-weight:900; padding:6px 12px; border-radius:999px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 0 12px rgba(239,68,68,0.25);">
+          🔄 Odayı / QR Yenile
         </button>
         <button type="button" id="btn-bottle-mod-open" style="background:rgba(251,191,36,0.15); border:1px solid #FBBF24; color:#FBBF24; font-size:0.75rem; font-weight:800; padding:6px 12px; border-radius:999px; cursor:pointer;">
           🛡️ Hakem / Oda Yönetimi
@@ -1457,12 +1466,15 @@
         <div style="font-size:1.15rem; font-weight:900; color:var(--gold); margin-top:4px;">
           ODA KODU: <span id="lbl-passa-room-code" style="letter-spacing:3px;">----</span>
         </div>
-        <div style="display:flex; justify-content:center; gap:8px; margin-top:8px;">
-          <button type="button" id="btn-passa-mod-open" style="background:rgba(251,191,36,0.15); border:1px solid #FBBF24; color:#FBBF24; font-size:0.75rem; font-weight:800; padding:6px 12px; border-radius:999px; cursor:pointer;">
-            🛡️ Hakem / Oda Yönetimi
-          </button>
+        <div style="display:flex; justify-content:center; gap:8px; margin-top:8px; flex-wrap:wrap;">
           <button type="button" id="btn-copy-passa-link" style="background:rgba(0,245,212,0.15); border:1px solid var(--primary); color:#00F5D4; font-size:0.75rem; font-weight:800; padding:6px 12px; border-radius:999px; cursor:pointer;">
             📋 Bağlantıyı Kopyala
+          </button>
+          <button type="button" id="btn-passa-refresh-room" style="background:linear-gradient(135deg, rgba(239,68,68,0.25), rgba(185,28,28,0.35)); border:1.5px solid #EF4444; color:#FCA5A5; font-size:0.75rem; font-weight:900; padding:6px 12px; border-radius:999px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 0 12px rgba(239,68,68,0.25);">
+            🔄 Odayı / QR Yenile
+          </button>
+          <button type="button" id="btn-passa-mod-open" style="background:rgba(251,191,36,0.15); border:1px solid #FBBF24; color:#FBBF24; font-size:0.75rem; font-weight:800; padding:6px 12px; border-radius:999px; cursor:pointer;">
+            🛡️ Hakem / Oda Yönetimi
           </button>
         </div>
         <div id="passa-player-count-badge" style="font-size:0.8rem; font-weight:800; color:var(--primary); margin-top:6px;">1 Oyuncu Bağlı</div>
@@ -1643,9 +1655,12 @@
         ODA KODU: <span id="lbl-cark-room-code" style="letter-spacing:3px;">----</span>
       </div>
       
-      <div style="display:flex; justify-content:center; gap:8px; margin-top:8px;">
+      <div style="display:flex; justify-content:center; gap:8px; margin-top:8px; flex-wrap:wrap;">
         <button type="button" id="btn-copy-cark-link" style="background:rgba(0,245,212,0.15); border:1px solid var(--primary); color:#00F5D4; font-size:0.75rem; font-weight:800; padding:6px 12px; border-radius:999px; cursor:pointer;">
           📋 Bağlantıyı Kopyala
+        </button>
+        <button type="button" id="btn-cark-refresh-room" style="background:linear-gradient(135deg, rgba(239,68,68,0.25), rgba(185,28,28,0.35)); border:1.5px solid #EF4444; color:#FCA5A5; font-size:0.75rem; font-weight:900; padding:6px 12px; border-radius:999px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 0 12px rgba(239,68,68,0.25);">
+          🔄 Odayı / QR Yenile
         </button>
         <button type="button" id="btn-cark-mod-open" style="background:rgba(251,191,36,0.15); border:1px solid #FBBF24; color:#FBBF24; font-size:0.75rem; font-weight:800; padding:6px 12px; border-radius:999px; cursor:pointer;">
           🛡️ Hakem / Oda Yönetimi

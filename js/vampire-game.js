@@ -629,6 +629,33 @@ export class VampireGameEngine {
     return { success: true, roomId: this.roomId };
   }
 
+  async refreshMultiHostRoom() {
+    if (this.roomId) {
+      try {
+        await firebaseNetwork.closeRoom('vampire', this.roomId);
+      } catch (e) {}
+    }
+    if (this.fbUnsub) {
+      try { this.fbUnsub(); } catch (e) {}
+      this.fbUnsub = null;
+    }
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
+    this.players = [];
+    this.nightActions = { vampireTarget: null, doctorTarget: null, detectiveTarget: null };
+    this.votes = {};
+    this.lastRenderedLobbyRoomId = null;
+    await this.createMultiplayerRoom(this.hostName || 'Köy Muhtarı');
+    this.renderMultiHostScreen({
+      roomId: this.roomId,
+      phase: 'lobby',
+      dayNumber: 1,
+      players: []
+    });
+  }
+
   startHostFirebaseSync() {
     if (this.fbUnsub) {
       this.fbUnsub();
@@ -765,6 +792,9 @@ export class VampireGameEngine {
               <button type="button" id="btn-vampire-copy-link" style="background:rgba(0,245,212,0.15); border:1px solid var(--primary); color:#00F5D4; font-size:0.78rem; font-weight:800; padding:6px 14px; border-radius:999px; cursor:pointer;" title="Katılım Bağlantısını Kopyala">
                 📋 Bağlantıyı Kopyala
               </button>
+              <button type="button" id="btn-vampire-refresh-room" style="background:linear-gradient(135deg, rgba(239,68,68,0.25), rgba(185,28,28,0.35)); border:1.5px solid #EF4444; color:#FCA5A5; font-size:0.78rem; font-weight:900; padding:6px 14px; border-radius:999px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 0 12px rgba(239,68,68,0.25);" title="Odayı ve QR Kodu Yenile">
+                🔄 Odayı / QR Yenile
+              </button>
             </div>
           </div>
 
@@ -827,6 +857,17 @@ export class VampireGameEngine {
         } catch (e) {
           prompt('Katılım Bağlantısı:', clientUrl);
         }
+      });
+
+      document.getElementById('btn-vampire-refresh-room')?.addEventListener('click', async () => {
+        if (window.sounds && window.sounds.playClick) window.sounds.playClick();
+        const btnRef = document.getElementById('btn-vampire-refresh-room');
+        if (btnRef) {
+          btnRef.disabled = true;
+          btnRef.textContent = '⏳ Yenileniyor...';
+        }
+        await this.refreshMultiHostRoom();
+        if (window.game && window.game.showToast) window.game.showToast(`✅ Yeni Köy Odası: ${this.roomId}`);
       });
 
       document.getElementById('btn-vamp-mod-open')?.addEventListener('click', (e) => {

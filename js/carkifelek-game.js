@@ -392,6 +392,23 @@ export class CarkifelekEngine {
         });
       };
     }
+
+    const btnRefreshCark = document.getElementById('btn-cark-refresh-room');
+    if (btnRefreshCark) {
+      btnRefreshCark.onclick = async () => {
+        sounds.playClick();
+        btnRefreshCark.disabled = true;
+        btnRefreshCark.textContent = '⏳ Yenileniyor...';
+        await this.refreshWifiRoom();
+        btnRefreshCark.textContent = '✅ Yenilendi!';
+        setTimeout(() => {
+          if (btnRefreshCark) {
+            btnRefreshCark.disabled = false;
+            btnRefreshCark.textContent = '🔄 Odayı / QR Yenile';
+          }
+        }, 1500);
+      };
+    }
     
     const cvsContainer = document.getElementById('cark-qr-canvas');
     if (cvsContainer && window.QRCode) {
@@ -445,6 +462,29 @@ export class CarkifelekEngine {
 
     this.updateConnectedPlayersUI();
     this.syncToFirebase();
+  }
+
+  async refreshWifiRoom() {
+    if (this.roomId) {
+      try { await firebaseNetwork.closeRoom('carkifelek', this.roomId); } catch(e) {}
+    }
+    if (this.unsubscribeRoom) {
+      try { this.unsubscribeRoom(); } catch (e) {}
+      this.unsubscribeRoom = null;
+    }
+    this.wifiPlayers = [
+      { id: this.hostId, name: 'Sunucu (Ana Ekran)', score: 0, color: '#EF4444' }
+    ];
+    this.teams = this.wifiPlayers;
+    const badge = document.getElementById('cark-player-count-badge');
+    if (badge) badge.textContent = '1 Oyuncu Bağlı';
+    const connEl = document.getElementById('cark-connected-players');
+    if (connEl) connEl.innerHTML = '';
+
+    await this.createWifiRoom();
+    if (window.game && window.game.showToast) {
+      window.game.showToast(`✅ Yeni Çarkıfelek Odası: ${this.roomId}`);
+    }
   }
 
   handleRemoteRoomUpdate(room) {

@@ -242,7 +242,10 @@ export class BottleGameEngine {
       namespace: 'bottle',
       title: 'Şişe Çevirmece Masası',
       subtitle: '☁️ Şişe ve görevler herkesin telefonuna anında düşer, cesaret oylanır!',
-      prefix: 'bottle'
+      prefix: 'bottle',
+      onRoomRefresh: (newRoomId) => {
+        this.syncWithCloud();
+      }
     });
     this.currentCardType = null; // 'truth' | 'dare'
     this.selectedPlayer = null;
@@ -262,6 +265,16 @@ export class BottleGameEngine {
       adultTruth: new NonRepeatingDeck(TRUTH_QUESTIONS_ADULT),
       adultDare: new NonRepeatingDeck(DARE_CHALLENGES_ADULT)
     };
+  }
+
+  syncWithCloud(turnInfo = '', taskText = '', taskType = '') {
+    if (!this.multiHelper || this.multiHelper.mode !== 'wifi') return;
+    this.multiHelper.updateRoomState({
+      turnInfo: turnInfo || (this.selectedPlayer ? `${this.selectedPlayer} Sırası` : 'Çark Çevriliyor'),
+      taskText: taskText || '',
+      taskType: taskType || '',
+      lastActive: Date.now()
+    }).catch(() => {});
   }
 
   savePlayers() {
@@ -469,6 +482,7 @@ export class BottleGameEngine {
   spinWheel() {
     if (this.isSpinning || this.players.length < 2) return;
     this.isSpinning = true;
+    this.syncWithCloud('🎡 Çark Çevriliyor...', '', '');
 
     const btnSpin = document.getElementById('btn-spin-dc-wheel');
     if (btnSpin) {
@@ -529,6 +543,7 @@ export class BottleGameEngine {
   }
 
   promptTruthOrDare(playerName) {
+    this.syncWithCloud(`👑 ${playerName} Seçim Yapıyor...`, '', '');
     const actionArea = document.getElementById('bottle-action-area');
     if (!actionArea) return;
 
@@ -568,11 +583,16 @@ export class BottleGameEngine {
     sounds.playClick();
     this.currentCardType = type;
     const text = this.getNextItem(type);
+    const isTruth = type === 'truth';
+
+    this.syncWithCloud(
+      this.selectedPlayer ? `👤 ${this.selectedPlayer}` : 'Sıradaki Oyuncu',
+      text,
+      isTruth ? 'DOĞRULUK' : 'CESARET'
+    );
 
     const actionArea = document.getElementById('bottle-action-area');
     if (!actionArea) return;
-
-    const isTruth = type === 'truth';
     actionArea.innerHTML = `
       <div style="background:linear-gradient(135deg, ${isTruth ? '#064e3b, #0f172a' : '#450a0a, #0f172a'}); border:2px solid ${isTruth ? '#00F5D4' : '#FF2E93'}; border-radius:20px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,0.5); animation:popIn 0.3s ease;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">

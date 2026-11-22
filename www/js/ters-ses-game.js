@@ -57,8 +57,29 @@ export class TersSesEngine {
       namespace: 'tersses',
       title: 'Ters Ses (Geri Vites) Masası',
       subtitle: '☁️ Ters ses herkesin telefonunda canlı çalar, cevabı bilen zili çalar!',
-      prefix: 'ters'
+      prefix: 'ters',
+      onAction: (act, room) => this.handlePlayerAction(act, room),
+      onRoomRefresh: (newRoomId) => this.syncWithCloud()
     });
+  }
+
+  syncWithCloud() {
+    if (!this.multiHelper || this.multiHelper.mode !== 'wifi') return;
+    this.multiHelper.updateRoomState({
+      round: this.roundNumber,
+      lastActive: Date.now()
+    }).catch(() => {});
+  }
+
+  handlePlayerAction(act, room) {
+    if (!act) return;
+    if (act.type === 'buzz_guess') {
+      sounds.playCorrect();
+      const pName = act.playerName || 'Bir oyuncu';
+      if (window.game && window.game.showToast) {
+        window.game.showToast(`🎯 ${pName} zili çaldı!`);
+      }
+    }
   }
 
   init() {
@@ -537,6 +558,7 @@ export class TersSesEngine {
 
     this.currentWord = this.wordsList[this.currentIndex];
     this.isRevealed = false;
+    this.syncWithCloud();
     this.hintOpened = false;
     this.letterHintOpened = false;
 

@@ -26,6 +26,7 @@ export class PartyMultiDeviceHelper {
     this.getJoinUrl = config.getJoinUrl || ((code) => firebaseNetwork.getGameUrl(this.namespace, code));
     this.onPlayerCountChange = config.onPlayerCountChange || null;
     this.onAction = config.onAction || null;
+    this.onRoomRefresh = config.onRoomRefresh || null;
     this.processedActionIds = new Set();
 
     this.mode = 'local'; // 'local' | 'wifi'
@@ -65,6 +66,9 @@ export class PartyMultiDeviceHelper {
         <div style="display:flex; justify-content:center; gap:8px; margin-top:8px; flex-wrap:wrap;">
           <button type="button" id="btn-copy-${this.prefix}-link" style="background:rgba(0,245,212,0.15); border:1px solid var(--primary); color:#00F5D4; font-size:0.75rem; font-weight:800; padding:6px 14px; border-radius:999px; cursor:pointer;">
             📋 Bağlantıyı Kopyala
+          </button>
+          <button type="button" id="btn-${this.prefix}-refresh-room" style="background:linear-gradient(135deg, rgba(239,68,68,0.25), rgba(185,28,28,0.35)); border:1.5px solid #EF4444; color:#FCA5A5; font-size:0.75rem; font-weight:900; padding:6px 14px; border-radius:999px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 0 12px rgba(239,68,68,0.25);">
+            🔄 Odayı / QR Yenile
           </button>
           <button type="button" id="btn-${this.prefix}-mod-open" style="background:rgba(251,191,36,0.15); border:1px solid #FBBF24; color:#FBBF24; font-size:0.75rem; font-weight:800; padding:6px 14px; border-radius:999px; cursor:pointer;">
             🛡️ Hakem / Oda Yönetimi
@@ -148,6 +152,23 @@ export class PartyMultiDeviceHelper {
         } catch (e) {
           prompt('Oyun Bağlantısı:', url);
         }
+      };
+    }
+
+    const btnRefresh = document.getElementById(`btn-${this.prefix}-refresh-room`);
+    if (btnRefresh) {
+      btnRefresh.onclick = async () => {
+        sounds.playClick();
+        btnRefresh.disabled = true;
+        btnRefresh.textContent = '⏳ Yenileniyor...';
+        await this.refreshRoom();
+        btnRefresh.textContent = '✅ Yenilendi!';
+        setTimeout(() => {
+          if (btnRefresh) {
+            btnRefresh.disabled = false;
+            btnRefresh.textContent = '🔄 Odayı / QR Yenile';
+          }
+        }, 1500);
       };
     }
 
@@ -294,6 +315,40 @@ export class PartyMultiDeviceHelper {
     });
 
     return this.roomId;
+  }
+
+  /**
+   * Mevcut odayı kapatıp taze bir oda kodu ve yeni QR kodu üretir
+   */
+  async refreshRoom(initialData = {}) {
+    if (this.roomId && this.mode === 'wifi') {
+      try {
+        await firebaseNetwork.closeRoom(this.namespace, this.roomId);
+      } catch (e) {}
+    }
+    this.stopListening();
+    this.connectedPlayers = [];
+    this.processedActionIds.clear();
+
+    const newCode = await this.createWifiRoom(initialData);
+
+    const badge = document.getElementById(`${this.prefix}-player-count-badge`);
+    if (badge) badge.textContent = '0 Oyuncu Bağlı';
+    const chipsBox = document.getElementById(`${this.prefix}-connected-players`);
+    if (chipsBox) chipsBox.innerHTML = '';
+
+    if (window.game && window.game.showToast) {
+      window.game.showToast(`✅ Yeni Oda ve QR Hazır: ${newCode}`);
+    }
+
+    if (this.onRoomRefresh) {
+      try {
+        this.onRoomRefresh(newCode);
+      } catch (e) {
+        console.warn('[PartyMultiDeviceHelper] onRoomRefresh error:', e);
+      }
+    }
+    return newCode;
   }
 
   async updateRoomState(patch) {

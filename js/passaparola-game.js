@@ -614,6 +614,24 @@ export class PassaparolaEngine {
       };
     }
 
+    // Odayı ve QR Kodu Yenileme Butonu
+    const btnRefreshPassa = document.getElementById('btn-passa-refresh-room');
+    if (btnRefreshPassa) {
+      btnRefreshPassa.onclick = async () => {
+        sounds.playClick();
+        btnRefreshPassa.disabled = true;
+        btnRefreshPassa.textContent = '⏳ Yenileniyor...';
+        await this.refreshWifiRoom();
+        btnRefreshPassa.textContent = '✅ Yenilendi!';
+        setTimeout(() => {
+          if (btnRefreshPassa) {
+            btnRefreshPassa.disabled = false;
+            btnRefreshPassa.textContent = '🔄 Odayı / QR Yenile';
+          }
+        }, 1500);
+      };
+    }
+
     // Yerel Oyuncu Ekleme
     const btnAddLocal = document.getElementById('btn-passa-add-local-player');
     if (btnAddLocal) {
@@ -838,7 +856,12 @@ export class PassaparolaEngine {
 
     await firebaseNetwork.createRoom('passaparola', initialRoom);
 
-    firebaseNetwork.listenRoom('passaparola', this.roomId, (room) => {
+    if (this.unsubRoom) {
+      try { this.unsubRoom(); } catch (e) {}
+      this.unsubRoom = null;
+    }
+
+    this.unsubRoom = firebaseNetwork.listenRoom('passaparola', this.roomId, (room) => {
       if (!room) return;
       if (room.players) {
         const pList = Object.values(room.players);
@@ -872,6 +895,26 @@ export class PassaparolaEngine {
         }
       }
     });
+  }
+
+  async refreshWifiRoom() {
+    if (this.roomId) {
+      try { await firebaseNetwork.closeRoom('passaparola', this.roomId); } catch(e) {}
+    }
+    if (this.unsubRoom) {
+      try { this.unsubRoom(); } catch (e) {}
+      this.unsubRoom = null;
+    }
+    this.players = [];
+    const badge = document.getElementById('passa-player-count-badge');
+    if (badge) badge.textContent = '0 Oyuncu Bağlı';
+    const connEl = document.getElementById('passa-connected-players');
+    if (connEl) connEl.innerHTML = '';
+
+    await this.createWifiRoom();
+    if (window.game && window.game.showToast) {
+      window.game.showToast(`✅ Yeni Passaparola Odası: ${this.roomId}`);
+    }
   }
 
   resetGame() {
